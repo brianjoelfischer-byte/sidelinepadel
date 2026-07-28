@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "title": "Sideline Padel",
+    "tagline": "Jugá. Registrá. Progresá.",
+    "description": "Registrá tus partidos, seguí tu progreso y coordiná turnos con jugadores de tu nivel."
+  },
+  "nav": {
+    "panel": "Panel",
+    "sessions": "Mis partidos",
+    "stats": "Estadísticas",
+    "players": "Jugadores",
+    "offers": "Turnos",
+    "venues": "Sedes",
+    "profile": "Perfil",
+    "settings": "Ajustes",
+    "addSession": "Registrar"
+  },
+  "landing": {
+    "heroTitle": "Tu pádel, medido de verdad",
+    "heroSubtitle": "Registrá cada partido, mirá cómo evoluciona tu nivel y encontrá gente para jugar cerca tuyo.",
+    "cta": "Empezar",
+    "ctaSecondary": "Ver cómo funciona",
+    "features": {
+      "trackTitle": "Registrá y medí",
+      "trackBody": "Cada partido suma. Ratio de victorias, racha, progresión de nivel y con quién jugaste.",
+      "levelTitle": "Tu nivel, honesto",
+      "levelBody": "Vos declarás tu categoría y la comunidad opina. El nivel que te empareja sale de los dos.",
+      "matchTitle": "Coordiná turnos",
+      "matchBody": "Publicá que te falta gente o sumate al turno de otro. Con recordatorio antes de jugar."
+    }
+  },
+  "disclaimer": {
+    "noBooking": "Sideline no reserva canchas. Reservá vos en el club y publicá el turno cuando lo tengas.",
+    "noBookingShort": "No reservamos canchas"
+  },
+  "level": {
+    "declared": "Declarado",
+    "perceived": "Percibido",
+    "effective": "Efectivo",
+    "raters": "{count, plural, =0 {sin valoraciones} =1 {1 valoración} other {# valoraciones}}",
+    "scale": {
+      "beginner": "Iniciación",
+      "improver": "Baja",
+      "intermediate": "Media",
+      "advanced": "Media-Alta",
+      "expert": "Alta",
+      "elite": "Competición"
+    }
+  },
+  "common": {
+    "loading": "Cargando…",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "back": "Volver",
+    "continue": "Continuar",
+    "language": "Idioma"
+  },
+  "errors": {
+    "notFoundTitle": "No encontramos esta página",
+    "notFoundBody": "El enlace puede estar roto o la página se movió.",
+    "genericTitle": "Algo salió mal",
+    "genericBody": "Probá de nuevo en un momento.",
+    "backHome": "Ir al inicio"
+  }
+}
