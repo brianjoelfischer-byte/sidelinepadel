@@ -63,13 +63,24 @@
 | Validación | **Zod** en todo borde de entrada | Un solo esquema valida cliente y servidor. |
 | i18n | **next-intl** | Rutas por locale, formato de fecha/número por región, carga por chunk. |
 | Push | **Web Push (VAPID)** vía `web-push` | Sin dependencia de Firebase. |
-| Cron | **pg_cron** en Supabase (o Vercel Cron como respaldo) | Dispara los recordatorios. |
+| Cron | **pg_cron** en Supabase — **no** Vercel Cron | Dispara los recordatorios. Ver la nota de abajo: no es una preferencia, es una restricción. |
 | Rate limiting | **Upstash Redis** (`@upstash/ratelimit`) | Serverless, sin servidor propio que mantener. |
 | Errores | **Sentry** con scrubbing de PII | |
 | Analítica | **Plausible** (sin cookies) | Evita el banner de cookies y el problema de consentimiento. |
 | Deploy | **Vercel** (app) + **Supabase** (datos) | |
 | Tests | **Vitest** (unidad) + **Playwright** (e2e) | |
 | CI | **GitHub Actions** | typecheck, lint, test, `npm audit`, escaneo de secretos. |
+
+**Restricción de hosting descubierta al montar el bloque 1.** El plan Hobby de
+Vercel corre los cron jobs **una vez por día**, y el §14 necesita cada 5 minutos.
+Los recordatorios **no pueden** depender de Vercel Cron sin pagar el plan Pro
+(20 USD/mes). Por eso el scheduler es `pg_cron` dentro de Supabase, que además es
+mejor decisión: el job vive al lado de los datos que consulta, sin salto de red
+ni secreto compartido entre dos plataformas.
+
+Segunda restricción del mismo plan: **Hobby prohíbe el uso comercial**. Mientras
+la app sea gratis se está en regla; el día que se monetice hay que pasar a Pro.
+Está anotado acá para que sea una decisión y no una sorpresa.
 
 **Decisión clave: por qué Supabase y no un backend propio.** La autorización de esta app es casi toda "¿este usuario puede ver/tocar esta fila?". Con RLS esa regla se escribe una vez en la base y se cumple aunque un endpoint tenga un bug. Un backend propio con Prisma pondría toda esa responsabilidad en el código de aplicación, donde un `where` olvidado filtra datos de otros usuarios. Para un equipo chico, RLS es la decisión de seguridad de mayor retorno.
 
