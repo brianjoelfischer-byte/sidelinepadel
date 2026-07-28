@@ -1150,21 +1150,64 @@ Esto no se discute durante la construcción. Si un bloque necesita romper una de
 >
 > Va acá porque **diseñarlo ahora es gratis y no diseñarlo es caro**: si el modelo de sesiones y niveles no lo contempla, en seis meses hay que migrar el historial de todos. Con esto escrito, la v1 se construye sin cerrarse puertas.
 >
-> **Sugerencia:** v1 sale sin torneos. v2.0 trae Americano y triangular. v2.1 trae eliminación directa. Es tu decisión — si querés torneos en la v1, se hace, pero mové la fecha de salida en consecuencia.
+> **Sugerencia de fases:**
+> - **v2.0** — Americano y triangular. Los dos más simples y los que más se juegan.
+> - **v2.1** — Mexicano y `groups_knockout` con los presets Super 8 / Super 12.
+> - **v2.2** — Eliminación directa pura y King of the Court.
+>
+> Es tu decisión — si querés torneos en la v1, se hace, pero mové la fecha de salida en consecuencia.
 
 ### 17.1 Formatos
 
-| Formato | Unidad | Cuántos | Cómo funciona | Complejidad |
+Dos familias, y la diferencia es estructural:
+
+- **Individuales con rotación** — te anotás solo, la app arma las parejas cada ronda. Puntaje individual acumulado.
+- **Por equipos** — venís con compañero, la pareja es fija todo el torneo.
+
+#### Familia 1 · Individuales con rotación
+
+| Formato | Jugadores | Cómo empareja | Para qué sirve |
+|---|---|---|---|
+| **Americano** | 4, 8, 12, 16… (múltiplos de 4) | Rotación **fija**: jugás con cada uno exactamente una vez | Grupo parejo, ambiente social |
+| **Mexicano** | Igual | Rotación **dinámica**: cada ronda se arma según la tabla — 1º+4º vs 2º+3º | **Niveles mezclados** |
+| **King of the Court** | 8+ (flexible) | El que gana se queda en la cancha, el que pierde rota | Entrada y salida libre |
+
+**Americano** es el formato del pádel amateur. Partidos a puntos fijos (16, 24 o 32, no a sets), puntaje **individual acumulado** — cambiás de compañero pero tu total sigue creciendo. Con 8 jugadores a 24 puntos son unos 90 minutos. Termina cuando todos jugaron con todos.
+
+**Mexicano merece atención especial: resuelve el mismo problema que tu app.** En vez de una rotación predefinida, cada ronda se genera desde la tabla de posiciones del momento, cruzando 1º+4º contra 2º+3º. Eso mantiene los equipos parejos ronda a ronda. Si el grupo tiene niveles mezclados —que es exactamente el caso cuando juntás gente por la app y no un grupo de amigos— **Mexicano da mejores partidos que Americano**. Y ya tenés la infraestructura: es el mismo criterio de nivel del §12, aplicado dentro del torneo.
+
+**King of the Court** son carreras cortas a 4–7 puntos con rotación de perdedores. Encaja para un evento de tarde donde la gente entra y sale, no para un torneo con resultado formal. Lo dejaría para v2.2.
+
+#### Familia 2 · Por equipos
+
+| Formato | Equipos | Cómo funciona |
+|---|---|---|
+| **Triangular** | 3 | Todos contra todos, 3 partidos |
+| **Liga (round robin)** | 3–8 | Todos contra todos |
+| **Eliminación directa** | 4, 8, 16 (*byes* si no) | Cuadro; el que pierde se va |
+| **Grupos + eliminación** | 8–32 | Fase de grupos y después cuadro |
+
+La eliminación directa pura es la que peor encaja con un amateur: la mitad de la gente juega un partido y se vuelve a casa.
+
+#### Sobre el "Super 8" y el "Super 12" — lo que encontré
+
+**No son un formato estandarizado.** Busqué y no existe un reglamento único: el nombre se usa distinto según el club y hasta según el país. Encontré al menos tres usos en circulación:
+
+1. **8 parejas, fase de grupos + final** — la lectura más común en Argentina y España.
+2. **Grupos + cuadro a gran escala** — por ejemplo 32 parejas en 8 grupos de 4, los dos mejores de cada grupo a cuadros de eliminación desde cuartos, todo a un set.
+3. **Marca de un circuito o evento puntual**, con reglas propias del organizador.
+
+**Por eso no lo hardcodeo, y creo que es la decisión correcta.** Si escribo un formato `super_8` con reglas fijas, el primer club que lo use distinto se encuentra con una app que no le sirve — y va a tener razón.
+
+En su lugar, `groups_knockout` es **paramétrico**: cantidad de participantes, cuántos grupos, cuántos avanzan por grupo, desde qué ronda arranca el cuadro, y si se juega a puntos o a sets. **"Super 8" y "Super 12" son *presets* de eso**, con nombre visible y todos los parámetros editables por el organizador.
+
+| Preset | Participantes | Grupos | Avanzan | Cuadro desde |
 |---|---|---|---|---|
-| **Americano** | Individual | 4, 8, 12, 16… | Rotás de compañero cada ronda; jugás con todos y contra todos. Puntos individuales. | Baja |
-| **Triangular** | Equipo | 3 equipos | Todos contra todos, 3 partidos. | Muy baja |
-| **Liga (round robin)** | Equipo | 3–8 equipos | Todos contra todos. | Baja |
-| **Eliminación directa** | Equipo | 4, 8, 16 (con *byes* si no) | Cuadro; el que pierde se va. | Media |
-| **Grupos + eliminación** | Equipo | 8–32 | Fase de grupos y después cuadro. | Alta — v3 |
+| Super 8 | 8 parejas | 2 × 4 | 2 | Semifinal |
+| Super 12 | 12 parejas | 3 × 4 | 2 + 2 mejores terceros | Cuartos |
+| Super 8 (grande) | 32 parejas | 8 × 4 | 2 | Cuartos, doble cuadro |
 
-**El Americano no estaba en tu lista y creo que es el que más te conviene arrancar.** Es *el* formato del pádel amateur: no necesita que la gente venga en parejas armadas, todos juegan la misma cantidad de partidos, nadie se va después de 20 minutos por perder el primero, y resuelve justo el problema que ya resuelve tu app — juntar gente suelta de nivel parecido. Además es el más fácil de implementar: la rotación es una tabla fija por cantidad de jugadores, sin cuadros ni wiring de partidos.
-
-La eliminación directa es la que peor encaja con un amateur: la mitad de la gente juega un partido y se vuelve a casa.
+El organizador elige el preset, ve los parámetros y los cambia si su club lo juega distinto. La app sugiere, no impone.
 
 ### 17.2 Modelo de datos
 
@@ -1174,8 +1217,20 @@ tournaments (
   creator_id    uuid NOT NULL FK profiles,
   name          text NOT NULL,
   format        text NOT NULL CHECK (format IN
-                ('americano','triangular','round_robin','single_elim')),
+                -- individuales con rotación        -- por equipos
+                ('americano','mexicano','king_of_court',
+                 'triangular','round_robin','single_elim','groups_knockout')),
   entry_unit    text NOT NULL CHECK (entry_unit IN ('individual','team')),
+
+  -- Parámetros del formato. "Super 8" y "Super 12" son PRESETS de
+  -- groups_knockout, no formatos propios — no están estandarizados (§17.1).
+  --   groups_knockout: {groups:3, per_group:4, advance:2, best_thirds:2,
+  --                     knockout_from:'quarter', preset:'super_12'}
+  --   americano/mexicano: {points_per_match:24}
+  --   king_of_court:      {race_to:5}
+  format_config jsonb NOT NULL DEFAULT '{}',
+  scoring_mode  text NOT NULL DEFAULT 'sets'
+                CHECK (scoring_mode IN ('points','sets')),
   venue_id      uuid FK venues,
   venue_freetext text,
   courts_count  int NOT NULL CHECK (courts_count >= 1),   -- limita la programación
@@ -1210,7 +1265,21 @@ tournament_entrants (
 
 tournament_rounds (
   id, tournament_id FK, idx int NOT NULL, label text,
+  phase text NOT NULL DEFAULT 'main'
+        CHECK (phase IN ('group','knockout','main')),
+  group_label text,                      -- 'A','B','C'… solo en phase='group'
   UNIQUE (tournament_id, idx)
+)
+
+-- Puntaje individual acumulado. Solo en americano / mexicano / king_of_court.
+-- En los formatos por equipos la tabla se deriva de tournament_matches.
+tournament_scores (
+  tournament_id uuid NOT NULL FK tournaments ON DELETE CASCADE,
+  profile_id    uuid NOT NULL FK profiles,
+  points_for    int NOT NULL DEFAULT 0,
+  points_against int NOT NULL DEFAULT 0,
+  matches_played int NOT NULL DEFAULT 0,
+  PRIMARY KEY (tournament_id, profile_id)
 )
 
 tournament_matches (
@@ -1239,13 +1308,33 @@ tournament_matches (
 
 ### 17.3 Reglas de generación
 
-**Americano.** La rotación de parejas es una tabla fija por cantidad de jugadores (4, 8, 12, 16), precalculada y testeada — no se genera en runtime. Con 8 jugadores y 2 canchas son 7 rondas y todos juegan con todos. Se puntúa por juegos ganados individualmente, no por partidos.
+Hay una diferencia grande entre los formatos, y define cuándo se generan los partidos:
 
-**Round robin / triangular.** Emparejamiento circular clásico. Con N impar, un equipo descansa por ronda. Las rondas se distribuyen entre las canchas disponibles: `ceil(partidos_por_ronda / courts_count)` franjas por ronda.
+| | Se generan… | Por qué |
+|---|---|---|
+| Americano, grupos, cuadro | **Todos al cerrar la inscripción** | El calendario es determinista; la gente quiere verlo completo desde el principio |
+| **Mexicano**, King of the Court | **Ronda a ronda** | La siguiente depende de resultados que todavía no existen |
 
-**Eliminación directa.** El cuadro se arma sobre la potencia de 2 más cercana hacia arriba; los mejor sembrados reciben *bye* en primera ronda. El cableado (`next_match_id`, `next_slot`) se calcula al cerrar la inscripción, no partido a partido — así el cuadro es visible completo desde el principio.
+**Americano.** Rotación fija por cantidad de jugadores (4, 8, 12, 16…), **precalculada como tabla constante y testeada** — no se genera en runtime. Con 8 jugadores y 2 canchas son 7 rondas y cada uno juega con cada uno exactamente una vez. Partidos a puntos fijos (`points_per_match`, por defecto 24), puntaje individual acumulado en `tournament_scores`.
 
-**Cierre de inscripción.** Al pasar a `locked` se congela la lista, se siembra y se generan todos los partidos. Después de eso, un jugador que se baja **no** regenera el cuadro: se registra `walkover`. Regenerar un cuadro en curso es la clase de operación que corrompe datos.
+**Mexicano.** Cada ronda se genera al cerrar la anterior: se ordena `tournament_scores`, se agrupan de a 4 por posición y dentro de cada grupo se cruza **1º+4º vs 2º+3º**. La primera ronda no tiene tabla todavía — se siembra por `effective_level` (§12), que es justo el dato que la app ya tiene y que a un organizador con planilla de Excel le falta. Regla extra: **no repetir compañero** mientras haya alternativa, si no en un torneo largo se repiten parejas.
+
+**King of the Court.** Sin calendario. Carreras a `race_to` puntos; los ganadores se quedan, los perdedores van al final de la cola. El estado es la cola, no un cuadro.
+
+**Round robin / triangular.** Emparejamiento circular clásico. Con N impar, un equipo descansa por ronda. Las rondas se reparten entre las canchas: `ceil(partidos_por_ronda / courts_count)` franjas.
+
+**Grupos + eliminación** *(la base de Super 8 / Super 12)*. Se lee todo de `format_config`:
+1. Repartir participantes en `groups` grupos, sembrando en serpentina por `effective_level` para que no quede un grupo de la muerte.
+2. Round robin dentro de cada grupo.
+3. Al cerrar los grupos, ordenar por: partidos ganados → diferencia de juegos → juegos a favor → **enfrentamiento directo**. Empate persistente: sorteo con semilla registrada, para que sea reproducible y auditable.
+4. Clasifican `advance` por grupo, más los `best_thirds` mejores terceros si el preset los usa (Super 12 los necesita para llegar a 8).
+5. Armar el cuadro desde `knockout_from`, cruzando 1º de un grupo contra 2º de otro.
+
+**Eliminación directa.** El cuadro se arma sobre la potencia de 2 más cercana hacia arriba; los mejor sembrados reciben *bye*. El cableado (`next_match_id`, `next_slot`) se calcula al cerrar la inscripción, no partido a partido — así el cuadro se ve completo desde el principio.
+
+**Cierre de inscripción.** Al pasar a `locked` se congela la lista, se siembra y se genera lo que corresponda según la tabla de arriba. Después de eso, alguien que se baja **no** regenera nada: se registra `walkover`. Regenerar un cuadro en curso es la clase de operación que corrompe datos.
+
+**Validación al crear.** Los formatos tienen restricciones duras de cantidad — Americano necesita múltiplo de 4, un triangular son 3 equipos, Super 12 no funciona con 9 parejas. Se valida **al crear el torneo**, no al cerrarlo: enterarte de que tu formato no cierra cuando ya tenés 11 inscriptos es la peor forma posible de descubrirlo. Si al cerrar faltan participantes, la app propone el preset más cercano que sí cierre.
 
 ### 17.4 Un partido de torneo **es** una sesión
 
@@ -1254,6 +1343,10 @@ Decisión clave: al terminar un `tournament_match`, se generan filas en `session
 Sin esto habría **dos historiales paralelos** — tus partidos sueltos por un lado y los de torneo por otro — con estadísticas que no suman, niveles que no se alimentan de la mitad de lo que jugaste, y un "ratio de victorias" que miente. El torneo no es un módulo aparte: es otra forma de generar los mismos hechos.
 
 Consecuencia directa: **las valoraciones de nivel del §12.2 funcionan igual en torneos**, y un torneo de 16 jugadores aporta muchísimos votantes distintos de una sola vez. Es la vía más rápida para que el nivel percibido de alguien se estabilice.
+
+En Americano y Mexicano esto se potencia: cambiás de compañero cada ronda, así que un solo torneo te cruza con 7 personas distintas y genera 7 sesiones. Para el motor de niveles del §12 es la mejor fuente de datos que existe — muchos votantes independientes, todos habiendo jugado con vos el mismo día.
+
+**Detalle de puntuación.** Americano, Mexicano y King of the Court se juegan a puntos, no a sets, así que `sessions.sets` guarda una sola entrada con el marcador de la ronda (`[{me:15, opp:9}]`) y `tournaments.scoring_mode = 'points'` marca cómo interpretarlo. Sin ese flag, el cálculo de estadísticas leería un 15-9 como un set de pádel imposible.
 
 ### 17.5 Visibilidad y acceso
 
@@ -1282,6 +1375,7 @@ Estas no bloquean el arranque (los bloques 1 a 6 se pueden construir igual), per
 3. **Umbral de votantes para publicar el percibido.** Hoy: se muestra desde el primer votante, con el `rater_count` al lado. Alternativa: ocultarlo hasta 3 votantes, para que un solo voto no defina la reputación de nadie. Me inclino por ocultarlo hasta 3.
 
 4. **Torneos: ¿v1 o v2?** Mi recomendación es v2, y arrancar por **Americano** (§17.1) — no por eliminación directa. En un torneo amateur, la eliminación manda a la mitad de la gente a su casa después de un partido; el Americano hace que todos jueguen con todos y encaja con lo que la app ya resuelve.
+5. **¿Mexicano antes que grupos+cuadro?** Mexicano usa el nivel efectivo para sembrar y equilibrar cada ronda — es la ventaja competitiva real de esta app frente a una planilla de Excel. Yo lo pondría en la v2.1 antes que el Super 8/12, aunque el Super 8 suene más conocido.
 
 **Resueltas:**
 - ~~¿Estado intermedio de asistencia?~~ → **Sí, `tentative`** con vencimiento propuesto por el jugador (§12.4).
