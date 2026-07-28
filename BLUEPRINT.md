@@ -23,12 +23,13 @@
 - Nivel declarado por el jugador **más nivel percibido por la comunidad**, con peso real sobre el nivel usado para emparejar.
 - Directorio de jugadores y perfiles públicos/privados.
 - Directorio mundial de sedes de pádel (27 países en el seed inicial).
-- Turnos abiertos con banda de nivel, en **dos ejes separados**: el creador confirma la cancha, cada jugador confirma su asistencia.
+- Turnos de **exactamente 4 jugadores**, con banda de nivel y **dos ejes separados**: el creador confirma la cancha, cada jugador confirma su asistencia (con estado intermedio *a confirmar*).
 - Invitaciones directas: desde el historial de con quién jugaste, por usuario, o por email a alguien que todavía no está en la app.
+- **Conexiones automáticas**: haber jugado juntos es la conexión. Sin solicitudes de amistad.
 - Aviso a las 24 h para confirmar y recordatorio 30 minutos antes del encuentro.
 - Multi-idioma y multi-país desde el día uno.
 
-**Fuera de alcance v1.** App nativa (fase 2), pagos/suscripción, reserva real de cancha, torneos, chat en tiempo real, ranking global competitivo.
+**Fuera de alcance v1.** App nativa (fase 2), pagos/suscripción, reserva real de cancha, chat en tiempo real, ranking global competitivo, y **torneos** — diseñados en el §17 para no cerrarnos puertas, pero construidos en la v2.
 
 ---
 
@@ -155,7 +156,30 @@ level_ratings (
 )
 CREATE INDEX ON level_ratings (subject_id, created_at DESC);
 
--- grafo social dirigido (seguir, no amistad mutua)
+-- CONEXIONES: no hay solicitud de amistad. Haber jugado juntos ES la conexión.
+-- No es una tabla con estado propio: es un HECHO derivado de las sesiones.
+-- Nada que aceptar, nada que rechazar, nada que se pueda desincronizar.
+CREATE MATERIALIZED VIEW played_with AS
+SELECT
+  a.profile_id            AS profile_id,
+  b.profile_id            AS other_id,
+  count(*)                AS times_played,
+  max(s.played_on)        AS last_played_on,
+  min(s.played_on)        AS first_played_on
+FROM session_participants a
+JOIN session_participants b
+  ON b.session_id = a.session_id AND b.profile_id <> a.profile_id
+JOIN sessions s ON s.id = a.session_id
+WHERE a.profile_id IS NOT NULL AND b.profile_id IS NOT NULL
+  AND a.confirmed_at IS NOT NULL AND b.confirmed_at IS NOT NULL
+GROUP BY a.profile_id, b.profile_id;
+
+CREATE UNIQUE INDEX ON played_with (profile_id, other_id);
+CREATE INDEX ON played_with (profile_id, times_played DESC, last_played_on DESC);
+-- Refresco CONCURRENTLY tras cada sesión confirmada + job nocturno.
+
+-- follows sigue existiendo, pero para OTRA cosa: interés unilateral en alguien
+-- con quien todavía NO jugaste. No requiere aprobación (modelo Twitter, no Facebook).
 follows (
   follower_id FK profiles, followee_id FK profiles, created_at,
   PRIMARY KEY (follower_id, followee_id),
@@ -245,7 +269,11 @@ match_offers (
   timezone      text NOT NULL,            -- IANA de la sede, para mostrar
   level_min     numeric(2,1) NOT NULL,
   level_max     numeric(2,1) NOT NULL CHECK (level_max >= level_min),
-  spots_total   int NOT NULL CHECK (spots_total BETWEEN 1 AND 3),
+  -- UN TURNO ES SIEMPRE 4 JUGADORES. Ni 3 ni 5. Es pádel.
+  --   1 (creador) + spots_open (busca en la app) + guests_count (trae de afuera) = 4
+  spots_open    int NOT NULL CHECK (spots_open BETWEEN 1 AND 3),
+  guests_count  int NOT NULL DEFAULT 0 CHECK (guests_count BETWEEN 0 AND 2),
+  CHECK (1 + spots_open + guests_count = 4),
   visibility    text NOT NULL DEFAULT 'public'
                 CHECK (visibility IN ('public','followers','invite_only')),
   -- DOS EJES INDEPENDIENTES. No se mezclan nunca. Ver §12.4.
@@ -273,10 +301,16 @@ match_participants (
   profile_id    uuid NOT NULL FK profiles,
   state         text NOT NULL DEFAULT 'requested'
                 CHECK (state IN ('requested','accepted','declined','withdrawn')),
-  -- Confirmación de asistencia, independiente de la aceptación (§12)
+  -- Confirmación de asistencia, independiente de la aceptación (§12.4)
+  --   pending    → todavía no dijo nada
+  --   tentative  → "me sumo, pero confirmo en unas horas"
+  --   going      → confirmado
+  --   not_going  → se bajó
   attendance    text NOT NULL DEFAULT 'pending'
-                CHECK (attendance IN ('pending','going','not_going')),
+                CHECK (attendance IN ('pending','tentative','going','not_going')),
   attendance_at timestamptz,
+  tentative_until timestamptz,     -- se propone al elegir 'tentative'; al vencer
+                                   -- vuelve a 'pending' y se le vuelve a preguntar
   requested_at, decided_at,
   origin        text NOT NULL DEFAULT 'request'
                 CHECK (origin IN ('request','invitation','creator')),
@@ -331,7 +365,8 @@ reminders (
   offer_id      uuid NOT NULL FK match_offers ON DELETE CASCADE,
   profile_id    uuid NOT NULL FK profiles ON DELETE CASCADE,
   kind          text NOT NULL
-                CHECK (kind IN ('confirm_request','court_nudge','match_reminder')),
+                CHECK (kind IN ('confirm_request','court_nudge',
+                                'tentative_expiry','match_reminder')),
   fire_at       timestamptz NOT NULL,     -- −24 h o −30 min según kind
   channel       text NOT NULL CHECK (channel IN ('push','email')),
   state         text NOT NULL DEFAULT 'pending'
@@ -631,8 +666,8 @@ Cada bloque es entregable y verificable. **No se avanza al siguiente con el ante
 | **5** | Sesiones y valoraciones | Alta de partido/entrenamiento/rápido, participantes invitados y registrados, confirmación de etiqueta, historial, `level_ratings` y el recálculo del percibido con sus tests. |
 | **6** | Estadísticas | Ratio de victorias, racha, forma reciente, progresión de nivel, calendario de días jugados. |
 | **7** | Sedes | Job de seed desde Overpass, búsqueda PostGIS por cercanía, ficha, alta por usuario + cola de moderación, atribución ODbL. |
-| **8** | Social | Directorio, seguir, bloquear, reportar, cara a cara. |
-| **9** | Turnos · eje cupo | Crear turno con banda de nivel, listar por cercanía/nivel, solicitar, aceptar/rechazar, confirmar asistencia, bajarse, cancelar. |
+| **8** | Social | Directorio, vista `played_with` con su refresco, seguir, bloquear, reportar, cara a cara. |
+| **9** | Turnos · eje cupo | Crear turno de 4 con banda de nivel, listar por cercanía/nivel, solicitar, aceptar/rechazar, los cuatro estados de asistencia con vencimiento del tentativo, bajarse con aviso a los confirmados, cancelar. |
 | **9b** | Turnos · eje cancha | `court_status` con sus tres estados, empujón al creador, "se cayó la cancha" sin perder el grupo, priorización de *cancha confirmada + faltan jugadores* en el listado. **Los cinco avisos de "no reservamos" del §12.7 entran acá, no después.** |
 | **9c** | Invitaciones | Lista de "jugaste con", invitar por usuario, invitar por email con token hasheado, reserva de cupo con vencimiento, revocar, aceptar/rechazar, baja de invitaciones sin login, `invite_suppressions`. |
 | **10** | Recordatorios | Suscripción push, `reminders` de 24 h y 30 min, empujón de cancha, acciones en la notificación, cron cada 5 min, respaldo por email, cancelación en cascada. |
@@ -642,6 +677,8 @@ Cada bloque es entregable y verificable. **No se avanza al siguiente con el ante
 | **14** | Endurecimiento | Cabeceras, rate limits, escaneo de dependencias, auditoría de seguridad completa, pruebas de carga básicas. |
 
 El bloque 2 antes que el 3 no es negociable: si las políticas se escriben después de tener pantallas, se escriben para no romper la UI en vez de para proteger los datos.
+
+**Fase 2 (después de que la v1 esté en producción y con usuarios reales):** app nativa y **torneos** (§17), en ese orden de decisión — pero primero mirando qué pide la gente que ya usa la v1.
 
 ---
 
@@ -791,8 +828,37 @@ Un turno tiene **dos preguntas independientes**, y meterlas en un solo campo `st
 | Pregunta | ¿Hay dónde jugar? | ¿Están los jugadores? |
 | Quién lo sabe | Solo el creador | Cada jugador, sobre sí mismo |
 | Dónde vive | `match_offers.court_status` | `match_participants.attendance` |
-| Valores | `pending` · `secured` · `lost` | `pending` · `going` · `not_going` |
+| Valores | `pending` · `secured` · `lost` | `pending` · `tentative` · `going` · `not_going` |
 | Se responde | Una vez, por el creador | Una vez por cada participante |
+
+**Un turno es siempre 4 jugadores.** Ni 3 ni 5 — es pádel. La base lo obliga: `1 (creador) + spots_open + guests_count = 4`. Si el creador viene con un amigo que no usa la app, marca `guests_count = 1` y busca 2. No hay forma de publicar un turno de 3 ni de 6, ni por error ni a propósito.
+
+#### Los cuatro estados de asistencia
+
+| Estado | Qué significa | Cuenta para el cupo | Recordatorio 30 min |
+|---|---|---|---|
+| `pending` | Todavía no dijo nada | Sí, reserva el lugar | No |
+| `tentative` | *"Me sumo, pero confirmo en unas horas"* | Sí, reserva el lugar | No |
+| `going` | Confirmado | Sí | **Sí** |
+| `not_going` | Se bajó | No, libera el lugar | No |
+
+`tentative` es el estado honesto que falta en casi todas estas apps. La alternativa es que la gente ponga "voy" sin estar segura —porque no hay otra opción— y el "voy" pierde todo significado. Con un tentativo explícito, un `going` vale.
+
+Al elegir `tentative` el jugador propone **hasta cuándo** (`tentative_until`, por defecto 6 h, tope: `starts_at − 3 h`). Al vencer vuelve a `pending` y se le pregunta de nuevo. Un tentativo no puede quedar colgado indefinidamente reteniendo un lugar.
+
+**El creador ve la diferencia.** El detalle del turno muestra `2 confirmados · 1 a confirmar · falta 1`, no un "3 de 4" que esconde el riesgo. Y mientras haya algún `tentative` o `pending`, el turno **no** figura como "todo listo" aunque el cupo esté completo.
+
+#### Cuando alguien se baja
+
+`not_going` o `withdrawFromOffer` dispara, en este orden:
+
+1. Libera el lugar → `roster_status` vuelve a `open`.
+2. **Notifica primero a quien ya está en `going`.** Ellos reorganizaron su día por este turno; son los que más pierden si no se llena. El aviso dice quién se bajó y cuántos faltan.
+3. Notifica al resto (`pending`, `tentative`) y al creador.
+4. Cancela los recordatorios de quien se fue.
+5. Si el turno vuelve a ser visible, reaparece en el listado con la etiqueta **"Se liberó un lugar"** — se llena mucho más rápido que uno nuevo, porque ya tiene gente confirmada y muchas veces cancha.
+
+A menos de 3 h del turno, bajarse **exige un motivo** (una línea, opcional pero pedida) y avisa que a esa altura es difícil reemplazarlo. No lo bloquea: bajarse tarde es mejor que no aparecer.
 
 **Son ortogonales.** Las cuatro combinaciones existen y todas son estados reales:
 
@@ -801,11 +867,12 @@ Un turno tiene **dos preguntas independientes**, y meterlas en un solo campo `st
 | `pending` | incompleto | Recién publicado | *"Buscando jugadores · cancha sin confirmar"* |
 | `pending` | completo | Están los cuatro, falta la cancha | *"Completo · falta confirmar la cancha"* → empuja al creador |
 | `secured` | incompleto | Hay cancha, faltan jugadores | *"Cancha confirmada · faltan 2"* → **prioridad alta en el listado** |
-| `secured` | completo + todos `going` | **Listo para jugar** | *"Todo listo"* |
+| `secured` | completo, con algún `tentative` | Falta que confirmen | *"Cancha lista · 1 a confirmar"* |
+| `secured` | completo + los 4 en `going` | **Listo para jugar** | *"Todo listo"* |
 
 Ese tercer caso es el que más importa y el que un `status` único te esconde: **hay cancha pagada y faltan jugadores**. Es urgente y hay que empujarlo arriba del listado. Con un solo campo de estado, ese turno se ve igual que uno sin cancha.
 
-**"Listo para jugar" no se guarda, se deriva:** `court_status = 'secured'` **y** cupo completo **y** todos los aceptados en `going`. Guardarlo como un estado más obligaría a mantenerlo sincronizado desde cinco lugares distintos, y ahí es donde aparecen los bugs.
+**"Listo para jugar" no se guarda, se deriva:** `court_status = 'secured'` **y** cupo completo **y** los 4 en `going`. Guardarlo como un estado más obligaría a mantenerlo sincronizado desde cinco lugares distintos, y ahí es donde aparecen los bugs.
 
 ### 12.5 Flujo del turno
 
@@ -839,6 +906,10 @@ Tres vías, en orden de uso esperado:
 
 **1. Desde el historial** *(la principal)*
 La app ya sabe con quién jugaste. Ofrece la lista ordenada por frecuencia y recencia — *"Sergio Castro · 8 partidos · el último hace 2 semanas"* — filtrando por quién entra en la banda de nivel. Un toque y queda invitado. Para el 90 % de los turnos amateur, los compañeros son los de siempre; que la app te los ponga adelante es la diferencia entre usarla y volver a WhatsApp.
+
+> **No hay solicitud de amistad.** Haber jugado juntos *es* la conexión: la vista `played_with` se deriva de las sesiones confirmadas, sin nada que aceptar ni rechazar. Un flujo de solicitud acá no aporta nada — ya compartieron una cancha, el vínculo es un hecho, no un pedido. Y al ser derivado no hay estado que mantener ni que se pueda desincronizar.
+>
+> Los dos controles que sí importan siguen existiendo: **`blocks`**, que corta la conexión en los dos sentidos y saca a la persona de tus listas, y **`is_public`**, que decide si tu perfil se ve. Una conexión automática nunca expone más de lo que el perfil ya mostraba.
 
 **2. Por usuario**
 Buscador sobre el directorio, por `display_name` o `slug`. Solo aparecen perfiles con `is_public = true`, y nunca se busca por email — eso permitiría averiguar si una dirección tiene cuenta.
@@ -943,6 +1014,8 @@ Dos avisos, con propósitos distintos:
 |---|---|---|---|---|
 | **Pedido de confirmación** | 24 h antes | Quien tiene `attendance = 'pending'` | Que diga si va, mientras hay tiempo de reemplazarlo | cupo |
 | **Empujón de cancha** | 24 h antes | El creador, si `court_status = 'pending'` | Que consiga la cancha o avise | cancha |
+| **Vencimiento de tentativo** | Cuando expira `tentative_until` | Quien está en `tentative` | Que defina, o que libere el lugar | cupo |
+| **Se liberó un lugar** | Al instante | Los `going` primero, después el resto | Que sepan que el turno está en riesgo | cupo |
 | **Recordatorio** | 30 min antes | Quien tiene `attendance = 'going'` | Que no se olvide | cupo |
 
 El de 24 h es el que salva el turno: si alguien se baja con un día de anticipación, el lugar vuelve a `open` y todavía se llena. Enterarse a los 30 minutos ya no sirve de nada.
@@ -964,10 +1037,15 @@ setAttendance(going)
   └→ programa su 'match_reminder'  (fire_at = starts_at − 30 min)
      cancela su 'confirm_request' pendiente
 
+setAttendance(tentative, hasta_cuando)
+  └→ NO programa 'match_reminder' (todavía no confirmó)
+     programa 'tentative_expiry' (fire_at = tentative_until)
+        al vencer → vuelve a 'pending' + se le vuelve a preguntar
+
 setAttendance(not_going)  |  withdrawFromOffer()
   └→ cancela sus reminders
      libera el lugar → roster_status vuelve a 'open'
-     notifica al creador y al resto
+     notifica PRIMERO a los 'going', después al resto y al creador
 
 setCourtLost()
   └→ NO cancela nada del eje cupo. Solo notifica:
@@ -1026,40 +1104,172 @@ Esto no se discute durante la construcción. Si un bloque necesita romper una de
 2. **No se reservan canchas.** La app registra y coordina; la reserva ocurre afuera. El aviso del §12.7 va en los cinco lugares indicados. **La palabra "reserva" solo se usa para negar que la app la haga** — nunca para describir `court_status = 'secured'`, ni en UI, ni en emails, ni en push.
 3. **Cancha y cupo son ejes separados.** Nunca se colapsan en un solo campo de estado, ni siquiera "para simplificar la query". Perder la cancha no disuelve el grupo; que falte un jugador no invalida la cancha. Si aparece un `status` único en un PR, se rechaza.
 4. **Invitar no es agregar.** Nadie entra a un turno sin aceptar. No hay "agregar directo" ni para el creador ni para un admin.
-5. **El correo de invitación no lleva texto libre del usuario.** El cuerpo lo controla la plataforma. Un campo abierto en un email saliente es un canal de acoso.
-6. **`invite_suppressions` se consulta antes de cada envío.** Sin excepción, sin "pero es una invitación de un amigo". Quien pidió no recibir más, no recibe más.
-7. **Nunca se revela si un email tiene cuenta.** La respuesta a `inviteByEmail` es idéntica en ambos casos.
-8. **Ningún dato de un jugador se modifica por acción de otro** sin confirmación explícita del afectado. Excepción única y explícita: el **nivel efectivo**, que por diseño incorpora valoraciones de terceros (§12). El **declarado** sigue siendo intocable.
-9. **Las valoraciones de nivel individuales son privadas.** Se publica el agregado, nunca quién puso qué. Si esto se rompe, aparecen las represalias y el sistema deja de ser honesto.
-10. **Solo valora quien jugó.** Sesión confirmada por ambos, y el votante con 3 sesiones confirmadas mínimo. Sin excepciones por conveniencia de producto.
-11. **El efectivo no se mueve más de 0,5 puntos en 30 días.** Es el freno contra el brigading. Si alguien propone sacarlo "para que converja más rápido", la respuesta es no.
-12. Nada de datos de salud, documentos de identidad ni información financiera. Si aparece el requerimiento, se rediseña la sección 8.5 antes de tocar código.
+5. **Un turno es exactamente 4 jugadores.** Garantizado por CHECK en la base, no por validación de formulario. Ni 3 ni 5, ni siquiera "temporalmente".
+6. **No hay solicitudes de amistad.** La conexión se deriva de haber jugado juntos. Si alguien propone agregar aceptar/rechazar, la respuesta es no: agrega estado, fricción y una cola de pendientes, y no protege nada que `blocks` e `is_public` no protejan ya.
+7. **Un partido de torneo genera sesiones normales** (§17.4). Nunca un historial paralelo.
+8. **El correo de invitación no lleva texto libre del usuario.** El cuerpo lo controla la plataforma. Un campo abierto en un email saliente es un canal de acoso.
+9. **`invite_suppressions` se consulta antes de cada envío.** Sin excepción, sin "pero es una invitación de un amigo". Quien pidió no recibir más, no recibe más.
+10. **Nunca se revela si un email tiene cuenta.** La respuesta a `inviteByEmail` es idéntica en ambos casos.
+11. **Ningún dato de un jugador se modifica por acción de otro** sin confirmación explícita del afectado. Excepción única y explícita: el **nivel efectivo**, que por diseño incorpora valoraciones de terceros (§12). El **declarado** sigue siendo intocable.
+12. **Las valoraciones de nivel individuales son privadas.** Se publica el agregado, nunca quién puso qué. Si esto se rompe, aparecen las represalias y el sistema deja de ser honesto.
+13. **Solo valora quien jugó.** Sesión confirmada por ambos, y el votante con 3 sesiones confirmadas mínimo. Sin excepciones por conveniencia de producto.
+14. **El efectivo no se mueve más de 0,5 puntos en 30 días.** Es el freno contra el brigading. Si alguien propone sacarlo "para que converja más rápido", la respuesta es no.
+15. Nada de datos de salud, documentos de identidad ni información financiera. Si aparece el requerimiento, se rediseña la sección 8.5 antes de tocar código.
 
 ### Seguridad
-13. **RLS activo y forzado en todas las tablas.** Una tabla sin política es una tabla que nadie lee — y así se queda hasta que se escriba la política.
-14. **Toda Server Action:** sesión → Zod → rate limit → autorización → efecto → auditoría. Sin saltear pasos.
-15. **`service_role` nunca** en código que corra para un usuario. Solo en jobs de servidor.
-16. **Cero secretos en el bundle del cliente.** Regla de lint que falla si una variable secreta lleva `NEXT_PUBLIC_`.
-17. **Sin `dangerouslySetInnerHTML`** sobre contenido de usuario. Sin excepciones.
-18. **CSP sin `unsafe-inline` ni `unsafe-eval`.** Si una librería lo exige, se cambia la librería.
-19. **Email nunca sale del sistema de auth.** No aparece en ninguna respuesta que otro usuario pueda ver.
-20. **Nada de PII en logs, errores ni notificaciones push.**
-21. **Subidas de archivo:** validar magic bytes, re-codificar siempre (mata EXIF y payloads), límite de tamaño, tipos en lista blanca.
-22. **Dependencias:** `npm audit` en CI; una vulnerabilidad crítica o alta bloquea el deploy.
+16. **RLS activo y forzado en todas las tablas.** Una tabla sin política es una tabla que nadie lee — y así se queda hasta que se escriba la política.
+17. **Toda Server Action:** sesión → Zod → rate limit → autorización → efecto → auditoría. Sin saltear pasos.
+18. **`service_role` nunca** en código que corra para un usuario. Solo en jobs de servidor.
+19. **Cero secretos en el bundle del cliente.** Regla de lint que falla si una variable secreta lleva `NEXT_PUBLIC_`.
+20. **Sin `dangerouslySetInnerHTML`** sobre contenido de usuario. Sin excepciones.
+21. **CSP sin `unsafe-inline` ni `unsafe-eval`.** Si una librería lo exige, se cambia la librería.
+22. **Email nunca sale del sistema de auth.** No aparece en ninguna respuesta que otro usuario pueda ver.
+23. **Nada de PII en logs, errores ni notificaciones push.**
+24. **Subidas de archivo:** validar magic bytes, re-codificar siempre (mata EXIF y payloads), límite de tamaño, tipos en lista blanca.
+25. **Dependencias:** `npm audit` en CI; una vulnerabilidad crítica o alta bloquea el deploy.
 
 ### Legal
-23. **Atribución ODbL de OpenStreetMap** visible. Es una obligación de licencia, no una cortesía.
-24. **Prohibido scrapear** Playtomic, MATCHi o cualquier plataforma. Integración solo por canal oficial y con acuerdo.
-25. **GDPR desde el día uno:** exportar mis datos y borrar mi cuenta funcionan de verdad (borrado en cascada real, no un flag), disponibles sin escribir a soporte.
-26. **Edad mínima 16 años**, verificada en el registro.
-27. Analítica sin cookies (Plausible) — sin banner de consentimiento y sin rastreo entre sitios.
+26. **Atribución ODbL de OpenStreetMap** visible. Es una obligación de licencia, no una cortesía.
+27. **Prohibido scrapear** Playtomic, MATCHi o cualquier plataforma. Integración solo por canal oficial y con acuerdo.
+28. **GDPR desde el día uno:** exportar mis datos y borrar mi cuenta funcionan de verdad (borrado en cascada real, no un flag), disponibles sin escribir a soporte.
+29. **Edad mínima 16 años**, verificada en el registro.
+30. Analítica sin cookies (Plausible) — sin banner de consentimiento y sin rastreo entre sitios.
 
 ### Técnicas
-28. TypeScript en modo estricto. `any` prohibido salvo con comentario que justifique.
-29. Toda migración es reversible y está versionada en el repo.
-30. Todo instante se guarda en UTC. Toda visualización usa la zona horaria correcta explícitamente.
-31. Cero texto visible fuera de `messages/*.json`.
-32. Presupuesto de rendimiento móvil: LCP < 2,5 s en 4G, JS inicial < 200 KB comprimido.
+31. TypeScript en modo estricto. `any` prohibido salvo con comentario que justifique.
+32. Toda migración es reversible y está versionada en el repo.
+33. Todo instante se guarda en UTC. Toda visualización usa la zona horaria correcta explícitamente.
+34. Cero texto visible fuera de `messages/*.json`.
+35. Presupuesto de rendimiento móvil: LCP < 2,5 s en 4G, JS inicial < 200 KB comprimido.
+
+---
+
+## 17 · Torneos — **fase 2, diseñado ahora**
+
+> **Recomendación de alcance, y es importante.** Los torneos son un dominio nuevo completo: emparejamientos, rondas, tablas de posiciones, programación por cancha y estados que no se parecen a nada del §12. Es aproximadamente **el doble de superficie** que todo el eje de turnos. Metido en la v1, el MVP no sale.
+>
+> Va acá porque **diseñarlo ahora es gratis y no diseñarlo es caro**: si el modelo de sesiones y niveles no lo contempla, en seis meses hay que migrar el historial de todos. Con esto escrito, la v1 se construye sin cerrarse puertas.
+>
+> **Sugerencia:** v1 sale sin torneos. v2.0 trae Americano y triangular. v2.1 trae eliminación directa. Es tu decisión — si querés torneos en la v1, se hace, pero mové la fecha de salida en consecuencia.
+
+### 17.1 Formatos
+
+| Formato | Unidad | Cuántos | Cómo funciona | Complejidad |
+|---|---|---|---|---|
+| **Americano** | Individual | 4, 8, 12, 16… | Rotás de compañero cada ronda; jugás con todos y contra todos. Puntos individuales. | Baja |
+| **Triangular** | Equipo | 3 equipos | Todos contra todos, 3 partidos. | Muy baja |
+| **Liga (round robin)** | Equipo | 3–8 equipos | Todos contra todos. | Baja |
+| **Eliminación directa** | Equipo | 4, 8, 16 (con *byes* si no) | Cuadro; el que pierde se va. | Media |
+| **Grupos + eliminación** | Equipo | 8–32 | Fase de grupos y después cuadro. | Alta — v3 |
+
+**El Americano no estaba en tu lista y creo que es el que más te conviene arrancar.** Es *el* formato del pádel amateur: no necesita que la gente venga en parejas armadas, todos juegan la misma cantidad de partidos, nadie se va después de 20 minutos por perder el primero, y resuelve justo el problema que ya resuelve tu app — juntar gente suelta de nivel parecido. Además es el más fácil de implementar: la rotación es una tabla fija por cantidad de jugadores, sin cuadros ni wiring de partidos.
+
+La eliminación directa es la que peor encaja con un amateur: la mitad de la gente juega un partido y se vuelve a casa.
+
+### 17.2 Modelo de datos
+
+```sql
+tournaments (
+  id            uuid PK,
+  creator_id    uuid NOT NULL FK profiles,
+  name          text NOT NULL,
+  format        text NOT NULL CHECK (format IN
+                ('americano','triangular','round_robin','single_elim')),
+  entry_unit    text NOT NULL CHECK (entry_unit IN ('individual','team')),
+  venue_id      uuid FK venues,
+  venue_freetext text,
+  courts_count  int NOT NULL CHECK (courts_count >= 1),   -- limita la programación
+  starts_at     timestamptz NOT NULL,
+  timezone      text NOT NULL,
+  level_min     numeric(2,1),
+  level_max     numeric(2,1),
+  max_entrants  int NOT NULL,
+  visibility    text NOT NULL DEFAULT 'link'
+                CHECK (visibility IN ('public','link','private')),
+  join_token_hash bytea UNIQUE,          -- solo si visibility='link'
+  status        text NOT NULL DEFAULT 'draft'
+                CHECK (status IN ('draft','open','locked','running',
+                                  'finished','cancelled')),
+  created_at, updated_at
+)
+
+tournament_entrants (
+  id            uuid PK,
+  tournament_id uuid NOT NULL FK tournaments ON DELETE CASCADE,
+  -- 'individual' (americano): solo profile_id
+  -- 'team': profile_id + partner_profile_id (o partner_guest_name)
+  profile_id    uuid NOT NULL FK profiles,
+  partner_profile_id uuid FK profiles,
+  partner_guest_name text,
+  team_name     text,
+  seed          int,
+  state         text NOT NULL DEFAULT 'registered'
+                CHECK (state IN ('registered','confirmed','withdrawn')),
+  UNIQUE (tournament_id, profile_id)     -- nadie se anota dos veces
+)
+
+tournament_rounds (
+  id, tournament_id FK, idx int NOT NULL, label text,
+  UNIQUE (tournament_id, idx)
+)
+
+tournament_matches (
+  id            uuid PK,
+  tournament_id uuid NOT NULL FK tournaments ON DELETE CASCADE,
+  round_id      uuid NOT NULL FK tournament_rounds,
+  court_label   text,
+  scheduled_at  timestamptz,
+  -- En 'team' apuntan a entrants. En 'americano' las parejas son por ronda,
+  -- así que los cuatro jugadores van en side_a_players / side_b_players.
+  side_a_entrant_id uuid FK tournament_entrants,
+  side_b_entrant_id uuid FK tournament_entrants,
+  side_a_players uuid[],
+  side_b_players uuid[],
+  score         jsonb,
+  winner_side   text CHECK (winner_side IN ('a','b')),
+  state         text NOT NULL DEFAULT 'scheduled'
+                CHECK (state IN ('scheduled','playing','finished','walkover')),
+  -- Cableado del cuadro (solo single_elim)
+  next_match_id uuid FK tournament_matches,
+  next_slot     text CHECK (next_slot IN ('a','b')),
+  -- Cada partido terminado genera una session por jugador (§17.4)
+  session_ids   uuid[]
+)
+```
+
+### 17.3 Reglas de generación
+
+**Americano.** La rotación de parejas es una tabla fija por cantidad de jugadores (4, 8, 12, 16), precalculada y testeada — no se genera en runtime. Con 8 jugadores y 2 canchas son 7 rondas y todos juegan con todos. Se puntúa por juegos ganados individualmente, no por partidos.
+
+**Round robin / triangular.** Emparejamiento circular clásico. Con N impar, un equipo descansa por ronda. Las rondas se distribuyen entre las canchas disponibles: `ceil(partidos_por_ronda / courts_count)` franjas por ronda.
+
+**Eliminación directa.** El cuadro se arma sobre la potencia de 2 más cercana hacia arriba; los mejor sembrados reciben *bye* en primera ronda. El cableado (`next_match_id`, `next_slot`) se calcula al cerrar la inscripción, no partido a partido — así el cuadro es visible completo desde el principio.
+
+**Cierre de inscripción.** Al pasar a `locked` se congela la lista, se siembra y se generan todos los partidos. Después de eso, un jugador que se baja **no** regenera el cuadro: se registra `walkover`. Regenerar un cuadro en curso es la clase de operación que corrompe datos.
+
+### 17.4 Un partido de torneo **es** una sesión
+
+Decisión clave: al terminar un `tournament_match`, se generan filas en `sessions` y `session_participants` para cada jugador, marcadas con el origen del torneo.
+
+Sin esto habría **dos historiales paralelos** — tus partidos sueltos por un lado y los de torneo por otro — con estadísticas que no suman, niveles que no se alimentan de la mitad de lo que jugaste, y un "ratio de victorias" que miente. El torneo no es un módulo aparte: es otra forma de generar los mismos hechos.
+
+Consecuencia directa: **las valoraciones de nivel del §12.2 funcionan igual en torneos**, y un torneo de 16 jugadores aporta muchísimos votantes distintos de una sola vez. Es la vía más rápida para que el nivel percibido de alguien se estabilice.
+
+### 17.5 Visibilidad y acceso
+
+| Modo | Quién lo ve | Cómo se entra |
+|---|---|---|
+| `public` | Cualquiera, aparece en el listado | Se anota solo, sujeto a banda de nivel |
+| `link` | Solo con el link | Token en la URL; no figura en ningún listado |
+| `private` | Solo invitados | Invitación nominal, igual que §12.6 |
+
+El token del link se guarda **hasheado** y se puede rotar sin recrear el torneo. `private` significa privado de verdad: no aparece en listados, ni en búsquedas, ni en el perfil público del creador.
+
+### 17.6 Lo que reutiliza (y por qué eso valida el diseño de la v1)
+
+Torneos **no** trae infraestructura nueva. Usa lo que ya existe: la escala de niveles canónica (§11) para las bandas, el directorio de sedes (§13), el mecanismo de invitaciones con token hasheado y supresión (§12.6), los recordatorios (§14) y el motor de sesiones y valoraciones (§05, §12.2).
+
+Si al construir la v2 alguna de esas piezas no alcanza, es señal de que estaba mal abstraída en la v1. Ese es el valor real de haber escrito esta sección ahora.
 
 ---
 
@@ -1071,7 +1281,12 @@ Estas no bloquean el arranque (los bloques 1 a 6 se pueden construir igual), per
 2. **Qué pasa cuando el efectivo y el declarado divergen mucho.** Si declarás 5.0 y el efectivo dice 3.5, ¿la app te avisa en privado ("la comunidad te ve en 3.5")? Creo que sí, y con tono neutro — pero es una conversación incómoda que hay que redactar bien.
 3. **Umbral de votantes para publicar el percibido.** Hoy: se muestra desde el primer votante, con el `rater_count` al lado. Alternativa: ocultarlo hasta 3 votantes, para que un solo voto no defina la reputación de nadie. Me inclino por ocultarlo hasta 3.
 
+4. **Torneos: ¿v1 o v2?** Mi recomendación es v2, y arrancar por **Americano** (§17.1) — no por eliminación directa. En un torneo amateur, la eliminación manda a la mitad de la gente a su casa después de un partido; el Americano hace que todos jueguen con todos y encaja con lo que la app ya resuelve.
+
 **Resueltas:**
+- ~~¿Estado intermedio de asistencia?~~ → **Sí, `tentative`** con vencimiento propuesto por el jugador (§12.4).
+- ~~¿Cuántos jugadores por turno?~~ → **Exactamente 4**, garantizado por CHECK en la base.
+- ~~¿Solicitudes de amistad?~~ → **No.** Conexión derivada de haber jugado juntos (`played_with`).
 - ~~¿Percibido público o privado?~~ → **Público, y con peso real sobre el nivel efectivo** (§12.1–12.2).
 - ~~Países del seed.~~ → **27 países** (§13): toda América Latina + US + ZA + los europeos de referencia.
 - ~~¿Quién confirma el turno?~~ → **Los dos, cosas distintas**: el creador confirma la cancha, cada jugador su asistencia (§12.4).
