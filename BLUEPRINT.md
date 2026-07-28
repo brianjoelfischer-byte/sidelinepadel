@@ -20,10 +20,11 @@
 - Alta de cuenta y onboarding con perfil de jugador.
 - Registro de partidos, entrenamientos y partidos rápidos.
 - Estadísticas y progresión de nivel.
+- Nivel declarado por el jugador **más nivel percibido por la comunidad**, con peso real sobre el nivel usado para emparejar.
 - Directorio de jugadores y perfiles públicos/privados.
-- Directorio mundial de sedes de pádel.
-- Turnos abiertos con banda de nivel y confirmación de participantes.
-- Recordatorio 30 minutos antes del encuentro.
+- Directorio mundial de sedes de pádel (27 países en el seed inicial).
+- Turnos abiertos con banda de nivel: el creador confirma la cancha, cada jugador confirma su asistencia.
+- Aviso a las 24 h para confirmar y recordatorio 30 minutos antes del encuentro.
 - Multi-idioma y multi-país desde el día uno.
 
 **Fuera de alcance v1.** App nativa (fase 2), pagos/suscripción, reserva real de cancha, torneos, chat en tiempo real, ranking global competitivo.
@@ -118,8 +119,12 @@ profiles (
   country_code      char(2) NOT NULL,              -- ISO 3166-1
   locale            text NOT NULL DEFAULT 'es',
   timezone          text NOT NULL,                 -- IANA, ej. America/Argentina/Buenos_Aires
-  level_value       numeric(2,1) NOT NULL CHECK (level_value BETWEEN 1.0 AND 7.0),
-  level_locked_until timestamptz,                  -- anti-sandbagging
+  -- Niveles: tres valores distintos, ver §12
+  declared_level    numeric(2,1) NOT NULL CHECK (declared_level BETWEEN 1.0 AND 7.0),
+  perceived_level   numeric(2,1),                  -- calculado de level_ratings, NULL si n=0
+  effective_level   numeric(2,1) NOT NULL,         -- mezcla ponderada, la que usa el matchmaking
+  rater_count       int NOT NULL DEFAULT 0,        -- votantes DISTINTOS, no votos
+  level_locked_until timestamptz,                  -- bloqueo tras cambiar el declarado
   preferred_side    text CHECK (preferred_side IN ('drive','reves','indistinto')),
   preferred_hand    text CHECK (preferred_hand IN ('left','right')),
   racket            text,
@@ -132,8 +137,22 @@ profiles (
 )
 
 level_history (
-  id, profile_id FK, from_value, to_value, reason, changed_at
+  id, profile_id FK, field, from_value, to_value, reason, changed_at
+  -- field: 'declared' | 'effective'
 )
+
+-- Valoraciones de nivel entre jugadores. Base del nivel percibido (§12).
+level_ratings (
+  id          uuid PK,
+  session_id  uuid NOT NULL FK sessions ON DELETE CASCADE,
+  rater_id    uuid NOT NULL FK profiles ON DELETE CASCADE,
+  subject_id  uuid NOT NULL FK profiles ON DELETE CASCADE,
+  value       numeric(2,1) NOT NULL CHECK (value BETWEEN 1.0 AND 7.0),
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  CHECK (rater_id <> subject_id),
+  UNIQUE (session_id, rater_id, subject_id)   -- una valoración por partido y por par
+)
+CREATE INDEX ON level_ratings (subject_id, created_at DESC);
 
 -- grafo social dirigido (seguir, no amistad mutua)
 follows (
@@ -230,6 +249,9 @@ match_offers (
                 CHECK (visibility IN ('public','followers','invite_only')),
   status        text NOT NULL DEFAULT 'open'
                 CHECK (status IN ('open','full','confirmed','cancelled','completed')),
+  -- 'confirmed' significa: el creador declaró que YA tiene la cancha asignada
+  -- por el club. La app nunca reserva nada. Ver §12.4 y regla 2 del §16.
+  court_secured_at timestamptz,
   notes         text CHECK (char_length(notes) <= 280),
   created_at, updated_at
 )
@@ -241,6 +263,10 @@ match_participants (
   profile_id    uuid NOT NULL FK profiles,
   state         text NOT NULL DEFAULT 'requested'
                 CHECK (state IN ('requested','accepted','declined','withdrawn')),
+  -- Confirmación de asistencia, independiente de la aceptación (§12)
+  attendance    text NOT NULL DEFAULT 'pending'
+                CHECK (attendance IN ('pending','going','not_going')),
+  attendance_at timestamptz,
   requested_at, decided_at,
   UNIQUE (offer_id, profile_id)
 )
@@ -258,13 +284,15 @@ reminders (
   id            uuid PK,
   offer_id      uuid NOT NULL FK match_offers ON DELETE CASCADE,
   profile_id    uuid NOT NULL FK profiles ON DELETE CASCADE,
-  fire_at       timestamptz NOT NULL,     -- starts_at - 30 min
+  kind          text NOT NULL
+                CHECK (kind IN ('confirm_request','match_reminder')),
+  fire_at       timestamptz NOT NULL,     -- −24 h o −30 min según kind
   channel       text NOT NULL CHECK (channel IN ('push','email')),
   state         text NOT NULL DEFAULT 'pending'
                 CHECK (state IN ('pending','sent','failed','cancelled')),
   attempts      int NOT NULL DEFAULT 0,
   sent_at       timestamptz,
-  UNIQUE (offer_id, profile_id, channel)
+  UNIQUE (offer_id, profile_id, kind, channel)
 )
 CREATE INDEX ON reminders (fire_at) WHERE state = 'pending';
 ```
@@ -315,9 +343,10 @@ abuse_reports (
 ```
 auth:      completeOnboarding, updateProfile, changeLevel, deleteAccount, exportData
 sessions:  createSession, updateSession, deleteSession, confirmTag, rejectTag
+levels:    rateParticipantLevel, recomputePerceivedLevel*   (* = job, no acción)
 social:    followPlayer, unfollowPlayer, blockPlayer, reportAbuse
 offers:    createOffer, cancelOffer, requestJoin, acceptRequest, declineRequest,
-           withdrawFromOffer, confirmOffer
+           withdrawFromOffer, confirmCourtSecured, setAttendance
 venues:    submitVenue, searchVenuesNearby, approveVenue*, rejectVenue*   (* = moderator)
 push:      savePushSubscription, removePushSubscription
 ```
@@ -412,6 +441,24 @@ CREATE POLICY sessions_select ON sessions FOR SELECT USING (
                AND sp.confirmed_at IS NOT NULL)
 );
 
+-- Valorar el nivel de alguien: solo si jugaron juntos ESA sesión, confirmada.
+CREATE POLICY level_ratings_insert ON level_ratings FOR INSERT WITH CHECK (
+  rater_id = auth.uid()
+  AND EXISTS (SELECT 1 FROM session_participants sp
+              WHERE sp.session_id = level_ratings.session_id
+                AND sp.profile_id = auth.uid()
+                AND sp.confirmed_at IS NOT NULL)
+  AND EXISTS (SELECT 1 FROM session_participants sp
+              WHERE sp.session_id = level_ratings.session_id
+                AND sp.profile_id = level_ratings.subject_id)
+);
+
+-- El valor individual de cada voto es PRIVADO; solo se publica el agregado.
+-- Sin esto, sabés quién te bajó el nivel y eso genera represalias.
+CREATE POLICY level_ratings_select ON level_ratings FOR SELECT USING (
+  rater_id = auth.uid()
+);
+
 -- Un turno abierto es visible según su visibilidad.
 CREATE POLICY offers_select ON match_offers FOR SELECT USING (
   creator_id = auth.uid()
@@ -469,6 +516,7 @@ RLS **y** chequeo en la acción. Es redundante a propósito: la redundancia es l
 | `requestJoin` | 20 | 1 h / usuario | Evita spam a creadores |
 | `createOffer` | 10 | 24 h / usuario | Evita saturar el listado |
 | `submitVenue` | 5 | 24 h / usuario | La moderación es humana |
+| `rateParticipantLevel` | 30 | 24 h / usuario | Limita el brigading masivo |
 | `reportAbuse` | 10 | 24 h / usuario | Evita reportes en masa |
 | `searchVenuesNearby` | 60 | 1 min / usuario | Protege PostGIS |
 | Escritura genérica | 100 | 1 min / usuario | Red de contención |
@@ -517,13 +565,13 @@ Cada bloque es entregable y verificable. **No se avanza al siguiente con el ante
 | **1** | Fundaciones | Next.js + TS estricto + Tailwind + tokens de diseño + i18n (es/en) + CI con typecheck y lint. |
 | **2** | Datos y RLS | Migraciones completas del §05, RLS activo en todas las tablas, **tests de políticas** que prueban que el usuario A no lee lo de B. Esto va antes que cualquier pantalla. |
 | **3** | Auth y onboarding | Magic link + Google, guard de sesión, verificación de edad, onboarding de 5 pasos, perfil creado. |
-| **4** | Perfil y niveles | Escala canónica ↔ categoría local, tarjeta de jugador, edición con bloqueo anti-sandbagging, público/privado. |
-| **5** | Sesiones | Alta de partido/entrenamiento/rápido, participantes invitados y registrados, flujo de confirmación de etiqueta, historial. |
+| **4** | Perfil y niveles | Escala canónica ↔ categoría local, tarjeta de jugador, los tres niveles (declarado/percibido/efectivo), bloqueo de 14 días, público/privado. |
+| **5** | Sesiones y valoraciones | Alta de partido/entrenamiento/rápido, participantes invitados y registrados, confirmación de etiqueta, historial, `level_ratings` y el recálculo del percibido con sus tests. |
 | **6** | Estadísticas | Ratio de victorias, racha, forma reciente, progresión de nivel, calendario de días jugados. |
 | **7** | Sedes | Job de seed desde Overpass, búsqueda PostGIS por cercanía, ficha, alta por usuario + cola de moderación, atribución ODbL. |
 | **8** | Social | Directorio, seguir, bloquear, reportar, cara a cara. |
-| **9** | Turnos | Crear turno con banda de nivel, listar por cercanía/nivel, solicitar, aceptar/rechazar, confirmar, cancelar. |
-| **10** | Recordatorios | Suscripción push, `reminders` al confirmar, cron cada 5 min, respaldo por email, cancelación en cascada. |
+| **9** | Turnos | Crear turno con banda de nivel, listar por cercanía/nivel, solicitar, aceptar/rechazar, confirmar cancha, confirmar asistencia, cancelar. **Los cuatro avisos de "no reservamos" del §12.5 entran acá, no después.** |
+| **10** | Recordatorios | Suscripción push, `reminders` de 24 h y 30 min, acciones en la notificación, cron cada 5 min, respaldo por email, cancelación en cascada. |
 | **11** | PWA | Manifest, service worker, instalable, offline del historial propio, prompt de instalación en iOS. |
 | **12** | Trofeos | Motor de logros por criterios, modal de desbloqueo, grilla. |
 | **13** | Cumplimiento | Exportar datos (JSON+CSV), borrar cuenta con cascada real, política de privacidad, términos, página de atribuciones. |
@@ -615,27 +663,97 @@ La comparación, el matchmaking y las estadísticas usan **siempre** el valor ca
 
 Modelo tomado del patrón validado por Playtomic ("open match"), adaptado a que **acá no hay reserva ni pago**.
 
-### Cómo funciona
+### 12.1 Los tres niveles
 
-1. **Crear turno.** El jugador ya tiene (o va a conseguir) la cancha. Publica: sede, cancha (texto libre, opcional), fecha y hora, cuántos lugares faltan (1 a 3), y la **banda de nivel** aceptada.
-2. **Banda de nivel automática.** Por defecto: `[mi_nivel − 0.25, mi_nivel + 0.75]`, editable. Es el rango que usa Playtomic y funciona: tolera un poco por abajo y bastante por arriba, porque jugar contra alguien mejor es lo que hace progresar.
-3. **Descubrir.** El listado filtra por: dentro de mi banda de nivel, cerca mío (radio configurable), fecha, y a quién sigo. Ordenado por cercanía de nivel primero, distancia después.
-4. **Solicitar.** Un jugador fuera de la banda **no puede** solicitar — la regla se aplica en el servidor, no ocultando el botón.
-5. **Aceptar.** El creador aprueba o rechaza. Al llenarse los lugares, el turno pasa a `full`.
-6. **Confirmar.** El creador confirma que la cancha está efectivamente conseguida → `confirmed`. **Recién ahí** se programan los recordatorios.
-7. **Cancelar.** Cualquier participante puede bajarse; si el turno queda incompleto vuelve a `open` y avisa a los demás. Si el creador cancela, se cancela todo y se notifica.
+El jugador declara su nivel, pero **la comunidad tiene voto**. Son tres valores distintos y los tres se muestran:
 
-### Por qué el nivel lo elige el jugador
+| Valor | Qué es | Quién lo controla |
+|---|---|---|
+| **Declarado** | Lo que vos decís que sos | Vos |
+| **Percibido** | Lo que los que jugaron con vos dicen que sos | Los demás |
+| **Efectivo** | La mezcla de ambos. **Es el que usa el matchmaking** | El sistema |
 
-Es tu decisión de producto y es defendible: un algoritmo de ELO con pocos partidos y resultados autoreportados produce números que parecen precisos pero no lo son. Con nivel autodeclarado el número es honesto sobre lo que es: una declaración.
+Los tres son **públicos** en el perfil. Que se vean juntos es el punto: si declarás 5.0 y el percibido dice 3.8, cualquiera lo nota antes de invitarte.
 
-**Pero el autodeclarado se abusa** (bajarse el nivel para ganar fácil — "sandbagging"). Tres contramedidas, sin quitarle el control al jugador:
+### 12.2 Cómo se calcula el percibido
 
-- **Bloqueo temporal.** Después de cambiar el nivel, `level_locked_until = now() + 14 días`. Evita el ajuste oportunista antes de un turno.
-- **Nivel percibido.** Cuando registrás un partido, asignás un nivel a cada rival (como en la referencia). El promedio de lo que **otros** te asignaron se muestra en tu perfil junto a tu autodeclarado. Si declarás 3.0 y ocho personas te vieron 4.5, se nota — sin que el sistema te fuerce.
-- **Historial visible.** `level_history` es público en tu perfil. Bajarse el nivel deja rastro.
+Cuando registrás un partido, le asignás un nivel a cada rival y compañero. Eso genera una fila en `level_ratings`. El percibido de una persona se calcula así:
 
-Ninguna de las tres cambia tu nivel automáticamente. Informan, no imponen.
+**Paso 1 — Una voz por persona.** Se agrupan las valoraciones por votante y se promedia. Que Juan te haya valorado en 10 partidos vale lo mismo que si te valoró en uno. Sin esto, dos amigos jugando seguido dominan tu nivel.
+
+**Paso 2 — Decaimiento por antigüedad.** Cada voz pesa `0.5 ^ (días / 180)`. Una valoración de hace seis meses vale la mitad que una de hoy. La gente mejora; el nivel tiene que poder seguirla.
+
+**Paso 3 — Media recortada.** Con 10 votantes o más, se descarta el 10 % más alto y el 10 % más bajo antes de promediar. Neutraliza tanto al amigo que te infla como al rival dolido que te hunde.
+
+```
+perceived_level = media_recortada_ponderada(voces)
+```
+
+**Paso 4 — Mezcla con credibilidad.** Con pocos votantes el percibido no es confiable, así que pesa poco. A medida que entran votantes, manda:
+
+```
+w = n / (n + 5)                                   -- n = votantes DISTINTOS
+effective_level = (1 − w) · declared + w · perceived
+```
+
+| Votantes | Peso de la comunidad | Lectura |
+|---|---|---|
+| 0 | 0 % | Solo tu palabra |
+| 3 | 38 % | Empieza a pesar |
+| 5 | 50 % | Empate |
+| 10 | 67 % | Manda la comunidad |
+| 20 | 80 % | Tu declaración es casi anecdótica |
+
+**Paso 5 — Freno de velocidad.** El efectivo se mueve como máximo **0,5 puntos cada 30 días**. Un grupo coordinado no te puede tirar de 4.5 a 2.0 en una semana; necesitaría meses de valoraciones sostenidas, y para entonces la moderación lo ve. El freno cuesta convergencia lenta en casos legítimos, y es un precio que vale la pena.
+
+**Se recalcula** en cada `level_ratings` nuevo y en un job nocturno (por el decaimiento, que corre solo con el tiempo).
+
+### 12.3 Reglas anti-abuso de las valoraciones
+
+1. **Solo valora quien jugó con vos.** `rater_id` tiene que estar en `session_participants` de esa misma sesión, con `confirmed_at` no nulo. Sin partido confirmado no hay voto.
+2. **Un voto por partido y por par.** Lo garantiza `UNIQUE (session_id, rater_id, subject_id)`.
+3. **El votante necesita historia.** Una cuenta con menos de 3 sesiones confirmadas **no** suma al percibido de nadie. Su voto se guarda y entra retroactivamente cuando llegue a 3. Sin esto, se crean cuentas descartables para hundir a alguien.
+4. **Detección de coordinación.** Si el grueso de las valoraciones bajas de una persona viene de un grupo que juega casi siempre entre sí, se marca para moderación y esos votos se ponderan a la baja. Es un `abuse_reports` automático, no un bloqueo silencioso.
+5. **Tu declarado no se toca nunca.** El sistema jamás reescribe lo que vos dijiste. Solo calcula el efectivo, que es otra cosa.
+6. **El historial es público.** `level_history` en tu perfil. Bajarse el declarado deja rastro visible.
+7. **Bloqueo de cambio.** Tras editar el declarado, `level_locked_until = now() + 14 días`. Evita el ajuste oportunista justo antes de un turno.
+
+### 12.4 Flujo del turno
+
+1. **Crear.** Publicás: sede, cancha (texto libre, opcional), fecha y hora, cuántos lugares faltan (1–3), y la **banda de nivel**.
+   - **Acá aparece el aviso de que no se reserva nada** (§12.5).
+2. **Banda automática.** Por defecto `[efectivo − 0.25, efectivo + 0.75]`, editable. Es el rango de Playtomic y funciona: tolera poco por abajo, bastante por arriba — jugar contra alguien mejor es lo que hace progresar.
+3. **Descubrir.** Filtra por banda de nivel (contra el **efectivo**, no el declarado), cercanía, fecha y a quién seguís. Ordena por cercanía de nivel, después por distancia.
+4. **Solicitar.** Quien está fuera de la banda no puede — validado en el servidor, no escondiendo el botón.
+5. **Aceptar.** El creador aprueba o rechaza. Al llenarse los lugares → `full`.
+6. **Confirmar la cancha (creador).** El creador declara que **ya tiene el turno asignado por el club** → `confirmed`, `court_secured_at`. Es un hecho que solo él conoce.
+   - **Segundo aviso acá**, más fuerte (§12.5).
+7. **Confirmar asistencia (cada uno).** Cada participante confirma que va → `attendance = 'going'`. Aviso a las 24 h para quien no respondió.
+8. **Cancelar.** Cualquiera se baja; si queda incompleto vuelve a `open` y se avisa. Si cancela el creador, cae todo.
+
+**Por qué las dos confirmaciones y no una** — me preguntaste cuál conviene. Las dos, porque son hechos distintos que conoce gente distinta:
+
+- **Solo el creador** sabe si el club le dio la cancha. Nadie más puede confirmarlo.
+- **Solo cada jugador** sabe si va a ir. El creador no puede afirmarlo por él.
+
+Si solo confirma el creador, tenés cancha y tres personas que dijeron que sí hace una semana y nunca más. El modo de falla real del pádel amateur no es la cancha, es el que no aparece. Si solo confirman los jugadores, se organizan para un turno que no existe.
+
+**El costo es un paso más, y se paga barato:** el creador queda auto-confirmado como asistente al crear el turno, y la confirmación del resto es **un toque desde la notificación** — no hay que abrir la app. El recordatorio de 30 min sale solo para quien confirmó; a quien no confirmó le llega otra cosa: *"¿Vas? Nadie confirmó tu lugar"*.
+
+### 12.5 Aviso obligatorio: la app no reserva canchas
+
+Es el malentendido más caro posible: alguien cree que Sideline le reservó la cancha, se presenta y no hay nada. Aparece en **cuatro** lugares, y no es un `<small>` gris:
+
+| Dónde | Texto | Formato |
+|---|---|---|
+| Al crear el turno | *"Sideline no reserva canchas. Reservá vos en el club y publicá el turno cuando lo tengas."* | Recuadro con borde ámbar, arriba del formulario |
+| En la tarjeta del turno, si `status ≠ 'confirmed'` | *"Cancha sin confirmar"* | Píldora ámbar |
+| Al confirmar la cancha | *"¿Ya tenés el turno asignado por el club? Confirmá solo si el club te lo dio. Sideline no reservó nada."* | Diálogo con confirmación explícita — el botón dice **"Sí, ya tengo la cancha"**, no "Aceptar" |
+| En el detalle del turno confirmado | *"Turno confirmado por [nombre]. La reserva la gestiona el club, no Sideline."* | Línea permanente al pie |
+
+También en el onboarding, en la pantalla que explica los turnos. Y en Términos.
+
+El estado `confirmed` **nunca** se muestra como "reservado". Ni en la UI, ni en los textos, ni en las notificaciones. Es una regla de vocabulario del producto: la palabra "reserva" solo se usa para decir que la app **no** la hace.
 
 ---
 
@@ -660,6 +778,22 @@ Google Places arranca en ~275 USD/mes en 2026 y sube con los detalles de contact
    ```
    Normaliza, resuelve la zona horaria del punto, deduplica por `(osm_type, osm_id)` y por proximidad + similitud de nombre, e inserta con `status='approved'`, `source='osm'`.
 2. **Re-sincronización mensual** por país. Nunca pisa los campos editados por moderadores.
+
+   **Países del seed inicial** (`country_code` ISO 3166-1, en orden de ejecución):
+
+   | Grupo | Países |
+   |---|---|
+   | Cono Sur | AR · CL · UY · PY · BO |
+   | Brasil | BR |
+   | Andina / Caribe | PE · EC · CO · VE |
+   | Centroamérica y México | MX · CR · PA · GT · SV · HN · NI · DO · CU · PR |
+   | Norteamérica | US |
+   | Europa (referencia del deporte) | ES · IT · PT · FR · SE |
+   | África | ZA |
+
+   Son 27 países. Brasil, Estados Unidos y México se procesan **por estado/provincia**, no de una sola consulta: un `nwr` sobre todo Brasil hace expirar el timeout de Overpass. El job trocea por área administrativa y encola cada trozo por separado, con reintento.
+
+   La cobertura de OSM es despareja: muy buena en España, Italia y Suecia; buena en Argentina y México; **floja en Centroamérica y Sudáfrica**. Ahí el alta por usuario no es un complemento, es la fuente principal — y hay que asumirlo en el diseño de esa pantalla, no tratarla como un caso raro.
 3. **Altas de usuario.** Si tu club no está, lo cargás: nombre, dirección, punto en el mapa. Entra como `pending`. Un moderador aprueba. **Mientras tanto podés usarlo igual** en tus sesiones vía `venue_freetext` — nunca se bloquea al usuario esperando moderación.
 4. **Búsqueda.** PostGIS `ST_DWithin` sobre el índice GIST, con radio configurable. Nunca se llama a Overpass desde una petición de usuario: es una API comunitaria gratuita y saturarla sería abusar de ella.
 
@@ -676,15 +810,33 @@ OSM está bajo **ODbL 1.0**. Al usar sus datos:
 
 ## 14 · Notificaciones y recordatorios
 
-**Único recordatorio en v1: 30 minutos antes del encuentro.** Simple, y resuelve el problema real (que alguien no aparezca).
+Dos avisos, con propósitos distintos:
+
+| Aviso | Cuándo | Para quién | Para qué |
+|---|---|---|---|
+| **Pedido de confirmación** | 24 h antes | Quien tiene `attendance = 'pending'` | Que diga si va, mientras hay tiempo de reemplazarlo |
+| **Recordatorio** | 30 min antes | Quien tiene `attendance = 'going'` | Que no se olvide |
+
+El de 24 h es el que salva el turno: si alguien se baja con un día de anticipación, el lugar vuelve a `open` y todavía se llena. Enterarse a los 30 minutos ya no sirve de nada.
 
 ### Flujo
 
 ```
-confirmOffer()
-  └→ crea reminders (fire_at = starts_at − 30 min) para cada participante aceptado
-       ├── canal 'push'  si tiene suscripción activa
-       └── canal 'email' siempre (respaldo)
+confirmOffer()                       -- el creador declaró que tiene la cancha
+  └→ reminders 'confirm_request'  (fire_at = starts_at − 24 h)
+        para cada participante aceptado con attendance='pending'
+     reminders 'match_reminder'   (fire_at = starts_at − 30 min)
+        para cada participante con attendance='going'
+        (el creador entra acá directo: queda 'going' al crear el turno)
+
+setAttendance(going)
+  └→ programa su 'match_reminder'
+     cancela su 'confirm_request' pendiente
+
+setAttendance(not_going)  |  withdrawFromOffer()
+  └→ cancela sus reminders
+     libera el lugar → offer vuelve a 'open'
+     notifica al creador y al resto
 
 pg_cron cada 5 min → /api/cron/reminders
   ├── SELECT ... WHERE state='pending' AND fire_at <= now() FOR UPDATE SKIP LOCKED
@@ -692,11 +844,13 @@ pg_cron cada 5 min → /api/cron/reminders
   ├── error 410/404 del push → borra la suscripción muerta
   └── otro error → attempts++, reintenta; a los 3 intentos → 'failed' + email
 
-cancelOffer / withdrawFromOffer
-  └→ reminders afectados → state='cancelled'
+cancelOffer()
+  └→ todos los reminders del turno → state='cancelled'
 ```
 
-`FOR UPDATE SKIP LOCKED` evita que dos ejecuciones solapadas del cron manden el aviso dos veces.
+`FOR UPDATE SKIP LOCKED` evita el envío duplicado si dos ejecuciones del cron se solapan.
+
+La acción de confirmar viaja **en la notificación push** (`actions: [{action:'going'}, {action:'not_going'}]`). Un toque, sin abrir la app. En los clientes que no soportan acciones, el tap abre directo el detalle del turno con los dos botones arriba.
 
 ### Restricciones reales que hay que asumir
 
@@ -704,7 +858,7 @@ cancelOffer / withdrawFromOffer
 - Cron cada 5 min ⇒ el aviso llega entre 30 y 25 minutos antes. Es aceptable y hay que decirlo en la UI ("~30 min antes"), no prometer exactitud al minuto.
 - El endpoint del cron se protege con un secreto comparado en **tiempo constante**. Si se filtra, alguien podría disparar avisos en masa.
 
-**Contenido del push:** mínimo. `"Turno en 30 min · Fusión Padel"`. Sin nombres de otros jugadores ni datos personales — la notificación aparece en una pantalla bloqueada que puede ver cualquiera.
+**Contenido del push:** mínimo. `"Turno en 30 min · Fusión Padel"`. Sin nombres de otros jugadores ni datos personales — la notificación aparece en una pantalla bloqueada que puede ver cualquiera. Y **nunca** la palabra "reserva": es `"Turno en 30 min"`, no `"Tu reserva es en 30 min"` (§12.5).
 
 ---
 
@@ -712,6 +866,7 @@ cancelOffer / withdrawFromOffer
 
 **Testing**
 - **Unidad (Vitest):** conversión de niveles, cálculo de estadísticas, cálculo de `fire_at` con zonas horarias, esquemas Zod.
+- **Motor de niveles (Vitest, suite propia):** el cálculo del percibido y el efectivo necesita casos adversarios explícitos — un votante con 20 valoraciones no pesa más que uno con una; 10 cuentas nuevas coordinadas no mueven el efectivo; el decaimiento por antigüedad se aplica; el freno de 0,5/30 días se respeta; con 0 votantes el efectivo es igual al declarado. Cada regla del §12.2–12.3 es un test.
 - **Políticas RLS:** suite dedicada que, con dos usuarios reales, verifica que A no lee ni escribe lo de B en cada tabla. Es la suite más importante del proyecto.
 - **E2E (Playwright):** onboarding completo, registrar partido, crear turno → solicitar → aceptar → confirmar, exportar y borrar cuenta.
 - **Accesibilidad:** `axe` en las pantallas principales dentro de Playwright.
@@ -733,35 +888,38 @@ Esto no se discute durante la construcción. Si un bloque necesita romper una de
 
 ### Producto
 1. **No hay pagos.** Ni suscripción, ni reservas pagas, ni datos de tarjeta. No entra Stripe ni ningún procesador en v1.
-2. **No se reservan canchas.** La app registra y coordina; la reserva ocurre afuera. La UI lo dice explícitamente para no generar la expectativa equivocada.
-3. **Ningún dato de un jugador se modifica por acción de otro** sin confirmación explícita del afectado.
-4. Nada de datos de salud, documentos de identidad ni información financiera. Si aparece el requerimiento, se rediseña la sección 8.5 antes de tocar código.
+2. **No se reservan canchas.** La app registra y coordina; la reserva ocurre afuera. El aviso del §12.5 va en los cuatro lugares indicados. **La palabra "reserva" solo se usa para negar que la app la haga** — nunca para describir el estado `confirmed`, ni en UI, ni en emails, ni en push.
+3. **Ningún dato de un jugador se modifica por acción de otro** sin confirmación explícita del afectado. Excepción única y explícita: el **nivel efectivo**, que por diseño incorpora valoraciones de terceros (§12). El **declarado** sigue siendo intocable.
+4. **Las valoraciones de nivel individuales son privadas.** Se publica el agregado, nunca quién puso qué. Si esto se rompe, aparecen las represalias y el sistema deja de ser honesto.
+5. **Solo valora quien jugó.** Sesión confirmada por ambos, y el votante con 3 sesiones confirmadas mínimo. Sin excepciones por conveniencia de producto.
+6. **El efectivo no se mueve más de 0,5 puntos en 30 días.** Es el freno contra el brigading. Si alguien propone sacarlo "para que converja más rápido", la respuesta es no.
+7. Nada de datos de salud, documentos de identidad ni información financiera. Si aparece el requerimiento, se rediseña la sección 8.5 antes de tocar código.
 
 ### Seguridad
-5. **RLS activo y forzado en todas las tablas.** Una tabla sin política es una tabla que nadie lee — y así se queda hasta que se escriba la política.
-6. **Toda Server Action:** sesión → Zod → rate limit → autorización → efecto → auditoría. Sin saltear pasos.
-7. **`service_role` nunca** en código que corra para un usuario. Solo en jobs de servidor.
-8. **Cero secretos en el bundle del cliente.** Regla de lint que falla si una variable secreta lleva `NEXT_PUBLIC_`.
-9. **Sin `dangerouslySetInnerHTML`** sobre contenido de usuario. Sin excepciones.
-10. **CSP sin `unsafe-inline` ni `unsafe-eval`.** Si una librería lo exige, se cambia la librería.
-11. **Email nunca sale del sistema de auth.** No aparece en ninguna respuesta que otro usuario pueda ver.
-12. **Nada de PII en logs, errores ni notificaciones push.**
-13. **Subidas de archivo:** validar magic bytes, re-codificar siempre (mata EXIF y payloads), límite de tamaño, tipos en lista blanca.
-14. **Dependencias:** `npm audit` en CI; una vulnerabilidad crítica o alta bloquea el deploy.
+8. **RLS activo y forzado en todas las tablas.** Una tabla sin política es una tabla que nadie lee — y así se queda hasta que se escriba la política.
+9. **Toda Server Action:** sesión → Zod → rate limit → autorización → efecto → auditoría. Sin saltear pasos.
+10. **`service_role` nunca** en código que corra para un usuario. Solo en jobs de servidor.
+11. **Cero secretos en el bundle del cliente.** Regla de lint que falla si una variable secreta lleva `NEXT_PUBLIC_`.
+12. **Sin `dangerouslySetInnerHTML`** sobre contenido de usuario. Sin excepciones.
+13. **CSP sin `unsafe-inline` ni `unsafe-eval`.** Si una librería lo exige, se cambia la librería.
+14. **Email nunca sale del sistema de auth.** No aparece en ninguna respuesta que otro usuario pueda ver.
+15. **Nada de PII en logs, errores ni notificaciones push.**
+16. **Subidas de archivo:** validar magic bytes, re-codificar siempre (mata EXIF y payloads), límite de tamaño, tipos en lista blanca.
+17. **Dependencias:** `npm audit` en CI; una vulnerabilidad crítica o alta bloquea el deploy.
 
 ### Legal
-15. **Atribución ODbL de OpenStreetMap** visible. Es una obligación de licencia, no una cortesía.
-16. **Prohibido scrapear** Playtomic, MATCHi o cualquier plataforma. Integración solo por canal oficial y con acuerdo.
-17. **GDPR desde el día uno:** exportar mis datos y borrar mi cuenta funcionan de verdad (borrado en cascada real, no un flag), disponibles sin escribir a soporte.
-18. **Edad mínima 16 años**, verificada en el registro.
-19. Analítica sin cookies (Plausible) — sin banner de consentimiento y sin rastreo entre sitios.
+18. **Atribución ODbL de OpenStreetMap** visible. Es una obligación de licencia, no una cortesía.
+19. **Prohibido scrapear** Playtomic, MATCHi o cualquier plataforma. Integración solo por canal oficial y con acuerdo.
+20. **GDPR desde el día uno:** exportar mis datos y borrar mi cuenta funcionan de verdad (borrado en cascada real, no un flag), disponibles sin escribir a soporte.
+21. **Edad mínima 16 años**, verificada en el registro.
+22. Analítica sin cookies (Plausible) — sin banner de consentimiento y sin rastreo entre sitios.
 
 ### Técnicas
-20. TypeScript en modo estricto. `any` prohibido salvo con comentario que justifique.
-21. Toda migración es reversible y está versionada en el repo.
-22. Todo instante se guarda en UTC. Toda visualización usa la zona horaria correcta explícitamente.
-23. Cero texto visible fuera de `messages/*.json`.
-24. Presupuesto de rendimiento móvil: LCP < 2,5 s en 4G, JS inicial < 200 KB comprimido.
+23. TypeScript en modo estricto. `any` prohibido salvo con comentario que justifique.
+24. Toda migración es reversible y está versionada en el repo.
+25. Todo instante se guarda en UTC. Toda visualización usa la zona horaria correcta explícitamente.
+26. Cero texto visible fuera de `messages/*.json`.
+27. Presupuesto de rendimiento móvil: LCP < 2,5 s en 4G, JS inicial < 200 KB comprimido.
 
 ---
 
@@ -769,10 +927,14 @@ Esto no se discute durante la construcción. Si un bloque necesita romper una de
 
 Estas no bloquean el arranque (los bloques 1 a 6 se pueden construir igual), pero hay que resolverlas antes del bloque 9:
 
-1. **¿Nivel percibido visible o privado?** Mostrar el promedio que otros te asignaron es la mejor defensa contra el sandbagging, pero puede incomodar. Alternativa: visible solo para vos.
-2. **Radio por defecto de búsqueda de turnos.** 25 km funciona en una ciudad grande; en zonas con poca densidad de canchas queda vacío. ¿Radio adaptativo?
-3. **Países del seed inicial de sedes.** Sugerencia: Argentina, España, México, Italia, Suecia — donde OSM ya tiene buena cobertura de pádel.
-4. **Confirmación de participantes.** Hoy el creador confirma el turno. ¿Debería cada participante confirmar su asistencia por separado (y recibir el recordatorio solo quien confirmó)?
+1. **Radio por defecto de búsqueda de turnos.** 25 km funciona en Buenos Aires o Madrid; en Costa Rica o Sudáfrica, con pocas canchas mapeadas, queda vacío. Propuesta: radio adaptativo — arranca en 25 km y se expande hasta encontrar al menos 5 turnos o llegar a 150 km.
+2. **Qué pasa cuando el efectivo y el declarado divergen mucho.** Si declarás 5.0 y el efectivo dice 3.5, ¿la app te avisa en privado ("la comunidad te ve en 3.5")? Creo que sí, y con tono neutro — pero es una conversación incómoda que hay que redactar bien.
+3. **Umbral de votantes para publicar el percibido.** Hoy: se muestra desde el primer votante, con el `rater_count` al lado. Alternativa: ocultarlo hasta 3 votantes, para que un solo voto no defina la reputación de nadie. Me inclino por ocultarlo hasta 3.
+
+**Resueltas:**
+- ~~¿Percibido público o privado?~~ → **Público, y con peso real sobre el nivel efectivo** (§12.1–12.2).
+- ~~Países del seed.~~ → **27 países** (§13): toda América Latina + US + ZA + los europeos de referencia.
+- ~~¿Quién confirma el turno?~~ → **Los dos, cosas distintas**: el creador confirma la cancha, cada jugador su asistencia (§12.4).
 
 ---
 
