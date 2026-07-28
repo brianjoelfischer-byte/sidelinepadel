@@ -96,6 +96,28 @@ npm run dev
 
 Abre <http://localhost:3000>, que redirige a `/es`.
 
+### Base de datos
+
+El esquema vive en `supabase/migrations/` como SQL versionado. Nunca se toca
+el esquema de producción a mano.
+
+Todo lo que toca la base lee **`DATABASE_URL`** y no le importa de dónde sale
+esa base. Por eso el proyecto se puede seguir desde cualquier máquina:
+
+| Cómo conseguir una base | Cuándo |
+|---|---|
+| **Supabase CLI** — `supabase start` | Lo recomendado. Trae también Auth y Storage. Necesita Docker. |
+| **`npm run db:start`** | Plan B sin Docker. Levanta un Postgres local descartable. Necesita `postgresql-16` y `postgresql-16-postgis-3`. |
+| **Proyecto Supabase en la nube** | `export DATABASE_URL=…` y listo. |
+
+Las tres usan el puerto **54322**, así que el `DATABASE_URL` por defecto sirve
+para cualquiera.
+
+```bash
+npm run db:reset     # base limpia + todas las migraciones
+npm run test:rls     # verifica que un usuario no pueda leer lo de otro
+```
+
 ### Comandos
 
 | Comando | Qué hace |
@@ -104,8 +126,12 @@ Abre <http://localhost:3000>, que redirige a `/es`.
 | `npm run build` | Build de producción (incluye typecheck) |
 | `npm run typecheck` | Solo tipos |
 | `npm run lint` | ESLint |
-| `npm run test` | Vitest |
-| `npm run check` | Typecheck + lint + test — lo mismo que corre CI |
+| `npm run test:unit` | Tests de la app (sin base de datos) |
+| `npm run test:rls` | Tests de seguridad contra `DATABASE_URL` |
+| `npm run check` | Typecheck + lint + tests de unidad — lo que corre CI |
+| `npm run db:start` / `db:stop` | Postgres local sin Docker |
+| `npm run db:reset` | Recrea la base y aplica todas las migraciones |
+| `npm run db:migrate` | Aplica migraciones a `DATABASE_URL` |
 
 ## Estructura
 
@@ -120,6 +146,15 @@ src/
 ├── lib/env.ts             # ÚNICO acceso a process.env
 ├── messages/              # es.json · en.json
 └── proxy.ts               # detección y prefijo de idioma
+
+supabase/
+├── migrations/            # el esquema, SQL versionado
+├── local/                 # shim de auth.* para Postgres pelado (no va a la nube)
+└── tests/                 # tests de RLS: A no puede leer lo de B
+
+scripts/
+├── db-local.sh            # Postgres local sin Docker
+└── db-migrate.mjs         # aplica migraciones a DATABASE_URL
 ```
 
 ## Convenciones
@@ -137,16 +172,19 @@ No son sugerencias: fallan el build o el CI.
   `@/i18n/navigation`, que conservan el idioma de la URL.
 - **`any` es error**, no warning.
 - **Una vulnerabilidad alta o crítica bloquea el merge.**
+- **Toda tabla lleva RLS activado y forzado.** Un test recorre el catálogo de
+  Postgres y falla si aparece una tabla sin política, o una con permisos y sin
+  política que los acote.
 
 ## Estado
 
-🚧 **En construcción.** Bloque 1 de 14 del plan de §09.
+🚧 **En construcción.** Bloque 2 de 14 del plan de §09.
 
 | | Bloque | Estado |
 |---|---|---|
 | 1 | Fundaciones, i18n, tokens, CI | ✅ |
-| 2 | Datos y RLS | ⏳ siguiente |
-| 3 | Auth y onboarding | |
+| 2 | Datos y RLS | ✅ |
+| 3 | Auth y onboarding | ⏳ siguiente |
 | 4 | Perfil y niveles | |
 | 5 | Sesiones y valoraciones | |
 | 6 | Estadísticas | |
@@ -159,7 +197,8 @@ No son sugerencias: fallan el build o el CI.
 | 13 | Cumplimiento (GDPR) | |
 | 14 | Endurecimiento | |
 
-Todavía no hay base de datos, autenticación ni funcionalidad de producto.
+El esquema completo está definido y con RLS probado (68 tests). Todavía no hay
+autenticación real ni interfaz de producto.
 
 ## Créditos y licencias
 

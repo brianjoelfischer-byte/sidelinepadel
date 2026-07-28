@@ -38,11 +38,52 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Tests
-        run: npm run test
+      - name: Tests de unidad
+        run: npm run test:unit
 
       - name: Build
         run: npm run build
+
+  rls:
+    name: Políticas RLS
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # PostGIS y no `postgres` a secas: el esquema usa geography (§13).
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 54322:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Aplicar migraciones
+        run: node scripts/db-migrate.mjs --reset
+
+      # El paso que importa: verifica que un usuario no pueda leer ni escribir
+      # lo de otro. Si esto falla, no se mergea (§09, bloque 2).
+      - name: Tests de RLS
+        run: npm run test:rls
 
   audit:
     name: Auditoría de dependencias

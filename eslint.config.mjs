@@ -75,4 +75,14 @@ export default tseslint.config(
       'no-restricted-properties': 'off',
     },
   },
+
+  /* Herramientas de build y tests de base de datos: corren solo en Node y
+     nunca entran a un bundle, así que la regla que protege al cliente de los
+     secretos no aplica. Leen DATABASE_URL, que es su razón de existir. */
+  {
+    files: ['scripts/**', 'supabase/tests/**'],
+    rules: {
+      'no-restricted-properties': 'off',
+    },
+  },
 );

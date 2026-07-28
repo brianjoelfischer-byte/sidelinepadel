@@ -13,7 +13,13 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run typecheck && npm run lint && npm run test"
+    "check": "npm run typecheck && npm run lint && npm run test:unit",
+    "db:start": "./scripts/db-local.sh start",
+    "db:stop": "./scripts/db-local.sh stop",
+    "db:reset": "./scripts/db-local.sh reset && node scripts/db-migrate.mjs --reset",
+    "db:migrate": "node scripts/db-migrate.mjs",
+    "test:unit": "vitest run --project unit",
+    "test:rls": "vitest run --project rls"
   },
   "overrides": {
     "@eslint/config-array": "^0.23.5",
@@ -36,6 +42,7 @@
     "eslint": "^9.39.0",
     "eslint-config-next": "^16.2.12",
     "postcss": "^8.5.24",
+    "postgres": "^3.4.9",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.65.0",
