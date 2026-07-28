@@ -23,7 +23,8 @@
 - Nivel declarado por el jugador **más nivel percibido por la comunidad**, con peso real sobre el nivel usado para emparejar.
 - Directorio de jugadores y perfiles públicos/privados.
 - Directorio mundial de sedes de pádel (27 países en el seed inicial).
-- Turnos abiertos con banda de nivel: el creador confirma la cancha, cada jugador confirma su asistencia.
+- Turnos abiertos con banda de nivel, en **dos ejes separados**: el creador confirma la cancha, cada jugador confirma su asistencia.
+- Invitaciones directas: desde el historial de con quién jugaste, por usuario, o por email a alguien que todavía no está en la app.
 - Aviso a las 24 h para confirmar y recordatorio 30 minutos antes del encuentro.
 - Multi-idioma y multi-país desde el día uno.
 
@@ -247,15 +248,24 @@ match_offers (
   spots_total   int NOT NULL CHECK (spots_total BETWEEN 1 AND 3),
   visibility    text NOT NULL DEFAULT 'public'
                 CHECK (visibility IN ('public','followers','invite_only')),
-  status        text NOT NULL DEFAULT 'open'
-                CHECK (status IN ('open','full','confirmed','cancelled','completed')),
-  -- 'confirmed' significa: el creador declaró que YA tiene la cancha asignada
-  -- por el club. La app nunca reserva nada. Ver §12.4 y regla 2 del §16.
+  -- DOS EJES INDEPENDIENTES. No se mezclan nunca. Ver §12.4.
+  --
+  -- Eje 1 · LA CANCHA — ¿hay dónde jugar? Solo el creador lo sabe.
+  --   'secured' NO significa reservado por la app: significa que el creador
+  --   declaró que el CLUB ya le asignó el turno. Regla 2 del §16.
+  court_status  text NOT NULL DEFAULT 'pending'
+                CHECK (court_status IN ('pending','secured','lost')),
   court_secured_at timestamptz,
+  court_lost_reason text,
+  --
+  -- Eje 2 · EL CUPO — ¿están los jugadores? Se deriva de match_participants.
+  roster_status text NOT NULL DEFAULT 'open'
+                CHECK (roster_status IN ('open','full','cancelled','completed')),
+  --
   notes         text CHECK (char_length(notes) <= 280),
   created_at, updated_at
 )
-CREATE INDEX ON match_offers (starts_at) WHERE status IN ('open','full','confirmed');
+CREATE INDEX ON match_offers (starts_at) WHERE roster_status IN ('open','full');
 
 match_participants (
   id            uuid PK,
@@ -268,7 +278,43 @@ match_participants (
                 CHECK (attendance IN ('pending','going','not_going')),
   attendance_at timestamptz,
   requested_at, decided_at,
+  origin        text NOT NULL DEFAULT 'request'
+                CHECK (origin IN ('request','invitation','creator')),
   UNIQUE (offer_id, profile_id)
+)
+
+-- Invitaciones directas a un turno (§12.6). Tres vías: historial, usuario, email.
+match_invitations (
+  id              uuid PK,
+  offer_id        uuid NOT NULL FK match_offers ON DELETE CASCADE,
+  inviter_id      uuid NOT NULL FK profiles ON DELETE CASCADE,
+
+  -- Exactamente uno de los dos. El email solo para quien todavía no tiene cuenta.
+  invitee_id      uuid FK profiles ON DELETE CASCADE,
+  invitee_email   citext,
+  CHECK (num_nonnulls(invitee_id, invitee_email) = 1),
+
+  token_hash      bytea NOT NULL UNIQUE,   -- SHA-256 del token. El token en claro
+                                           -- vive solo en el email, nunca en la DB.
+  state           text NOT NULL DEFAULT 'sent'
+                  CHECK (state IN ('sent','accepted','declined','expired','revoked')),
+  holds_spot      boolean NOT NULL DEFAULT true,
+  expires_at      timestamptz NOT NULL,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  responded_at    timestamptz,
+
+  -- Una invitación viva por persona y por turno.
+  UNIQUE (offer_id, invitee_id),
+  UNIQUE (offer_id, invitee_email)
+)
+CREATE INDEX ON match_invitations (expires_at) WHERE state = 'sent';
+
+-- Lista de supresión: quien pidió no recibir más, no recibe más. Nunca.
+-- Se consulta ANTES de cualquier envío a un email no registrado.
+invite_suppressions (
+  email_hash  bytea PK,          -- sha256(lower(email) + PEPPER), no el email
+  reason      text NOT NULL CHECK (reason IN ('unsubscribed','reported','bounced')),
+  created_at  timestamptz NOT NULL DEFAULT now()
 )
 ```
 
@@ -285,7 +331,7 @@ reminders (
   offer_id      uuid NOT NULL FK match_offers ON DELETE CASCADE,
   profile_id    uuid NOT NULL FK profiles ON DELETE CASCADE,
   kind          text NOT NULL
-                CHECK (kind IN ('confirm_request','match_reminder')),
+                CHECK (kind IN ('confirm_request','court_nudge','match_reminder')),
   fire_at       timestamptz NOT NULL,     -- −24 h o −30 min según kind
   channel       text NOT NULL CHECK (channel IN ('push','email')),
   state         text NOT NULL DEFAULT 'pending'
@@ -332,7 +378,10 @@ abuse_reports (
 | `/jugadores` | auth | Directorio |
 | `/j/[slug]` | público *si* `is_public` | Perfil |
 | `/turnos` | auth | Turnos abiertos cerca / de mi nivel |
-| `/turnos/[id]` | auth | Detalle y solicitudes |
+| `/turnos/[id]` | auth | Detalle, solicitudes e invitaciones |
+| `/turnos/[id]/invitar` | auth (creador) | Historial de compañeros, buscar usuario, invitar por email |
+| `/i/[token]` | público | Aceptar invitación; si no tiene cuenta, registro y entra al turno |
+| `/invitaciones/baja` | público, sin login | Baja de invitaciones por email (`invite_suppressions`) |
 | `/sedes` | público | Buscador mundial |
 | `/sedes/[id]` | público | Ficha de sede |
 | `/ajustes` | auth | Cuenta, idioma, privacidad, datos |
@@ -346,7 +395,11 @@ sessions:  createSession, updateSession, deleteSession, confirmTag, rejectTag
 levels:    rateParticipantLevel, recomputePerceivedLevel*   (* = job, no acción)
 social:    followPlayer, unfollowPlayer, blockPlayer, reportAbuse
 offers:    createOffer, cancelOffer, requestJoin, acceptRequest, declineRequest,
-           withdrawFromOffer, confirmCourtSecured, setAttendance
+           withdrawFromOffer
+  eje cancha:  setCourtSecured, setCourtLost
+  eje cupo:    setAttendance
+invites:   listPlayedWith, invitePlayer, inviteByEmail, revokeInvitation,
+           acceptInvitation, declineInvitation, unsubscribeInvites (sin login)
 venues:    submitVenue, searchVenuesNearby, approveVenue*, rejectVenue*   (* = moderator)
 push:      savePushSubscription, removePushSubscription
 ```
@@ -464,7 +517,10 @@ CREATE POLICY offers_select ON match_offers FOR SELECT USING (
   creator_id = auth.uid()
   OR EXISTS (SELECT 1 FROM match_participants mp
              WHERE mp.offer_id = id AND mp.profile_id = auth.uid())
-  OR (visibility = 'public' AND status IN ('open','full'))
+  OR EXISTS (SELECT 1 FROM match_invitations mi
+             WHERE mi.offer_id = id AND mi.invitee_id = auth.uid()
+               AND mi.state = 'sent')
+  OR (visibility = 'public' AND roster_status IN ('open','full'))
   OR (visibility = 'followers' AND EXISTS (
         SELECT 1 FROM follows
         WHERE follower_id = auth.uid() AND followee_id = creator_id))
@@ -517,6 +573,10 @@ RLS **y** chequeo en la acción. Es redundante a propósito: la redundancia es l
 | `createOffer` | 10 | 24 h / usuario | Evita saturar el listado |
 | `submitVenue` | 5 | 24 h / usuario | La moderación es humana |
 | `rateParticipantLevel` | 30 | 24 h / usuario | Limita el brigading masivo |
+| `invitePlayer` (in-app) | 50 | 24 h / usuario | Invitar a usuarios existentes es barato |
+| **`inviteByEmail`** | **10** | **24 h / usuario** | **Correo saliente a dirección arbitraria: vector de spam** |
+| `inviteByEmail` global | 2 000 | 1 h / plataforma | Freno de emergencia con alerta |
+| `acceptInvitation` (token) | 10 | 1 h / IP | Impide adivinar tokens por fuerza bruta |
 | `reportAbuse` | 10 | 24 h / usuario | Evita reportes en masa |
 | `searchVenuesNearby` | 60 | 1 min / usuario | Protege PostGIS |
 | Escritura genérica | 100 | 1 min / usuario | Red de contención |
@@ -535,6 +595,8 @@ Superar el límite devuelve `429` con `Retry-After`. Los límites por IP usan el
 | IP | Nunca en claro. `sha256(ip + PEPPER)` solo en `audit_log`. |
 | Notas de partido | Texto del usuario; se escapa al renderizar, sin HTML. |
 | Token de push | Tratado como credencial: no se expone al cliente ni se loguea. |
+| Email de un invitado | Se guarda en `match_invitations.invitee_email` **solo hasta que se resuelve** la invitación; al aceptar, vencer o revocarse se borra (ya existe la cuenta o no hace falta). Nunca visible para nadie salvo quien invitó, que ya lo conocía. |
+| Token de invitación | En claro **solo en el correo**. En la base va `sha256(token)`. Un volcado no sirve para aceptar invitaciones ajenas. |
 
 **Cifrado.** TLS 1.3 obligatorio en tránsito (HSTS con preload). En reposo, cifrado de disco de Supabase. No se agrega cifrado a nivel de columna en v1 porque no guardamos datos que lo justifiquen — y cifrar mal es peor que no cifrar. Si en el futuro entra un dato de salud o documento, se revisa.
 
@@ -570,8 +632,10 @@ Cada bloque es entregable y verificable. **No se avanza al siguiente con el ante
 | **6** | Estadísticas | Ratio de victorias, racha, forma reciente, progresión de nivel, calendario de días jugados. |
 | **7** | Sedes | Job de seed desde Overpass, búsqueda PostGIS por cercanía, ficha, alta por usuario + cola de moderación, atribución ODbL. |
 | **8** | Social | Directorio, seguir, bloquear, reportar, cara a cara. |
-| **9** | Turnos | Crear turno con banda de nivel, listar por cercanía/nivel, solicitar, aceptar/rechazar, confirmar cancha, confirmar asistencia, cancelar. **Los cuatro avisos de "no reservamos" del §12.5 entran acá, no después.** |
-| **10** | Recordatorios | Suscripción push, `reminders` de 24 h y 30 min, acciones en la notificación, cron cada 5 min, respaldo por email, cancelación en cascada. |
+| **9** | Turnos · eje cupo | Crear turno con banda de nivel, listar por cercanía/nivel, solicitar, aceptar/rechazar, confirmar asistencia, bajarse, cancelar. |
+| **9b** | Turnos · eje cancha | `court_status` con sus tres estados, empujón al creador, "se cayó la cancha" sin perder el grupo, priorización de *cancha confirmada + faltan jugadores* en el listado. **Los cinco avisos de "no reservamos" del §12.7 entran acá, no después.** |
+| **9c** | Invitaciones | Lista de "jugaste con", invitar por usuario, invitar por email con token hasheado, reserva de cupo con vencimiento, revocar, aceptar/rechazar, baja de invitaciones sin login, `invite_suppressions`. |
+| **10** | Recordatorios | Suscripción push, `reminders` de 24 h y 30 min, empujón de cancha, acciones en la notificación, cron cada 5 min, respaldo por email, cancelación en cascada. |
 | **11** | PWA | Manifest, service worker, instalable, offline del historial propio, prompt de instalación en iOS. |
 | **12** | Trofeos | Motor de logros por criterios, modal de desbloqueo, grilla. |
 | **13** | Cumplimiento | Exportar datos (JSON+CSV), borrar cuenta con cascada real, política de privacidad, términos, página de atribuciones. |
@@ -718,42 +782,105 @@ effective_level = (1 − w) · declared + w · perceived
 6. **El historial es público.** `level_history` en tu perfil. Bajarse el declarado deja rastro visible.
 7. **Bloqueo de cambio.** Tras editar el declarado, `level_locked_until = now() + 14 días`. Evita el ajuste oportunista justo antes de un turno.
 
-### 12.4 Flujo del turno
+### 12.4 Los dos ejes del turno — están separados a propósito
 
-1. **Crear.** Publicás: sede, cancha (texto libre, opcional), fecha y hora, cuántos lugares faltan (1–3), y la **banda de nivel**.
-   - **Acá aparece el aviso de que no se reserva nada** (§12.5).
+Un turno tiene **dos preguntas independientes**, y meterlas en un solo campo `status` es el error de modelado que hay que evitar:
+
+| | **Eje CANCHA** | **Eje CUPO** |
+|---|---|---|
+| Pregunta | ¿Hay dónde jugar? | ¿Están los jugadores? |
+| Quién lo sabe | Solo el creador | Cada jugador, sobre sí mismo |
+| Dónde vive | `match_offers.court_status` | `match_participants.attendance` |
+| Valores | `pending` · `secured` · `lost` | `pending` · `going` · `not_going` |
+| Se responde | Una vez, por el creador | Una vez por cada participante |
+
+**Son ortogonales.** Las cuatro combinaciones existen y todas son estados reales:
+
+| Cancha | Cupo | Situación | Qué muestra la app |
+|---|---|---|---|
+| `pending` | incompleto | Recién publicado | *"Buscando jugadores · cancha sin confirmar"* |
+| `pending` | completo | Están los cuatro, falta la cancha | *"Completo · falta confirmar la cancha"* → empuja al creador |
+| `secured` | incompleto | Hay cancha, faltan jugadores | *"Cancha confirmada · faltan 2"* → **prioridad alta en el listado** |
+| `secured` | completo + todos `going` | **Listo para jugar** | *"Todo listo"* |
+
+Ese tercer caso es el que más importa y el que un `status` único te esconde: **hay cancha pagada y faltan jugadores**. Es urgente y hay que empujarlo arriba del listado. Con un solo campo de estado, ese turno se ve igual que uno sin cancha.
+
+**"Listo para jugar" no se guarda, se deriva:** `court_status = 'secured'` **y** cupo completo **y** todos los aceptados en `going`. Guardarlo como un estado más obligaría a mantenerlo sincronizado desde cinco lugares distintos, y ahí es donde aparecen los bugs.
+
+### 12.5 Flujo del turno
+
+**Publicar**
+1. **Crear.** Sede, cancha (texto libre, opcional), fecha y hora, cuántos lugares faltan (1–3), y la **banda de nivel**. El creador entra como participante con `attendance = 'going'` y `origin = 'creator'`.
+   - **Primer aviso de que no se reserva nada** (§12.7).
 2. **Banda automática.** Por defecto `[efectivo − 0.25, efectivo + 0.75]`, editable. Es el rango de Playtomic y funciona: tolera poco por abajo, bastante por arriba — jugar contra alguien mejor es lo que hace progresar.
-3. **Descubrir.** Filtra por banda de nivel (contra el **efectivo**, no el declarado), cercanía, fecha y a quién seguís. Ordena por cercanía de nivel, después por distancia.
-4. **Solicitar.** Quien está fuera de la banda no puede — validado en el servidor, no escondiendo el botón.
-5. **Aceptar.** El creador aprueba o rechaza. Al llenarse los lugares → `full`.
-6. **Confirmar la cancha (creador).** El creador declara que **ya tiene el turno asignado por el club** → `confirmed`, `court_secured_at`. Es un hecho que solo él conoce.
-   - **Segundo aviso acá**, más fuerte (§12.5).
-7. **Confirmar asistencia (cada uno).** Cada participante confirma que va → `attendance = 'going'`. Aviso a las 24 h para quien no respondió.
-8. **Cancelar.** Cualquiera se baja; si queda incompleto vuelve a `open` y se avisa. Si cancela el creador, cae todo.
 
-**Por qué las dos confirmaciones y no una** — me preguntaste cuál conviene. Las dos, porque son hechos distintos que conoce gente distinta:
+**Llenar el cupo** — dos vías que conviven
+3. **Abierto.** Otros lo descubren filtrando por banda de nivel (contra el **efectivo**), cercanía, fecha y a quién siguen. Solicitan; el creador acepta o rechaza. Quien está fuera de la banda no puede solicitar — validado en el servidor, no escondiendo el botón.
+4. **Invitado.** El creador invita directo desde el historial, por usuario o por email (§12.6).
 
-- **Solo el creador** sabe si el club le dio la cancha. Nadie más puede confirmarlo.
-- **Solo cada jugador** sabe si va a ir. El creador no puede afirmarlo por él.
+**Eje cancha** *(en cualquier momento, independiente del cupo)*
+5. **Confirmar la cancha.** El creador declara que **el club ya le asignó el turno** → `court_status = 'secured'`.
+   - **Segundo aviso acá, más fuerte** (§12.7).
+6. **Perder la cancha.** El club se la dio de baja → `court_status = 'lost'` + motivo. Avisa a todos. **El cupo no se toca**: los jugadores siguen ahí y el creador puede conseguir otra cancha sin rearmar el grupo. Esto solo funciona porque los ejes están separados.
 
-Si solo confirma el creador, tenés cancha y tres personas que dijeron que sí hace una semana y nunca más. El modo de falla real del pádel amateur no es la cancha, es el que no aparece. Si solo confirman los jugadores, se organizan para un turno que no existe.
+**Eje cupo** *(en cualquier momento, independiente de la cancha)*
+7. **Confirmar asistencia.** Cada participante responde si va → `going` / `not_going`. Aviso a las 24 h para quien no respondió.
+8. **Bajarse.** Libera el lugar, el turno vuelve a `open`, se avisa al resto. La cancha sigue confirmada.
 
-**El costo es un paso más, y se paga barato:** el creador queda auto-confirmado como asistente al crear el turno, y la confirmación del resto es **un toque desde la notificación** — no hay que abrir la app. El recordatorio de 30 min sale solo para quien confirmó; a quien no confirmó le llega otra cosa: *"¿Vas? Nadie confirmó tu lugar"*.
+**Cancelar todo.** Solo el creador. `roster_status = 'cancelled'`, se cancelan los recordatorios y se notifica.
 
-### 12.5 Aviso obligatorio: la app no reserva canchas
+**Por qué dos confirmaciones y no una.** Son hechos distintos que conoce gente distinta: solo el creador sabe si el club le dio la cancha, y solo cada jugador sabe si va a ir. Si confirma solo el creador, tenés cancha y tres personas que dijeron que sí hace una semana. Si confirman solo los jugadores, se organizan para un turno que no existe. **El modo de falla real del pádel amateur no es la cancha: es el que no aparece.**
+
+El paso extra se paga barato: el creador queda auto-confirmado al crear, y el resto responde **con un toque desde la notificación**, sin abrir la app.
+
+### 12.6 Invitaciones
+
+Tres vías, en orden de uso esperado:
+
+**1. Desde el historial** *(la principal)*
+La app ya sabe con quién jugaste. Ofrece la lista ordenada por frecuencia y recencia — *"Sergio Castro · 8 partidos · el último hace 2 semanas"* — filtrando por quién entra en la banda de nivel. Un toque y queda invitado. Para el 90 % de los turnos amateur, los compañeros son los de siempre; que la app te los ponga adelante es la diferencia entre usarla y volver a WhatsApp.
+
+**2. Por usuario**
+Buscador sobre el directorio, por `display_name` o `slug`. Solo aparecen perfiles con `is_public = true`, y nunca se busca por email — eso permitiría averiguar si una dirección tiene cuenta.
+
+**3. Por email** *(para quien todavía no está en la app)*
+Se manda un link con token. Al aceptar, la persona se registra y cae directo en el turno. Es la vía de crecimiento natural: el compañero nuevo entra invitado, no buscando la app.
+
+**Reglas comunes**
+
+- **La invitación reserva el lugar** mientras está `sent`, hasta `expires_at` = mín(48 h, `starts_at` − 2 h). Vencida, libera el cupo automáticamente. Sin esto invitás a tres y te llenan el turno dos desconocidos mientras esperás respuesta.
+- **Invitar no es agregar.** El invitado acepta y recién ahí entra como participante. Nadie queda metido en un turno sin decir que sí.
+- **La invitación directa saltea la banda de nivel**, con una advertencia visible al creador (*"Está fuera de tu rango"*) y el nivel del invitado a la vista. Si conocés a la persona, sabés lo que hacés; el filtro está para desconocidos, no para tu compañero de siempre.
+- **Un invitado bloqueado no recibe nada.** `blocks` se consulta antes de crear la invitación, en los dos sentidos.
+- **Se puede revocar** mientras esté `sent`.
+
+**Seguridad de la invitación por email** — es la única función de la app que dispara un correo hacia una dirección arbitraria elegida por un usuario. Eso es un vector de spam y de acoso, y necesita cinco defensas:
+
+| Riesgo | Defensa |
+|---|---|
+| Spam masivo | **10 invitaciones por email/día por usuario** (las de historial y usuario tienen su propio límite, más alto). Además, tope global por hora en toda la plataforma con alerta. |
+| Acoso dirigido | `invite_suppressions`. Todo email lleva **"No quiero recibir más invitaciones"** en un clic, sin login. Suprimido = nunca más, de nadie. |
+| Enumeración de cuentas | La respuesta al creador es **siempre la misma** — *"Invitación enviada"* — exista o no la cuenta. Si el email ya tiene cuenta, se convierte en invitación in-app y **no** se manda correo. |
+| Robo de token | Token de 32 bytes de `crypto.randomBytes`, **guardado hasheado** (SHA-256), un solo uso, vencimiento corto. Un volcado de la base no permite aceptar invitaciones ajenas. |
+| Fuga de datos antes de aceptar | El email dice solo: quién invita (nombre público), qué deporte, día y sede. **No** lleva los otros participantes, ni sus niveles, ni ningún email. |
+
+El contenido del correo es de la plataforma, no del usuario: el creador **no puede escribir un mensaje libre**. Un campo de texto libre en un email saliente es un canal de abuso servido en bandeja.
+
+### 12.7 Aviso obligatorio: la app no reserva canchas
 
 Es el malentendido más caro posible: alguien cree que Sideline le reservó la cancha, se presenta y no hay nada. Aparece en **cuatro** lugares, y no es un `<small>` gris:
 
 | Dónde | Texto | Formato |
 |---|---|---|
 | Al crear el turno | *"Sideline no reserva canchas. Reservá vos en el club y publicá el turno cuando lo tengas."* | Recuadro con borde ámbar, arriba del formulario |
-| En la tarjeta del turno, si `status ≠ 'confirmed'` | *"Cancha sin confirmar"* | Píldora ámbar |
+| En la tarjeta del turno, si `court_status ≠ 'secured'` | *"Cancha sin confirmar"* | Píldora ámbar |
 | Al confirmar la cancha | *"¿Ya tenés el turno asignado por el club? Confirmá solo si el club te lo dio. Sideline no reservó nada."* | Diálogo con confirmación explícita — el botón dice **"Sí, ya tengo la cancha"**, no "Aceptar" |
-| En el detalle del turno confirmado | *"Turno confirmado por [nombre]. La reserva la gestiona el club, no Sideline."* | Línea permanente al pie |
+| En el detalle con `court_status = 'secured'` | *"Cancha confirmada por [nombre]. La reserva la gestiona el club, no Sideline."* | Línea permanente al pie |
+| En el email de invitación | *"Sideline no reserva canchas. Coordina el turno quien te invitó."* | Al pie, siempre |
 
 También en el onboarding, en la pantalla que explica los turnos. Y en Términos.
 
-El estado `confirmed` **nunca** se muestra como "reservado". Ni en la UI, ni en los textos, ni en las notificaciones. Es una regla de vocabulario del producto: la palabra "reserva" solo se usa para decir que la app **no** la hace.
+`court_status = 'secured'` **nunca** se muestra como "reservado". Ni en la UI, ni en los textos, ni en las notificaciones. Es una regla de vocabulario del producto: la palabra "reserva" solo se usa para decir que la app **no** la hace. Por eso el valor se llama `secured` y no `booked` — el nombre del campo también educa a quien escribe el código.
 
 ---
 
@@ -812,31 +939,39 @@ OSM está bajo **ODbL 1.0**. Al usar sus datos:
 
 Dos avisos, con propósitos distintos:
 
-| Aviso | Cuándo | Para quién | Para qué |
-|---|---|---|---|
-| **Pedido de confirmación** | 24 h antes | Quien tiene `attendance = 'pending'` | Que diga si va, mientras hay tiempo de reemplazarlo |
-| **Recordatorio** | 30 min antes | Quien tiene `attendance = 'going'` | Que no se olvide |
+| Aviso | Cuándo | Para quién | Para qué | Eje |
+|---|---|---|---|---|
+| **Pedido de confirmación** | 24 h antes | Quien tiene `attendance = 'pending'` | Que diga si va, mientras hay tiempo de reemplazarlo | cupo |
+| **Empujón de cancha** | 24 h antes | El creador, si `court_status = 'pending'` | Que consiga la cancha o avise | cancha |
+| **Recordatorio** | 30 min antes | Quien tiene `attendance = 'going'` | Que no se olvide | cupo |
 
 El de 24 h es el que salva el turno: si alguien se baja con un día de anticipación, el lugar vuelve a `open` y todavía se llena. Enterarse a los 30 minutos ya no sirve de nada.
 
 ### Flujo
 
+Los recordatorios cuelgan del **eje cupo**, no del eje cancha. Un turno sin cancha confirmada igual manda avisos: la gente tiene que saber que se comprometió, y el creador tiene que sentir la presión de conseguir la cancha.
+
 ```
-confirmOffer()                       -- el creador declaró que tiene la cancha
-  └→ reminders 'confirm_request'  (fire_at = starts_at − 24 h)
-        para cada participante aceptado con attendance='pending'
-     reminders 'match_reminder'   (fire_at = starts_at − 30 min)
-        para cada participante con attendance='going'
-        (el creador entra acá directo: queda 'going' al crear el turno)
+acceptRequest() | acceptInvitation()     -- entra un participante
+  └→ reminder 'confirm_request'  (fire_at = starts_at − 24 h)
+     reminder 'court_nudge'      (fire_at = starts_at − 24 h)  → SOLO al creador,
+        y solo si court_status = 'pending'. Se cancela al pasar a 'secured'.
+
+createOffer()
+  └→ el creador queda attendance='going' → su 'match_reminder' directo
 
 setAttendance(going)
-  └→ programa su 'match_reminder'
+  └→ programa su 'match_reminder'  (fire_at = starts_at − 30 min)
      cancela su 'confirm_request' pendiente
 
 setAttendance(not_going)  |  withdrawFromOffer()
   └→ cancela sus reminders
-     libera el lugar → offer vuelve a 'open'
+     libera el lugar → roster_status vuelve a 'open'
      notifica al creador y al resto
+
+setCourtLost()
+  └→ NO cancela nada del eje cupo. Solo notifica:
+     "Se cayó la cancha. [nombre] está buscando otra."
 
 pg_cron cada 5 min → /api/cron/reminders
   ├── SELECT ... WHERE state='pending' AND fire_at <= now() FOR UPDATE SKIP LOCKED
@@ -858,7 +993,7 @@ La acción de confirmar viaja **en la notificación push** (`actions: [{action:'
 - Cron cada 5 min ⇒ el aviso llega entre 30 y 25 minutos antes. Es aceptable y hay que decirlo en la UI ("~30 min antes"), no prometer exactitud al minuto.
 - El endpoint del cron se protege con un secreto comparado en **tiempo constante**. Si se filtra, alguien podría disparar avisos en masa.
 
-**Contenido del push:** mínimo. `"Turno en 30 min · Fusión Padel"`. Sin nombres de otros jugadores ni datos personales — la notificación aparece en una pantalla bloqueada que puede ver cualquiera. Y **nunca** la palabra "reserva": es `"Turno en 30 min"`, no `"Tu reserva es en 30 min"` (§12.5).
+**Contenido del push:** mínimo. `"Turno en 30 min · Fusión Padel"`. Sin nombres de otros jugadores ni datos personales — la notificación aparece en una pantalla bloqueada que puede ver cualquiera. Y **nunca** la palabra "reserva": es `"Turno en 30 min"`, no `"Tu reserva es en 30 min"` (§12.7).
 
 ---
 
@@ -888,38 +1023,43 @@ Esto no se discute durante la construcción. Si un bloque necesita romper una de
 
 ### Producto
 1. **No hay pagos.** Ni suscripción, ni reservas pagas, ni datos de tarjeta. No entra Stripe ni ningún procesador en v1.
-2. **No se reservan canchas.** La app registra y coordina; la reserva ocurre afuera. El aviso del §12.5 va en los cuatro lugares indicados. **La palabra "reserva" solo se usa para negar que la app la haga** — nunca para describir el estado `confirmed`, ni en UI, ni en emails, ni en push.
-3. **Ningún dato de un jugador se modifica por acción de otro** sin confirmación explícita del afectado. Excepción única y explícita: el **nivel efectivo**, que por diseño incorpora valoraciones de terceros (§12). El **declarado** sigue siendo intocable.
-4. **Las valoraciones de nivel individuales son privadas.** Se publica el agregado, nunca quién puso qué. Si esto se rompe, aparecen las represalias y el sistema deja de ser honesto.
-5. **Solo valora quien jugó.** Sesión confirmada por ambos, y el votante con 3 sesiones confirmadas mínimo. Sin excepciones por conveniencia de producto.
-6. **El efectivo no se mueve más de 0,5 puntos en 30 días.** Es el freno contra el brigading. Si alguien propone sacarlo "para que converja más rápido", la respuesta es no.
-7. Nada de datos de salud, documentos de identidad ni información financiera. Si aparece el requerimiento, se rediseña la sección 8.5 antes de tocar código.
+2. **No se reservan canchas.** La app registra y coordina; la reserva ocurre afuera. El aviso del §12.7 va en los cinco lugares indicados. **La palabra "reserva" solo se usa para negar que la app la haga** — nunca para describir `court_status = 'secured'`, ni en UI, ni en emails, ni en push.
+3. **Cancha y cupo son ejes separados.** Nunca se colapsan en un solo campo de estado, ni siquiera "para simplificar la query". Perder la cancha no disuelve el grupo; que falte un jugador no invalida la cancha. Si aparece un `status` único en un PR, se rechaza.
+4. **Invitar no es agregar.** Nadie entra a un turno sin aceptar. No hay "agregar directo" ni para el creador ni para un admin.
+5. **El correo de invitación no lleva texto libre del usuario.** El cuerpo lo controla la plataforma. Un campo abierto en un email saliente es un canal de acoso.
+6. **`invite_suppressions` se consulta antes de cada envío.** Sin excepción, sin "pero es una invitación de un amigo". Quien pidió no recibir más, no recibe más.
+7. **Nunca se revela si un email tiene cuenta.** La respuesta a `inviteByEmail` es idéntica en ambos casos.
+8. **Ningún dato de un jugador se modifica por acción de otro** sin confirmación explícita del afectado. Excepción única y explícita: el **nivel efectivo**, que por diseño incorpora valoraciones de terceros (§12). El **declarado** sigue siendo intocable.
+9. **Las valoraciones de nivel individuales son privadas.** Se publica el agregado, nunca quién puso qué. Si esto se rompe, aparecen las represalias y el sistema deja de ser honesto.
+10. **Solo valora quien jugó.** Sesión confirmada por ambos, y el votante con 3 sesiones confirmadas mínimo. Sin excepciones por conveniencia de producto.
+11. **El efectivo no se mueve más de 0,5 puntos en 30 días.** Es el freno contra el brigading. Si alguien propone sacarlo "para que converja más rápido", la respuesta es no.
+12. Nada de datos de salud, documentos de identidad ni información financiera. Si aparece el requerimiento, se rediseña la sección 8.5 antes de tocar código.
 
 ### Seguridad
-8. **RLS activo y forzado en todas las tablas.** Una tabla sin política es una tabla que nadie lee — y así se queda hasta que se escriba la política.
-9. **Toda Server Action:** sesión → Zod → rate limit → autorización → efecto → auditoría. Sin saltear pasos.
-10. **`service_role` nunca** en código que corra para un usuario. Solo en jobs de servidor.
-11. **Cero secretos en el bundle del cliente.** Regla de lint que falla si una variable secreta lleva `NEXT_PUBLIC_`.
-12. **Sin `dangerouslySetInnerHTML`** sobre contenido de usuario. Sin excepciones.
-13. **CSP sin `unsafe-inline` ni `unsafe-eval`.** Si una librería lo exige, se cambia la librería.
-14. **Email nunca sale del sistema de auth.** No aparece en ninguna respuesta que otro usuario pueda ver.
-15. **Nada de PII en logs, errores ni notificaciones push.**
-16. **Subidas de archivo:** validar magic bytes, re-codificar siempre (mata EXIF y payloads), límite de tamaño, tipos en lista blanca.
-17. **Dependencias:** `npm audit` en CI; una vulnerabilidad crítica o alta bloquea el deploy.
+13. **RLS activo y forzado en todas las tablas.** Una tabla sin política es una tabla que nadie lee — y así se queda hasta que se escriba la política.
+14. **Toda Server Action:** sesión → Zod → rate limit → autorización → efecto → auditoría. Sin saltear pasos.
+15. **`service_role` nunca** en código que corra para un usuario. Solo en jobs de servidor.
+16. **Cero secretos en el bundle del cliente.** Regla de lint que falla si una variable secreta lleva `NEXT_PUBLIC_`.
+17. **Sin `dangerouslySetInnerHTML`** sobre contenido de usuario. Sin excepciones.
+18. **CSP sin `unsafe-inline` ni `unsafe-eval`.** Si una librería lo exige, se cambia la librería.
+19. **Email nunca sale del sistema de auth.** No aparece en ninguna respuesta que otro usuario pueda ver.
+20. **Nada de PII en logs, errores ni notificaciones push.**
+21. **Subidas de archivo:** validar magic bytes, re-codificar siempre (mata EXIF y payloads), límite de tamaño, tipos en lista blanca.
+22. **Dependencias:** `npm audit` en CI; una vulnerabilidad crítica o alta bloquea el deploy.
 
 ### Legal
-18. **Atribución ODbL de OpenStreetMap** visible. Es una obligación de licencia, no una cortesía.
-19. **Prohibido scrapear** Playtomic, MATCHi o cualquier plataforma. Integración solo por canal oficial y con acuerdo.
-20. **GDPR desde el día uno:** exportar mis datos y borrar mi cuenta funcionan de verdad (borrado en cascada real, no un flag), disponibles sin escribir a soporte.
-21. **Edad mínima 16 años**, verificada en el registro.
-22. Analítica sin cookies (Plausible) — sin banner de consentimiento y sin rastreo entre sitios.
+23. **Atribución ODbL de OpenStreetMap** visible. Es una obligación de licencia, no una cortesía.
+24. **Prohibido scrapear** Playtomic, MATCHi o cualquier plataforma. Integración solo por canal oficial y con acuerdo.
+25. **GDPR desde el día uno:** exportar mis datos y borrar mi cuenta funcionan de verdad (borrado en cascada real, no un flag), disponibles sin escribir a soporte.
+26. **Edad mínima 16 años**, verificada en el registro.
+27. Analítica sin cookies (Plausible) — sin banner de consentimiento y sin rastreo entre sitios.
 
 ### Técnicas
-23. TypeScript en modo estricto. `any` prohibido salvo con comentario que justifique.
-24. Toda migración es reversible y está versionada en el repo.
-25. Todo instante se guarda en UTC. Toda visualización usa la zona horaria correcta explícitamente.
-26. Cero texto visible fuera de `messages/*.json`.
-27. Presupuesto de rendimiento móvil: LCP < 2,5 s en 4G, JS inicial < 200 KB comprimido.
+28. TypeScript en modo estricto. `any` prohibido salvo con comentario que justifique.
+29. Toda migración es reversible y está versionada en el repo.
+30. Todo instante se guarda en UTC. Toda visualización usa la zona horaria correcta explícitamente.
+31. Cero texto visible fuera de `messages/*.json`.
+32. Presupuesto de rendimiento móvil: LCP < 2,5 s en 4G, JS inicial < 200 KB comprimido.
 
 ---
 
