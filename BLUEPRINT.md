@@ -287,7 +287,7 @@ match_offers (
   CHECK (1 + spots_open + guests_count = 4),
   visibility    text NOT NULL DEFAULT 'public'
                 CHECK (visibility IN ('public','followers','invite_only')),
-  -- DOS EJES INDEPENDIENTES. No se mezclan nunca. Ver §12.4.
+  -- DOS EJES INDEPENDIENTES. No se mezclan nunca. Ver §12.5.
   --
   -- Eje 1 · LA CANCHA — ¿hay dónde jugar? Solo el creador lo sabe.
   --   'secured' NO significa reservado por la app: significa que el creador
@@ -328,7 +328,7 @@ match_participants (
   UNIQUE (offer_id, profile_id)
 )
 
--- Invitaciones directas a un turno (§12.6). Tres vías: historial, usuario, email.
+-- Invitaciones directas a un turno (§12.7). Tres vías: historial, usuario, email.
 match_invitations (
   id              uuid PK,
   offer_id        uuid NOT NULL FK match_offers ON DELETE CASCADE,
@@ -679,7 +679,7 @@ Cada bloque es entregable y verificable. **No se avanza al siguiente con el ante
 | **7** | Sedes | Job de seed desde Overpass, búsqueda PostGIS por cercanía, ficha, alta por usuario + cola de moderación, atribución ODbL. |
 | **8** | Social | Directorio, vista `played_with` con su refresco, seguir, bloquear, reportar, cara a cara. |
 | **9** | Turnos · eje cupo | Crear turno de 4 con banda de nivel, listar por cercanía/nivel, solicitar, aceptar/rechazar, los cuatro estados de asistencia con vencimiento del tentativo, bajarse con aviso a los confirmados, cancelar. |
-| **9b** | Turnos · eje cancha | `court_status` con sus tres estados, empujón al creador, "se cayó la cancha" sin perder el grupo, priorización de *cancha confirmada + faltan jugadores* en el listado. **Los cinco avisos de "no reservamos" del §12.7 entran acá, no después.** |
+| **9b** | Turnos · eje cancha | `court_status` con sus tres estados, empujón al creador, "se cayó la cancha" sin perder el grupo, priorización de *cancha confirmada + faltan jugadores* en el listado. **Los cinco avisos de "no reservamos" del §12.8 entran acá, no después.** |
 | **9c** | Invitaciones | Lista de "jugaste con", invitar por usuario, invitar por email con token hasheado, reserva de cupo con vencimiento, revocar, aceptar/rechazar, baja de invitaciones sin login, `invite_suppressions`. |
 | **10** | Recordatorios | Suscripción push, `reminders` de 24 h y 30 min, empujón de cancha, acciones en la notificación, cron cada 5 min, respaldo por email, cancelación en cascada. |
 | **11** | PWA | Manifest, service worker, instalable, offline del historial propio, prompt de instalación en iOS. |
@@ -820,7 +820,77 @@ effective_level = (1 − w) · declared + w · perceived
 
 **Se recalcula** en cada `level_ratings` nuevo y en un job nocturno (por el decaimiento, que corre solo con el tiempo).
 
-### 12.3 Reglas anti-abuso de las valoraciones
+### 12.3 Confianza del nivel — lo que aprendimos de los juegos competitivos
+
+Antes de cerrar el diseño se investigó cómo manejan esto Valorant, Rocket
+League, CS2 y Fortnite. Hay tres ideas que se repiten y que sirven acá.
+
+**1 · Un número visible y una incertidumbre invisible.** Valorant tiene el RR
+que ves y el MMR que no ves. Rocket League usa Glicko-2, que además del rating
+guarda una *desviación* (RD): cuánto duda el sistema de ese número. No es un
+detalle técnico — es lo que decide cuánto se mueve tu rating después de cada
+partido.
+
+**2 · Cuanto menos sabemos, más rápido corregimos.** Una cuenta nueva en
+Valorant tiene "MMR de alta incertidumbre" y por eso llega a su nivel real en
+20–30 partidas en vez de cientos. Al revés, una cuenta con historial se mueve
+poco: ya se sabe dónde está.
+
+**3 · La opinión de alguien incierto vale menos.** En Glicko, un rival cuya
+fuerza real no se conoce aporta poca información, así que el resultado contra
+él mueve menos el rating.
+
+Y una cuarta, transversal: **reinicio suave, nunca duro**. La incertidumbre
+sube con la inactividad, pero lo aprendido no se tira.
+
+#### Qué cambia en Sideline
+
+El freno del §12.2 era **fijo**: 0,5 puntos cada 30 días para todos. Eso trata
+igual dos casos opuestos, y en los dos se equivoca:
+
+| | Con freno fijo | Con confianza |
+|---|---|---|
+| Recién llegado que declaró 3.0 siendo 5.0 | **4 meses** para llegar a su nivel, jugando partidos desparejos todo ese tiempo | Converge en la primera tanda de valoraciones |
+| Veterano con 25 votantes | Se lo puede empujar 0,5 por mes | Se mueve 0,3 — cuesta el doble manipularlo |
+
+Se agrega `profiles.level_confidence` (0 a 1):
+
+```
+confianza = votantes/(votantes+8)  ×  0.5 ^ (días desde el último partido / 240)
+paso máximo = 1.5 − 1.2 × confianza
+```
+
+| Confianza | Paso máximo | Situación |
+|---|---|---|
+| 0.00 | 1.5 | Nadie lo valoró: calibrando |
+| 0.43 | 1.0 | Unos 6 votantes |
+| 0.71 | 0.65 | Unos 20 votantes |
+| 1.00 | 0.3 | Muy establecido |
+
+Nunca llega a 1 exactamente — como la RD de Glicko, siempre queda margen a
+seguir aprendiendo.
+
+**El peso de cada votante también escala con SU confianza**, con piso 0,4:
+jugó el partido y vio algo, pero si su propio nivel es incierto su opinión
+pesa menos. Efecto lateral valioso: una red de cuentas nuevas coordinadas
+tiene confianza baja entre todas, así que su peso combinado es chico **sin que
+haga falta detectarlas como fraude**.
+
+**La inactividad devuelve incertidumbre.** Alguien que jugó 50 partidos y paró
+dos años vuelve a ser incierto — que es la verdad, porque el nivel cambia
+cuando dejás de jugar. No se le borra nada: se admite que ya no sabemos.
+
+#### Lo que NO tomamos
+
+- **Nada de ELO ni resultados automáticos.** El insumo sigue siendo la
+  valoración humana. Ganar o perder no mueve tu nivel: en pádel amateur el
+  resultado depende tanto del compañero que sería ruido.
+- **Nada de temporadas ni reinicios periódicos.** En un juego existen para
+  vender la próxima temporada. Acá solo confundirían.
+- **Nada de rangos con nombre** (Oro, Platino). La escala 1.0–7.0 ya es la del
+  deporte; inventar otra encima sería una capa de traducción de más.
+
+### 12.4 Reglas anti-abuso de las valoraciones
 
 1. **Solo valora quien jugó con vos.** `rater_id` tiene que estar en `session_participants` de esa misma sesión, con `confirmed_at` no nulo. Sin partido confirmado no hay voto.
 2. **Un voto por partido y por par.** Lo garantiza `UNIQUE (session_id, rater_id, subject_id)`.
@@ -836,7 +906,7 @@ effective_level = (1 − w) · declared + w · perceived
 
    Es una **ventana móvil, no un techo**: a medida que el efectivo se corrige, la ventana se corre con él. Una categoría mal declarada igual converge —despacio, como pide la regla del §16— pero nadie la hunde de un golpe. El nivel de referencia queda guardado en cada valoración (`subject_level_at_rating`) para poder auditar después si un voto era razonable en su contexto.
 
-### 12.4 Los dos ejes del turno — están separados a propósito
+### 12.5 Los dos ejes del turno — están separados a propósito
 
 Un turno tiene **dos preguntas independientes**, y meterlas en un solo campo `status` es el error de modelado que hay que evitar:
 
@@ -891,20 +961,20 @@ Ese tercer caso es el que más importa y el que un `status` único te esconde: *
 
 **"Listo para jugar" no se guarda, se deriva:** `court_status = 'secured'` **y** cupo completo **y** los 4 en `going`. Guardarlo como un estado más obligaría a mantenerlo sincronizado desde cinco lugares distintos, y ahí es donde aparecen los bugs.
 
-### 12.5 Flujo del turno
+### 12.6 Flujo del turno
 
 **Publicar**
 1. **Crear.** Sede, cancha (texto libre, opcional), fecha y hora, cuántos lugares faltan (1–3), y la **banda de nivel**. El creador entra como participante con `attendance = 'going'` y `origin = 'creator'`.
-   - **Primer aviso de que no se reserva nada** (§12.7).
+   - **Primer aviso de que no se reserva nada** (§12.8).
 2. **Banda automática.** Por defecto `[efectivo − 0.25, efectivo + 0.75]`, editable. Es el rango de Playtomic y funciona: tolera poco por abajo, bastante por arriba — jugar contra alguien mejor es lo que hace progresar.
 
 **Llenar el cupo** — dos vías que conviven
 3. **Abierto.** Otros lo descubren filtrando por banda de nivel (contra el **efectivo**), cercanía, fecha y a quién siguen. Solicitan; el creador acepta o rechaza. Quien está fuera de la banda no puede solicitar — validado en el servidor, no escondiendo el botón.
-4. **Invitado.** El creador invita directo desde el historial, por usuario o por email (§12.6).
+4. **Invitado.** El creador invita directo desde el historial, por usuario o por email (§12.7).
 
 **Eje cancha** *(en cualquier momento, independiente del cupo)*
 5. **Confirmar la cancha.** El creador declara que **el club ya le asignó el turno** → `court_status = 'secured'`.
-   - **Segundo aviso acá, más fuerte** (§12.7).
+   - **Segundo aviso acá, más fuerte** (§12.8).
 6. **Perder la cancha.** El club se la dio de baja → `court_status = 'lost'` + motivo. Avisa a todos. **El cupo no se toca**: los jugadores siguen ahí y el creador puede conseguir otra cancha sin rearmar el grupo. Esto solo funciona porque los ejes están separados.
 
 **Eje cupo** *(en cualquier momento, independiente de la cancha)*
@@ -917,7 +987,7 @@ Ese tercer caso es el que más importa y el que un `status` único te esconde: *
 
 El paso extra se paga barato: el creador queda auto-confirmado al crear, y el resto responde **con un toque desde la notificación**, sin abrir la app.
 
-### 12.6 Invitaciones
+### 12.7 Invitaciones
 
 Tres vías, en orden de uso esperado:
 
@@ -954,7 +1024,7 @@ Se manda un link con token. Al aceptar, la persona se registra y cae directo en 
 
 El contenido del correo es de la plataforma, no del usuario: el creador **no puede escribir un mensaje libre**. Un campo de texto libre en un email saliente es un canal de abuso servido en bandeja.
 
-### 12.7 Aviso obligatorio: la app no reserva canchas
+### 12.8 Aviso obligatorio: la app no reserva canchas
 
 Es el malentendido más caro posible: alguien cree que Sideline le reservó la cancha, se presenta y no hay nada. Aparece en **cuatro** lugares, y no es un `<small>` gris:
 
@@ -1088,7 +1158,7 @@ La acción de confirmar viaja **en la notificación push** (`actions: [{action:'
 - Cron cada 5 min ⇒ el aviso llega entre 30 y 25 minutos antes. Es aceptable y hay que decirlo en la UI ("~30 min antes"), no prometer exactitud al minuto.
 - El endpoint del cron se protege con un secreto comparado en **tiempo constante**. Si se filtra, alguien podría disparar avisos en masa.
 
-**Contenido del push:** mínimo. `"Turno en 30 min · Fusión Padel"`. Sin nombres de otros jugadores ni datos personales — la notificación aparece en una pantalla bloqueada que puede ver cualquiera. Y **nunca** la palabra "reserva": es `"Turno en 30 min"`, no `"Tu reserva es en 30 min"` (§12.7).
+**Contenido del push:** mínimo. `"Turno en 30 min · Fusión Padel"`. Sin nombres de otros jugadores ni datos personales — la notificación aparece en una pantalla bloqueada que puede ver cualquiera. Y **nunca** la palabra "reserva": es `"Turno en 30 min"`, no `"Tu reserva es en 30 min"` (§12.8).
 
 ---
 
@@ -1096,7 +1166,7 @@ La acción de confirmar viaja **en la notificación push** (`actions: [{action:'
 
 **Testing**
 - **Unidad (Vitest):** conversión de niveles, cálculo de estadísticas, cálculo de `fire_at` con zonas horarias, esquemas Zod.
-- **Motor de niveles (Vitest, suite propia):** el cálculo del percibido y el efectivo necesita casos adversarios explícitos — un votante con 20 valoraciones no pesa más que uno con una; 10 cuentas nuevas coordinadas no mueven el efectivo; el decaimiento por antigüedad se aplica; el freno de 0,5/30 días se respeta; con 0 votantes el efectivo es igual al declarado. Cada regla del §12.2–12.3 es un test.
+- **Motor de niveles (Vitest, suite propia):** el cálculo del percibido y el efectivo necesita casos adversarios explícitos — un votante con 20 valoraciones no pesa más que uno con una; 10 cuentas nuevas coordinadas no mueven el efectivo; el decaimiento por antigüedad se aplica; el freno de 0,5/30 días se respeta; con 0 votantes el efectivo es igual al declarado. Cada regla del §12.2 y §12.4 es un test.
 - **Políticas RLS:** suite dedicada que, con dos usuarios reales, verifica que A no lee ni escribe lo de B en cada tabla. Es la suite más importante del proyecto.
 - **E2E (Playwright):** onboarding completo, registrar partido, crear turno → solicitar → aceptar → confirmar, exportar y borrar cuenta.
 - **Accesibilidad:** `axe` en las pantallas principales dentro de Playwright.
@@ -1118,7 +1188,7 @@ Esto no se discute durante la construcción. Si un bloque necesita romper una de
 
 ### Producto
 1. **No hay pagos.** Ni suscripción, ni reservas pagas, ni datos de tarjeta. No entra Stripe ni ningún procesador en v1.
-2. **No se reservan canchas.** La app registra y coordina; la reserva ocurre afuera. El aviso del §12.7 va en los cinco lugares indicados. **La palabra "reserva" solo se usa para negar que la app la haga** — nunca para describir `court_status = 'secured'`, ni en UI, ni en emails, ni en push.
+2. **No se reservan canchas.** La app registra y coordina; la reserva ocurre afuera. El aviso del §12.8 va en los cinco lugares indicados. **La palabra "reserva" solo se usa para negar que la app la haga** — nunca para describir `court_status = 'secured'`, ni en UI, ni en emails, ni en push.
 3. **Cancha y cupo son ejes separados.** Nunca se colapsan en un solo campo de estado, ni siquiera "para simplificar la query". Perder la cancha no disuelve el grupo; que falte un jugador no invalida la cancha. Si aparece un `status` único en un PR, se rechaza.
 4. **Invitar no es agregar.** Nadie entra a un turno sin aceptar. No hay "agregar directo" ni para el creador ni para un admin.
 5. **Un turno es exactamente 4 jugadores.** Garantizado por CHECK en la base, no por validación de formulario. Ni 3 ni 5, ni siquiera "temporalmente".
@@ -1379,7 +1449,7 @@ El token del link se guarda **hasheado** y se puede rotar sin recrear el torneo.
 
 ### 17.6 Lo que reutiliza (y por qué eso valida el diseño de la v1)
 
-Torneos **no** trae infraestructura nueva. Usa lo que ya existe: la escala de niveles canónica (§11) para las bandas, el directorio de sedes (§13), el mecanismo de invitaciones con token hasheado y supresión (§12.6), los recordatorios (§14) y el motor de sesiones y valoraciones (§05, §12.2).
+Torneos **no** trae infraestructura nueva. Usa lo que ya existe: la escala de niveles canónica (§11) para las bandas, el directorio de sedes (§13), el mecanismo de invitaciones con token hasheado y supresión (§12.7), los recordatorios (§14) y el motor de sesiones y valoraciones (§05, §12.2).
 
 Si al construir la v2 alguna de esas piezas no alcanza, es señal de que estaba mal abstraída en la v1. Ese es el valor real de haber escrito esta sección ahora.
 

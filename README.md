@@ -53,8 +53,14 @@ valores, y los tres son públicos.
 El peso de la comunidad crece con la cantidad de votantes distintos: con 5
 votantes es 50 %, con 20 es 80 %. Hay frenos contra el abuso — una voz por
 persona, decaimiento por antigüedad, media recortada, mínimo de partidos para
-votar, y un tope de 0,5 puntos de movimiento cada 30 días. Tu nivel declarado
-**nunca se reescribe**; se calcula otro al lado.
+votar, y un límite de ±2,5 puntos por valoración. Tu nivel declarado **nunca se
+reescribe**; se calcula otro al lado.
+
+La velocidad del ajuste depende de cuánto se sabe de vos —idea tomada de la
+*rating deviation* de Glicko-2 y del MMR de alta incertidumbre de Valorant. Un
+jugador nuevo mal declarado converge enseguida; uno con 20 valoraciones se mueve
+la mitad de rápido, así que cuesta el doble manipularlo. Dejar de jugar devuelve
+incertidumbre, porque el nivel cambia cuando parás.
 
 Como "8va a 1ra" no es universal, internamente la escala es canónica (1.0–7.0) y
 la categoría local es solo una etiqueta. Así un jugador argentino y uno sueco
@@ -71,6 +77,9 @@ contradice, el que está mal es el código.
 
 El plan de trabajo —dónde estamos y qué sigue— está en
 **[`ROADMAP.md`](./ROADMAP.md)**.
+
+¿Nunca programaste? **[`GUIA.md`](./GUIA.md)** explica desde cero cómo bajar el
+proyecto, conectarlo y levantarlo.
 
 ## Stack
 
