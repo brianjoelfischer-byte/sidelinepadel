@@ -7,43 +7,35 @@ Estado y próximos pasos. El **qué** y el **por qué** de cada decisión están
 
 ## Dónde estamos
 
-**Bloques 1 y 2 terminados.** Los cimientos y toda la capa de datos.
+**Bloques 1, 2 y 3 terminados.** Cimientos, capa de datos y autenticación.
 
 | | Qué quedó funcionando |
 |---|---|
-| **Diseño** | 17 secciones, 35 reglas no negociables, con la investigación de matchmaking y formatos de torneo hecha |
+| **Diseño** | 17 secciones y 37 reglas no negociables, con la investigación de matchmaking, formatos de torneo y sistemas de rango competitivos |
 | **App** | Next.js 16, TypeScript estricto, Tailwind 4 con los tokens, español e inglés, CI con typecheck + lint + audit + escaneo de secretos |
-| **Datos** | 8 migraciones, RLS activo y forzado en todas las tablas, PostGIS para las sedes |
-| **Seguridad** | 68 tests que prueban que un usuario no puede leer ni escribir lo de otro |
+| **Datos** | 10 migraciones, RLS activo y forzado en todas las tablas, PostGIS para las sedes |
+| **Auth** | Login sin contraseñas (magic link + Google), guard de sesión en el layout, verificación de 16 años, onboarding de 5 pasos |
+| **Niveles** | Declarado + percibido + efectivo, con confianza adaptativa, límite de ±2,5 por voto y categoría estimada |
+| **Seguridad** | 85 tests de base que prueban que un usuario no puede leer ni escribir lo de otro, más 32 de lógica |
 
 Se levanta en cualquier máquina con `npm install && npm run db:reset`.
 
-**Lo que todavía no existe:** cualquier cosa que un usuario pueda ver o tocar.
-Hay una landing y nada más. No hay login, ni perfil, ni forma de cargar un
-partido.
+**Lo que todavía no existe:** registrar un partido. El perfil se crea y se ve,
+pero no hay forma de cargar lo que jugaste — que es el corazón de la app.
 
 ---
 
-## El único bloqueo real
+## Pendiente del owner
 
-**Hace falta un proyecto Supabase para seguir.** El bloque 3 es autenticación, y
-eso corre sobre GoTrue, el servicio de auth de Supabase — un Postgres local no lo
-emula.
-
-Son unos 5 minutos y el plan gratis alcanza:
-
-1. Crear el proyecto en [supabase.com](https://supabase.com) (región: São Paulo o
-   la más cercana).
-2. Copiar de *Project Settings → API*:
-   - la **URL** del proyecto
-   - la **anon key** (pública, va al navegador)
-3. Aplicar el esquema: `export DATABASE_URL=<connection string> && npm run db:migrate`
-
-> **La `service_role` key no se comparte con nadie ni se pega en un chat.** Va
-> derecho a las variables de entorno del servidor cuando haga falta, y no antes.
-
-Mientras tanto se puede avanzar con las pantallas del onboarding y la lógica de
-niveles, que no dependen de auth real.
+- **Aplicar las dos migraciones nuevas** (`rating_bounds` y `level_confidence`).
+  Con `npm run db:bundle` y pegando el resultado en el SQL Editor, o con
+  `supabase db push` si usás el CLI. Ver [`GUIA.md`](./GUIA.md).
+- **Agregar el Redirect URL** en Supabase → Authentication → URL Configuration:
+  `http://localhost:3000/auth/callback`. Sin eso el enlace de acceso no vuelve
+  a la app.
+- **Probar el login de punta a punta.** No se pudo verificar acá: el entorno de
+  desarrollo bloquea el acceso a `supabase.co`, así que el magic link real
+  nunca se vio llegar.
 
 ---
 
@@ -134,7 +126,7 @@ Ninguna frena los hitos 1 y 2, pero conviene cerrarlas antes del bloque 9.
 |---|---|---|
 | 1 | Radio por defecto de búsqueda | Adaptativo: arranca en 25 km y se expande hasta encontrar 5 turnos o llegar a 150 km. 25 km fijos dejan vacía media Latinoamérica. |
 | 2 | ¿Avisar si el declarado y el efectivo divergen? | Sí, en privado y con tono neutro. Hay que redactarlo bien: es una conversación incómoda. |
-| 3 | ¿Desde cuántos votantes se publica el percibido? | Ocultarlo hasta 3. Un solo voto no debería definir la reputación de nadie. |
+| 3 | ~~¿Desde cuántos votantes se publica el percibido?~~ | **Resuelto:** se oculta hasta 3. |
 | 4 | ¿Torneos en v1 o v2? | v2. Duplican la superficie de la app y hundirían la fecha de salida. |
 | 5 | ¿Mexicano antes que Super 8/12? | Sí. Mexicano siembra con el nivel efectivo — es lo que una planilla de Excel no puede hacer. |
 
@@ -144,10 +136,12 @@ Ninguna frena los hitos 1 y 2, pero conviene cerrarlas antes del bloque 9.
 
 ```bash
 npm install
-npm run db:reset     # base limpia + las 8 migraciones
-npm run test:rls     # 68 tests de aislamiento
+npm run db:reset     # base limpia + las 10 migraciones
+npm run test:rls     # 85 tests de aislamiento
 npm run dev
 ```
+
+¿Nunca usaste una terminal? [`GUIA.md`](./GUIA.md) lo explica desde cero.
 
 El Postgres local es descartable y se recrea con ese `db:reset`. Nada depende de
 una máquina en particular.
