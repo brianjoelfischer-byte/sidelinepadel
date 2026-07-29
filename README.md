@@ -69,6 +69,9 @@ de sedes, los torneos y 35 reglas no negociables.
 Se escribió **antes** que el código y manda sobre él. Si algo del código lo
 contradice, el que está mal es el código.
 
+El plan de trabajo —dónde estamos y qué sigue— está en
+**[`ROADMAP.md`](./ROADMAP.md)**.
+
 ## Stack
 
 | Capa | Elección | Por qué |
