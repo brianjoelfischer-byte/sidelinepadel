@@ -29,8 +29,27 @@ export default tseslint.config(
         },
       ],
 
-      /* Regla 23: cero secretos en el bundle del cliente. Esto ataja el error
-         obvio; `src/lib/env.ts` es la única puerta legítima. */
+      /* Regla 24: sin dangerouslySetInnerHTML sobre contenido de usuario. */
+      'react/no-danger': 'error',
+
+      /* Nada de estado de la app en localStorage ni sessionStorage.
+         Son POR DISPOSITIVO: entrás desde el celular y ves datos viejos del
+         que quedó en la notebook, sin forma de saber cuál es el bueno. La
+         sesión va en cookies (que el servidor lee y valida en cada request) y
+         todo lo demás sale de Supabase, que es la única fuente de verdad. */
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'localStorage',
+          message:
+            'Es por dispositivo y se desincroniza. La sesión va en cookies y el resto en Supabase.',
+        },
+        {
+          name: 'sessionStorage',
+          message:
+            'Es por dispositivo y se desincroniza. La sesión va en cookies y el resto en Supabase.',
+        },
+      ],
       'no-restricted-properties': [
         'error',
         {
@@ -39,10 +58,17 @@ export default tseslint.config(
           message:
             'Leé variables de entorno desde src/lib/env.ts, que separa las públicas de las del servidor.',
         },
+        {
+          object: 'window',
+          property: 'localStorage',
+          message: 'Es por dispositivo y se desincroniza. Usá cookies o Supabase.',
+        },
+        {
+          object: 'window',
+          property: 'sessionStorage',
+          message: 'Es por dispositivo y se desincroniza. Usá cookies o Supabase.',
+        },
       ],
-
-      /* Regla 24: sin dangerouslySetInnerHTML sobre contenido de usuario. */
-      'react/no-danger': 'error',
 
       /* §11: la navegación tiene que conservar el locale. `next/link` lo pierde. */
       'no-restricted-imports': [

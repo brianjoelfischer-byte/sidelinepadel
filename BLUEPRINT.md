@@ -830,6 +830,12 @@ effective_level = (1 − w) · declared + w · perceived
 6. **El historial es público.** `level_history` en tu perfil. Bajarse el declarado deja rastro visible.
 7. **Bloqueo de cambio.** Tras editar el declarado, `level_locked_until = now() + 14 días`. Evita el ajuste oportunista justo antes de un turno.
 
+8. **Límite de desvío: ±2,5 puntos.** Una valoración no puede alejarse más de eso del nivel efectivo que la persona tiene hoy. Si alguien está en 4.0, el rango válido va de 1.5 a 6.5 — poner 1.0 o 7.0 "de chiste" se rechaza en la base, no se promedia.
+
+   Los otros frenos actúan **después** de recibir el voto; este actúa **antes**. La media recortada descarta extremos, pero recién con 10 votantes o más: con pocos, un amigo poniendo 1.0 sí movía el número.
+
+   Es una **ventana móvil, no un techo**: a medida que el efectivo se corrige, la ventana se corre con él. Una categoría mal declarada igual converge —despacio, como pide la regla del §16— pero nadie la hunde de un golpe. El nivel de referencia queda guardado en cada valoración (`subject_level_at_rating`) para poder auditar después si un voto era razonable en su contexto.
+
 ### 12.4 Los dos ejes del turno — están separados a propósito
 
 Un turno tiene **dos preguntas independientes**, y meterlas en un solo campo `status` es el error de modelado que hay que evitar:
@@ -1123,35 +1129,37 @@ Esto no se discute durante la construcción. Si un bloque necesita romper una de
 10. **Nunca se revela si un email tiene cuenta.** La respuesta a `inviteByEmail` es idéntica en ambos casos.
 11. **Ningún dato de un jugador se modifica por acción de otro** sin confirmación explícita del afectado. Excepción única y explícita: el **nivel efectivo**, que por diseño incorpora valoraciones de terceros (§12). El **declarado** sigue siendo intocable.
 12. **Las valoraciones de nivel individuales son privadas.** Se publica el agregado, nunca quién puso qué. Si esto se rompe, aparecen las represalias y el sistema deja de ser honesto.
-13. **Solo valora quien jugó.** Sesión confirmada por ambos, y el votante con 3 sesiones confirmadas mínimo. Sin excepciones por conveniencia de producto.
-14. **El efectivo no se mueve más de 0,5 puntos en 30 días.** Es el freno contra el brigading. Si alguien propone sacarlo "para que converja más rápido", la respuesta es no.
-15. Nada de datos de salud, documentos de identidad ni información financiera. Si aparece el requerimiento, se rediseña la sección 8.5 antes de tocar código.
+13. **Ninguna valoración se aparta más de ±2,5 del nivel efectivo actual.** Lo aplica un trigger en la base, no la validación del formulario.
+14. **Nada de estado de la app en `localStorage` ni `sessionStorage`.** Son por dispositivo: entrás desde el celular y ves datos viejos del que quedó en la notebook, sin forma de saber cuál es el bueno. La sesión va en **cookies** —que el servidor lee y valida en cada request— y todo lo demás sale de Supabase. Lo hace cumplir una regla de ESLint.
+15. **Solo valora quien jugó.** Sesión confirmada por ambos, y el votante con 3 sesiones confirmadas mínimo. Sin excepciones por conveniencia de producto.
+16. **El efectivo no se mueve más de 0,5 puntos en 30 días.** Es el freno contra el brigading. Si alguien propone sacarlo "para que converja más rápido", la respuesta es no.
+17. Nada de datos de salud, documentos de identidad ni información financiera. Si aparece el requerimiento, se rediseña la sección 8.5 antes de tocar código.
 
 ### Seguridad
-16. **RLS activo y forzado en todas las tablas.** Una tabla sin política es una tabla que nadie lee — y así se queda hasta que se escriba la política.
-17. **Toda Server Action:** sesión → Zod → rate limit → autorización → efecto → auditoría. Sin saltear pasos.
-18. **`service_role` nunca** en código que corra para un usuario. Solo en jobs de servidor.
-19. **Cero secretos en el bundle del cliente.** Regla de lint que falla si una variable secreta lleva `NEXT_PUBLIC_`.
-20. **Sin `dangerouslySetInnerHTML`** sobre contenido de usuario. Sin excepciones.
-21. **CSP sin `unsafe-inline` ni `unsafe-eval`.** Si una librería lo exige, se cambia la librería.
-22. **Email nunca sale del sistema de auth.** No aparece en ninguna respuesta que otro usuario pueda ver.
-23. **Nada de PII en logs, errores ni notificaciones push.**
-24. **Subidas de archivo:** validar magic bytes, re-codificar siempre (mata EXIF y payloads), límite de tamaño, tipos en lista blanca.
-25. **Dependencias:** `npm audit` en CI; una vulnerabilidad crítica o alta bloquea el deploy.
+18. **RLS activo y forzado en todas las tablas.** Una tabla sin política es una tabla que nadie lee — y así se queda hasta que se escriba la política.
+19. **Toda Server Action:** sesión → Zod → rate limit → autorización → efecto → auditoría. Sin saltear pasos.
+20. **`service_role` nunca** en código que corra para un usuario. Solo en jobs de servidor.
+21. **Cero secretos en el bundle del cliente.** Regla de lint que falla si una variable secreta lleva `NEXT_PUBLIC_`.
+22. **Sin `dangerouslySetInnerHTML`** sobre contenido de usuario. Sin excepciones.
+23. **CSP sin `unsafe-inline` ni `unsafe-eval`.** Si una librería lo exige, se cambia la librería.
+24. **Email nunca sale del sistema de auth.** No aparece en ninguna respuesta que otro usuario pueda ver.
+25. **Nada de PII en logs, errores ni notificaciones push.**
+26. **Subidas de archivo:** validar magic bytes, re-codificar siempre (mata EXIF y payloads), límite de tamaño, tipos en lista blanca.
+27. **Dependencias:** `npm audit` en CI; una vulnerabilidad crítica o alta bloquea el deploy.
 
 ### Legal
-26. **Atribución ODbL de OpenStreetMap** visible. Es una obligación de licencia, no una cortesía.
-27. **Prohibido scrapear** Playtomic, MATCHi o cualquier plataforma. Integración solo por canal oficial y con acuerdo.
-28. **GDPR desde el día uno:** exportar mis datos y borrar mi cuenta funcionan de verdad (borrado en cascada real, no un flag), disponibles sin escribir a soporte.
-29. **Edad mínima 16 años**, verificada en el registro.
-30. Analítica sin cookies (Plausible) — sin banner de consentimiento y sin rastreo entre sitios.
+28. **Atribución ODbL de OpenStreetMap** visible. Es una obligación de licencia, no una cortesía.
+29. **Prohibido scrapear** Playtomic, MATCHi o cualquier plataforma. Integración solo por canal oficial y con acuerdo.
+30. **GDPR desde el día uno:** exportar mis datos y borrar mi cuenta funcionan de verdad (borrado en cascada real, no un flag), disponibles sin escribir a soporte.
+31. **Edad mínima 16 años**, verificada en el registro.
+32. Analítica sin cookies (Plausible) — sin banner de consentimiento y sin rastreo entre sitios.
 
 ### Técnicas
-31. TypeScript en modo estricto. `any` prohibido salvo con comentario que justifique.
-32. Toda migración es reversible y está versionada en el repo.
-33. Todo instante se guarda en UTC. Toda visualización usa la zona horaria correcta explícitamente.
-34. Cero texto visible fuera de `messages/*.json`.
-35. Presupuesto de rendimiento móvil: LCP < 2,5 s en 4G, JS inicial < 200 KB comprimido.
+33. TypeScript en modo estricto. `any` prohibido salvo con comentario que justifique.
+34. Toda migración es reversible y está versionada en el repo.
+35. Todo instante se guarda en UTC. Toda visualización usa la zona horaria correcta explícitamente.
+36. Cero texto visible fuera de `messages/*.json`.
+37. Presupuesto de rendimiento móvil: LCP < 2,5 s en 4G, JS inicial < 200 KB comprimido.
 
 ---
 

@@ -1,0 +1,58 @@
+# Configuración del Supabase CLI.
+#
+#   supabase link --project-ref xajnoqtxuzpgtlzbjkxo
+#   supabase db push          # aplica supabase/migrations/ al proyecto
+#   supabase start            # stack local completo (necesita Docker)
+#   supabase gen types typescript --local > src/types/database.ts
+#
+# `npm run db:types` hace lo mismo que ese último comando sin necesitar el CLI,
+# así que el proyecto sigue funcionando en una máquina sin Docker.
+
+project_id = "sidelinepadel"
+
+[db]
+port = 54322          # el mismo que usa scripts/db-local.sh, para que
+major_version = 16    # DATABASE_URL sirva con cualquiera de los dos
+
+[db.migrations]
+schema_paths = []
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 200        # techo duro: ninguna consulta devuelve más que esto
+
+[studio]
+enabled = true
+port = 54323
+
+# Interceptor de correo local: los magic links del stack local se leen acá,
+# sin mandar nada a una dirección real.
+[inbucket]
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+
+# Sin contraseñas (§8.1): solo magic link y OAuth.
+enable_signup = true
+enable_anonymous_sign_ins = false
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+# Sin contraseña no hay nada que confirmar dos veces.
+double_confirm_changes = true
+max_frequency = "60s"   # freno al reenvío del enlace
+
+[auth.external.google]
+enabled = false         # se activa cuando haya credenciales de Google Cloud

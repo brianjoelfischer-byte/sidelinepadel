@@ -82,7 +82,7 @@ describe('nivel percibido', () => {
     const victima = await createUser({ declaredLevel: 4.0 });
     const novato = await createUser();
 
-    await rate(novato.id, victima.id, 1.0);
+    await rate(novato.id, victima.id, 1.5); // dentro de la ventana de +-2.5
     await db`SELECT app.refresh_level(${victima.id})`;
 
     const l = await levelOf(victima.id);
@@ -117,7 +117,7 @@ describe('nivel percibido', () => {
     await makeEligible(insistente.id);
 
     for (let i = 0; i < 10; i++) {
-      await rate(insistente.id, victima.id, 7.0);
+      await rate(insistente.id, victima.id, 6.5); // borde de la ventana
     }
     await db`SELECT app.refresh_level(${victima.id})`;
 
@@ -134,7 +134,7 @@ describe('nivel percibido', () => {
       for (let i = 0; i < n; i++) {
         const votante = await createUser();
         await makeEligible(votante.id);
-        await rate(votante.id, v.id, 6.0);
+        await rate(votante.id, v.id, 5.5); // dentro de +-2.5 de 3.0
       }
       await db`SELECT app.refresh_level(${v.id})`;
       return levelOf(v.id);
@@ -159,13 +159,13 @@ describe('nivel percibido', () => {
     for (let i = 0; i < 20; i++) {
       const votante = await createUser();
       await makeEligible(votante.id);
-      await rate(votante.id, victima.id, 1.0);
+      await rate(votante.id, victima.id, 3.5); // minimo permitido desde 6.0
     }
     await db`SELECT app.refresh_level(${victima.id})`;
 
     const l = await levelOf(victima.id);
     expect(l.raters).toBe(20);
-    // El objetivo sería ~2.0, pero el freno lo deja cerca de 5.5.
+    // El objetivo sería ~3.9, pero el freno lo deja cerca de 5.5.
     expect(l.effective).toBeGreaterThanOrEqual(5.4);
     expect(6.0 - l.effective).toBeLessThanOrEqual(0.6);
   });
@@ -195,7 +195,7 @@ describe('nivel percibido', () => {
     for (let i = 0; i < 10; i++) {
       const votante = await createUser();
       await makeEligible(votante.id);
-      await rate(votante.id, a.id, 1.0);
+      await rate(votante.id, a.id, 1.5); // minimo permitido desde 4.0
     }
     await db`SELECT app.refresh_level(${a.id})`;
 
