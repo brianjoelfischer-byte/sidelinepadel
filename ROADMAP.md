@@ -62,7 +62,7 @@ convence a nadie, pero un registro de partidos que funciona, sí.
 
 | Bloque | Qué trae |
 |---|---|
-| **3** · Auth y onboarding | Magic link + Google, guard de sesión, verificación de 16 años, onboarding de 5 pasos |
+| **3** · Auth y onboarding ✅ | Magic link + Google, guard de sesión, verificación de 16 años, onboarding de 5 pasos |
 | **4** · Perfil y niveles | Los tres niveles en pantalla, escala canónica ↔ categoría local, tarjeta de jugador, público/privado |
 | **5** · Sesiones | Cargar partido / entrenamiento / partido rápido, participantes, confirmación de etiqueta, historial |
 | **6** · Estadísticas | Ratio de victorias, racha, forma reciente, progresión, calendario |

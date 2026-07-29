@@ -190,14 +190,14 @@ No son sugerencias: fallan el build o el CI.
 
 ## Estado
 
-🚧 **En construcción.** Bloque 2 de 14 del plan de §09.
+🚧 **En construcción.** Bloque 3 de 14 del plan de §09.
 
 | | Bloque | Estado |
 |---|---|---|
 | 1 | Fundaciones, i18n, tokens, CI | ✅ |
 | 2 | Datos y RLS | ✅ |
 | 3 | Auth y onboarding | ⏳ siguiente |
-| 4 | Perfil y niveles | |
+| 4 | Perfil y niveles | ⏳ siguiente |
 | 5 | Sesiones y valoraciones | |
 | 6 | Estadísticas | |
 | 7 | Sedes | |
@@ -209,8 +209,9 @@ No son sugerencias: fallan el build o el CI.
 | 13 | Cumplimiento (GDPR) | |
 | 14 | Endurecimiento | |
 
-El esquema completo está definido y con RLS probado (68 tests). Todavía no hay
-autenticación real ni interfaz de producto.
+Esquema completo con RLS probado (85 tests de base), login sin contraseñas,
+onboarding de 5 pasos y el sistema de niveles con confianza adaptativa. Falta
+todo lo de registrar partidos en adelante.
 
 ## Créditos y licencias
 
