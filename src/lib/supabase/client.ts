@@ -2,7 +2,7 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 
-import { clientEnv } from '@/lib/env';
+import { requireSupabaseConfig } from '@/lib/env';
 
 /**
  * Cliente de Supabase para el navegador.
@@ -13,8 +13,6 @@ import { clientEnv } from '@/lib/env';
  * quisiéramos: el código del navegador es inspeccionable.
  */
 export function createClient() {
-  return createBrowserClient(
-    clientEnv.NEXT_PUBLIC_SUPABASE_URL,
-    clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
+  const config = requireSupabaseConfig();
+  return createBrowserClient(config.url, config.anonKey);
 }

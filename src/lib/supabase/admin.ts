@@ -2,7 +2,7 @@ import 'server-only';
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-import { clientEnv, serverEnv } from '@/lib/env';
+import { requireSupabaseConfig, serverEnv } from '@/lib/env';
 
 /**
  * Cliente administrativo. **Se saltea RLS por completo.**
@@ -27,7 +27,7 @@ export function createAdminClient() {
   }
 
   return createSupabaseClient(
-    clientEnv.NEXT_PUBLIC_SUPABASE_URL,
+    requireSupabaseConfig().url,
     SUPABASE_SERVICE_ROLE_KEY,
     {
       auth: { autoRefreshToken: false, persistSession: false },

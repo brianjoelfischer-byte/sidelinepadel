@@ -7,19 +7,20 @@
   },
   "scripts": {
     "dev": "next dev",
+    "predev": "node scripts/check-env.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:unit": "vitest run --project unit",
+    "test:rls": "vitest run --project rls",
     "check": "npm run typecheck && npm run lint && npm run test:unit",
     "db:start": "./scripts/db-local.sh start",
     "db:stop": "./scripts/db-local.sh stop",
     "db:reset": "./scripts/db-local.sh reset && node scripts/db-migrate.mjs --reset",
     "db:migrate": "node scripts/db-migrate.mjs",
-    "test:unit": "vitest run --project unit",
-    "test:rls": "vitest run --project rls",
     "db:bundle": "node scripts/db-bundle.mjs"
   },
   "overrides": {

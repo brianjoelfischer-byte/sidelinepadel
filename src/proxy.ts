@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 
-import { clientEnv } from '@/lib/env';
+import { supabaseConfig } from '@/lib/env';
 import { routing } from '@/i18n/routing';
 
 /**
@@ -23,9 +23,15 @@ const handleI18n = createIntlMiddleware(routing);
 export default async function proxy(request: NextRequest) {
   const response = handleI18n(request);
 
+  // Sin configuracion de Supabase no hay sesion que refrescar. El sitio sigue
+  // navegable en desarrollo en vez de tirar 500 en cada pagina; en produccion
+  // `supabaseConfig()` lanza, asi que este camino no existe alla.
+  const config = supabaseConfig();
+  if (!config) return response;
+
   const supabase = createServerClient(
-    clientEnv.NEXT_PUBLIC_SUPABASE_URL,
-    clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    config.url,
+    config.anonKey,
     {
       cookies: {
         getAll() {

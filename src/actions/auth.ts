@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 
-import { clientEnv } from '@/lib/env';
+import { siteUrl } from '@/lib/env';
 import { createClient } from '@/lib/supabase/server';
 import { defaultLocale, locales } from '@/i18n/routing';
 
@@ -42,7 +42,7 @@ export async function sendMagicLink(input: unknown): Promise<AuthResult> {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${clientEnv.NEXT_PUBLIC_SITE_URL}/auth/callback?locale=${locale}`,
+      emailRedirectTo: `${siteUrl}/auth/callback?locale=${locale}`,
       // El alta ocurre al entrar por primera vez; el perfil se crea después,
       // en el onboarding, donde se verifica la edad.
       shouldCreateUser: true,
@@ -71,7 +71,7 @@ export async function startGoogleSignIn(
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${clientEnv.NEXT_PUBLIC_SITE_URL}/auth/callback?locale=${locale}`,
+      redirectTo: `${siteUrl}/auth/callback?locale=${locale}`,
       // `skipBrowserRedirect` porque redirigimos desde el servidor: así el
       // flujo no depende de que el cliente tenga JS habilitado.
       skipBrowserRedirect: true,

@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-import { clientEnv } from '@/lib/env';
+import { requireSupabaseConfig } from '@/lib/env';
 
 /**
  * Cliente de Supabase para Server Components y Server Actions.
@@ -12,10 +12,11 @@ import { clientEnv } from '@/lib/env';
  */
 export async function createClient() {
   const cookieStore = await cookies();
+  const config = requireSupabaseConfig();
 
   return createServerClient(
-    clientEnv.NEXT_PUBLIC_SUPABASE_URL,
-    clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    config.url,
+    config.anonKey,
     {
       cookies: {
         getAll() {
