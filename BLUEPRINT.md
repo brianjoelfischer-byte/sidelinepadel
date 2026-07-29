@@ -793,19 +793,30 @@ El número 1–7 es el que manda: es lo que compara, lo que empareja y lo que se
 muestra grande. Pero "4,2" no le dice nada a alguien que toda su vida habló de
 cuartas y quintas, así que **al lado** aparece una categoría estimada.
 
-| Nivel | AR · UY · PY · BO · CL | ES |
-|---|---|---|
-| 1.0–1.9 | 8va | Iniciación |
-| 2.0–2.7 | 7ma | Iniciación alta |
-| 2.8–3.4 | 6ta | Baja |
-| 3.5–4.0 | 5ta | Media-Baja |
-| 4.1–4.6 | 4ta | Media |
-| 4.7–5.3 | 3ra | Media-Alta |
-| 5.4–6.0 | 2da | Alta |
-| 6.1–7.0 | 1ra | Competición |
+| Nivel | Ancho | AR · UY · PY · BO · CL | ES |
+|---|---|---|---|
+| 1.0–2.2 | 1,2 | 8va | Iniciación |
+| 2.3–3.0 | 0,8 | 7ma | Iniciación alta |
+| 3.1–3.7 | 0,7 | 6ta | Baja |
+| 3.8–4.4 | 0,7 | 5ta | Media-Baja |
+| 4.5–5.1 | 0,7 | 4ta | Media |
+| 5.2–5.9 | 0,8 | 3ra | Media-Alta |
+| 6.0–6.4 | **0,5** | 2da | Alta |
+| 6.5–7.0 | 0,6 | 1ra | Competición |
 
-Anclada en fuentes del deporte: 7ma es principiante consolidando golpes básicos
-con dificultad en las paredes; 6ta ya tiene regularidad y control moderado de
+**Los tramos no son de ancho parejo, y no deberían serlo:** la población de
+jugadores tampoco lo es. La mayoría recreativa vive entre 2.5 y 5.0, con el
+grueso en 3.0–4.0; los jugadores de club se estancan en 3.0–3.5 sin entrenar;
+pasar de 4.0 requiere clases o competir; y **arriba de 6.0 es territorio de ex
+profesionales y gente de torneo serio**.
+
+De ahí que 1ra y 2da vivan por encima de 6.0 —no en 5.4— y que los tramos se
+angosten hacia la cima: media décima allá arriba es una diferencia de juego
+enorme, mientras que entre "nunca agarré una pala" y "peloteo" hay mucho
+recorrido y poca gente estacionada.
+
+Anclajes cualitativos: 7ma es principiante consolidando golpes básicos con
+dificultad en las paredes; 6ta ya tiene regularidad y control moderado de
 derecha y revés; quien juega dos o tres veces por semana desde hace más de un
 año cae entre 5ta y 4ta.
 
@@ -813,7 +824,7 @@ año cae entre 5ta y 4ta.
 categorías argentinas salen de resultados en torneos federados —se asciende por
 puntos— así que alguien que nunca compitió no tiene categoría, y dos personas
 con el mismo nivel real pueden estar en categorías distintas según cuánto
-torneo hayan jugado. Se muestra también el rango que cubre ("4ta ≈ 4.1–4.6")
+torneo hayan jugado. Se muestra también el rango que cubre ("4ta ≈ 4.5–5.1")
 para que la estimación no parezca más precisa de lo que es.
 
 ### 12.2 Cómo se calcula el percibido

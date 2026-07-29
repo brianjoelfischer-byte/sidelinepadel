@@ -52,27 +52,50 @@ interface CategoryRange {
   label: string;
 }
 
+/**
+ * Los tramos NO son de ancho parejo, y no debería sorprender: la población de
+ * jugadores tampoco lo es.
+ *
+ * Lo que dicen los datos del deporte:
+ *   · la mayoría recreativa vive entre 2.5 y 5.0, con el grueso en 3.0–4.0
+ *   · los jugadores de club se estancan en 3.0–3.5 sin entrenar
+ *   · pasar de 4.0 requiere clases o competir
+ *   · arriba de 6.0 es territorio raro: ex profesionales y gente de torneo
+ *
+ * De ahí salen dos propiedades:
+ *
+ * **Arriba los tramos son angostos (0,5).** Si 6.0+ ya es casi profesional,
+ * 1ra y 2da tienen que vivir ahí. Media décima en la cima es una diferencia
+ * de juego enorme; en la base, no tanto.
+ *
+ * **Abajo son anchos (1,3).** Entre "nunca agarré una pala" y "peloteo" hay
+ * mucho recorrido y poca gente estacionada: no hace falta partirlo fino.
+ *
+ * En el medio quedan parejos (0,7) porque ahí está casi todo el mundo y cada
+ * décima separa gente real.
+ */
+
 /** Argentina, Uruguay, Paraguay, Bolivia y Chile: numeradas al revés. */
 const CATEGORIES_AR: CategoryRange[] = [
-  { max: 1.9, label: '8va' },
-  { max: 2.7, label: '7ma' },
-  { max: 3.4, label: '6ta' },
-  { max: 4.0, label: '5ta' },
-  { max: 4.6, label: '4ta' },
-  { max: 5.3, label: '3ra' },
-  { max: 6.0, label: '2da' },
-  { max: 7.0, label: '1ra' },
+  { max: 2.2, label: '8va' }, // 1.2 de ancho
+  { max: 3.0, label: '7ma' }, // 0.8
+  { max: 3.7, label: '6ta' }, // 0.7
+  { max: 4.4, label: '5ta' }, // 0.7
+  { max: 5.1, label: '4ta' }, // 0.7
+  { max: 5.9, label: '3ra' }, // 0.8
+  { max: 6.4, label: '2da' }, // 0.5  ← se angosta
+  { max: 7.0, label: '1ra' }, // 0.6
 ];
 
-/** España: por nombre, no por número. */
+/** España: por nombre, no por número. Mismos cortes. */
 const CATEGORIES_ES: CategoryRange[] = [
-  { max: 1.9, label: 'Iniciación' },
-  { max: 2.7, label: 'Iniciación alta' },
-  { max: 3.4, label: 'Baja' },
-  { max: 4.0, label: 'Media-Baja' },
-  { max: 4.6, label: 'Media' },
-  { max: 5.3, label: 'Media-Alta' },
-  { max: 6.0, label: 'Alta' },
+  { max: 2.2, label: 'Iniciación' },
+  { max: 3.0, label: 'Iniciación alta' },
+  { max: 3.7, label: 'Baja' },
+  { max: 4.4, label: 'Media-Baja' },
+  { max: 5.1, label: 'Media' },
+  { max: 5.9, label: 'Media-Alta' },
+  { max: 6.4, label: 'Alta' },
   { max: 7.0, label: 'Competición' },
 ];
 

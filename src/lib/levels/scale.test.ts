@@ -39,8 +39,8 @@ describe('categoría estimada', () => {
    * Sin esto, un argentino y un sueco nunca aparecerían en el mismo turno.
    */
   it('traduce el mismo nivel a la categoría de cada país', () => {
-    expect(localCategory(4.2, 'AR')).toBe('4ta');
-    expect(localCategory(4.2, 'ES')).toBe('Media');
+    expect(localCategory(4.2, 'AR')).toBe('5ta');
+    expect(localCategory(4.2, 'ES')).toBe('Media-Baja');
   });
 
   /**
@@ -50,19 +50,38 @@ describe('categoría estimada', () => {
    */
   it('cubre las ocho categorías del sistema argentino', () => {
     expect(localCategory(1.5, 'AR')).toBe('8va');
-    expect(localCategory(2.5, 'AR')).toBe('7ma');
-    expect(localCategory(3.0, 'AR')).toBe('6ta');
-    expect(localCategory(3.8, 'AR')).toBe('5ta');
-    expect(localCategory(4.5, 'AR')).toBe('4ta');
-    expect(localCategory(5.0, 'AR')).toBe('3ra');
-    expect(localCategory(5.7, 'AR')).toBe('2da');
+    expect(localCategory(2.6, 'AR')).toBe('7ma');
+    expect(localCategory(3.4, 'AR')).toBe('6ta');
+    expect(localCategory(4.1, 'AR')).toBe('5ta');
+    expect(localCategory(4.8, 'AR')).toBe('4ta');
+    expect(localCategory(5.4, 'AR')).toBe('3ra');
+    expect(localCategory(6.2, 'AR')).toBe('2da');
     expect(localCategory(6.8, 'AR')).toBe('1ra');
+  });
+
+  /**
+   * Los tramos se angostan hacia arriba. Media décima cerca de la cima es una
+   * diferencia de juego enorme; en la base, no tanto. Y arriba de 6.0 es
+   * territorio de ex profesionales, así que 1ra y 2da viven ahí — no en 5.4.
+   */
+  it('los tramos altos son más angostos que los bajos', () => {
+    const ancho = (nivel: number) => {
+      const r = categoryRange(nivel, 'AR');
+      return r === null ? null : Math.round((r.max - r.min) * 10) / 10;
+    };
+
+    const base = ancho(1.5); // 8va
+    const cima = ancho(6.2); // 2da
+
+    expect(base).not.toBeNull();
+    expect(cima).not.toBeNull();
+    expect(cima!).toBeLessThan(base!);
   });
 
   it('devuelve el rango que cubre cada categoría', () => {
     // Mostrarlo evita que la estimación parezca más precisa de lo que es.
-    expect(categoryRange(4.5, 'AR')).toEqual({ min: 4.1, max: 4.6 });
-    expect(categoryRange(1.2, 'AR')).toEqual({ min: 1.0, max: 1.9 });
+    expect(categoryRange(4.8, 'AR')).toEqual({ min: 4.5, max: 5.1 });
+    expect(categoryRange(1.2, 'AR')).toEqual({ min: 1.0, max: 2.2 });
     expect(categoryRange(4.5, 'SE')).toBeNull();
   });
 
@@ -80,7 +99,7 @@ describe('categoría estimada', () => {
   });
 
   it('no distingue mayúsculas en el código de país', () => {
-    expect(localCategory(4.2, 'ar')).toBe('4ta');
+    expect(localCategory(4.2, 'ar')).toBe('5ta');
   });
 });
 
