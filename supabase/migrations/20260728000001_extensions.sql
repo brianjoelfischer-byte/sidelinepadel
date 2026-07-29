@@ -6,6 +6,15 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;   -- gen_random_uuid, digest
 CREATE EXTENSION IF NOT EXISTS citext;     -- emails case-insensitive
 CREATE EXTENSION IF NOT EXISTS postgis;    -- geografía de sedes (§13)
 
+-- Permisos de USO sobre `public`, explícitos.
+--
+-- Un proyecto Supabase nuevo ya los trae, pero apoyarse en ese default es
+-- frágil: si alguien recrea el esquema (un reset, una restauración), el nuevo
+-- `public` nace sin grants y TODAS las consultas fallan con "permission denied
+-- for schema public" — un error que no menciona ninguna tabla y cuesta rastrear.
+-- Dejarlo escrito hace que el esquema se baste a sí mismo.
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+
 -- Esquema propio para funciones internas. No se expone por la API.
 CREATE SCHEMA IF NOT EXISTS app;
 REVOKE ALL ON SCHEMA app FROM PUBLIC;

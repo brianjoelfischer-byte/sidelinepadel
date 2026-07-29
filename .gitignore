@@ -37,3 +37,6 @@ yarn-error.log*
 
 # deploy
 .vercel
+
+# generado por scripts/db-bundle.mjs — se regenera, no se versiona
+supabase/bundle.sql

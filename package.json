@@ -19,7 +19,8 @@
     "db:reset": "./scripts/db-local.sh reset && node scripts/db-migrate.mjs --reset",
     "db:migrate": "node scripts/db-migrate.mjs",
     "test:unit": "vitest run --project unit",
-    "test:rls": "vitest run --project rls"
+    "test:rls": "vitest run --project rls",
+    "db:bundle": "node scripts/db-bundle.mjs"
   },
   "overrides": {
     "@eslint/config-array": "^0.23.5",
