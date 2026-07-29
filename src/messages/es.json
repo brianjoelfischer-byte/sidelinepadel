@@ -13,7 +13,8 @@
     "venues": "Sedes",
     "profile": "Perfil",
     "settings": "Ajustes",
-    "addSession": "Registrar"
+    "addSession": "Registrar",
+    "signOut": "Cerrar sesión"
   },
   "landing": {
     "heroTitle": "Tu pádel, medido de verdad",

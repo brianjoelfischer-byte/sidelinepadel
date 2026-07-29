@@ -50,16 +50,25 @@ export async function requireUser(locale: Locale): Promise<SessionUser> {
   return user;
 }
 
+/**
+ * Columnas del perfil que usa la app.
+ *
+ * Va como UN literal y no concatenado: Supabase infiere el tipo del resultado
+ * a partir del texto del select, y una concatenación lo degrada a `string`,
+ * con lo que el resultado queda sin tipar.
+ *
+ * `birth_date` no está y no debe estar: solo sirvió para verificar la edad y
+ * no se expone nunca (§8.5).
+ */
+const PROFILE_COLUMNS =
+  'id, display_name, slug, avatar_path, country_code, locale, timezone, declared_level, perceived_level, effective_level, rater_count, preferred_side, preferred_hand, racket, is_public, role' as const;
+
 /** El perfil del usuario, o `null` si todavía no completó el onboarding. */
 export async function getProfile(userId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from('profiles')
-    .select(
-      'id, display_name, slug, avatar_path, country_code, locale, timezone, ' +
-        'declared_level, perceived_level, effective_level, rater_count, ' +
-        'preferred_side, preferred_hand, racket, is_public, role',
-    )
+    .select(PROFILE_COLUMNS)
     .eq('id', userId)
     .is('deleted_at', null)
     .maybeSingle();

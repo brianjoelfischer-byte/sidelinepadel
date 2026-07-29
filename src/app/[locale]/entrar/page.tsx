@@ -6,14 +6,15 @@ import { Logo } from '@/components/logo';
 import { getUser } from '@/lib/auth/session';
 import { hasSupabaseConfig } from '@/lib/env';
 import { redirect } from '@/i18n/navigation';
-import type { Locale } from '@/i18n/routing';
+import { toLocale } from '@/i18n/routing';
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params;
+  const { locale: raw } = await params;
+  const locale = toLocale(raw);
   const t = await getTranslations({ locale, namespace: 'auth' });
   return { title: t('title') };
 }
@@ -22,10 +23,11 @@ export default async function LoginPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ locale: Locale }>;
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { locale } = await params;
+  const { locale: raw } = await params;
+  const locale = toLocale(raw);
   setRequestLocale(locale);
 
   const t = await getTranslations({ locale, namespace: 'auth' });

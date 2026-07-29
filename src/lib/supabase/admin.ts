@@ -3,6 +3,7 @@ import 'server-only';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 import { requireSupabaseConfig, serverEnv } from '@/lib/env';
+import type { Database } from '@/types/database';
 
 /**
  * Cliente administrativo. **Se saltea RLS por completo.**
@@ -26,7 +27,7 @@ export function createAdminClient() {
     );
   }
 
-  return createSupabaseClient(
+  return createSupabaseClient<Database>(
     requireSupabaseConfig().url,
     SUPABASE_SERVICE_ROLE_KEY,
     {

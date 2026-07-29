@@ -16,3 +16,16 @@ export const routing = defineRouting({
   // Sin prefijo el locale por defecto queda ambiguo para SEO y para el cache.
   localePrefix: 'always',
 });
+
+/**
+ * Estrecha el `locale` que llega por params a nuestro tipo.
+ *
+ * Next tipa los params de página como `string`, pero el layout de `[locale]`
+ * ya devuelve 404 ante un idioma desconocido: cuando esto corre, el valor es
+ * válido. El fallback existe solo para satisfacer al compilador.
+ */
+export function toLocale(value: string): Locale {
+  return (locales as readonly string[]).includes(value)
+    ? (value as Locale)
+    : defaultLocale;
+}

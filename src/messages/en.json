@@ -13,7 +13,8 @@
     "venues": "Venues",
     "profile": "Profile",
     "settings": "Settings",
-    "addSession": "Log match"
+    "addSession": "Log match",
+    "signOut": "Sign out"
   },
   "landing": {
     "heroTitle": "Your padel, actually measured",

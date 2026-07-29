@@ -3,6 +3,7 @@
 import { createBrowserClient } from '@supabase/ssr';
 
 import { requireSupabaseConfig } from '@/lib/env';
+import type { Database } from '@/types/database';
 
 /**
  * Cliente de Supabase para el navegador.
@@ -14,5 +15,5 @@ import { requireSupabaseConfig } from '@/lib/env';
  */
 export function createClient() {
   const config = requireSupabaseConfig();
-  return createBrowserClient(config.url, config.anonKey);
+  return createBrowserClient<Database>(config.url, config.anonKey);
 }
