@@ -61,5 +61,75 @@
     "genericTitle": "Something went wrong",
     "genericBody": "Please try again in a moment.",
     "backHome": "Go home"
+  },
+  "auth": {
+    "title": "Sign in to Sideline",
+    "subtitle": "No passwords. We'll email you a link.",
+    "emailLabel": "Your email",
+    "emailPlaceholder": "you@example.com",
+    "sendLink": "Email me a link",
+    "sending": "Sending…",
+    "google": "Continue with Google",
+    "or": "or",
+    "checkInbox": "Check your inbox",
+    "checkInboxBody": "If that address has an account, a sign-in link is on its way. It expires in 15 minutes.",
+    "backToEmail": "Use another email",
+    "legal": "By signing in you accept the terms and the privacy policy.",
+    "minAge": "You must be 16 or older to use Sideline.",
+    "errors": {
+      "invalid_email": "That email doesn't look valid.",
+      "rate_limited": "Too many attempts. Wait a few minutes.",
+      "unavailable": "We couldn't send the link. Please try again.",
+      "missing_code": "That link is incomplete. Request a new one.",
+      "invalid_code": "That link expired or was already used. Request a new one."
+    }
+  },
+  "onboarding": {
+    "stepOf": "Step {current} of {total}",
+    "next": "Continue",
+    "back": "Back",
+    "finish": "Create my profile",
+    "saving": "Creating…",
+    "name": {
+      "title": "What's your name?",
+      "subtitle": "This is how other players will see you.",
+      "label": "First and last name",
+      "placeholder": "Brian Fischer"
+    },
+    "birth": {
+      "title": "When were you born?",
+      "subtitle": "Only used to check the minimum age. Never shown to anyone.",
+      "label": "Date of birth"
+    },
+    "country": {
+      "title": "Where are you from?",
+      "subtitle": "Sets your flag and how your category is displayed.",
+      "label": "Country"
+    },
+    "game": {
+      "title": "How do you play?",
+      "subtitle": "Your dominant hand and the side you're comfortable on.",
+      "handLabel": "Dominant hand",
+      "left": "Left-handed",
+      "right": "Right-handed",
+      "sideLabel": "Side",
+      "drive": "Drive (right)",
+      "reves": "Backhand (left)",
+      "indistinto": "Either",
+      "racketLabel": "Racket (optional)",
+      "racketPlaceholder": "Nox AT10 Genius"
+    },
+    "level": {
+      "title": "What's your level?",
+      "subtitle": "Be honest: you can change it later, and the community weighs in too.",
+      "communityNote": "As you play, the people you share a court with will rate your level. Your declaration and those ratings combine into the level we use to match you."
+    },
+    "errors": {
+      "invalid_input": "Something's off — check the fields.",
+      "under_minimum_age": "You must be 16 or older to create an account.",
+      "already_exists": "Your profile already exists.",
+      "unavailable": "We couldn't create the profile. Please try again.",
+      "not_authenticated": "Your session ended. Please sign in again."
+    }
   }
 }

@@ -50,9 +50,14 @@ export default async function proxy(request: NextRequest) {
 
 export const config = {
   /**
-   * Todo menos rutas internas de Next, la API y archivos con extensión.
-   * `/i/...` (invitaciones) y `/api/...` quedan fuera a propósito: no llevan
-   * prefijo de idioma porque se entra por token, no por navegación.
+   * Todo menos rutas internas de Next y las que NO llevan prefijo de idioma:
+   *
+   *   auth/  — el callback de Supabase. La URL la arma el proveedor de auth,
+   *            no nuestra navegación. Si el proxy le antepusiera el idioma,
+   *            `/auth/callback` se convertiría en `/es/auth/callback` y el
+   *            route handler no existiría ahí: el login no funcionaría nunca.
+   *   i/     — invitaciones: se entra por token, no navegando.
+   *   api/   — endpoints internos y cron.
    */
-  matcher: ['/((?!api|_next|_vercel|i/|.*\\..*).*)'],
+  matcher: ['/((?!api|auth|_next|_vercel|i/|.*\\..*).*)'],
 };

@@ -61,5 +61,75 @@
     "genericTitle": "Algo salió mal",
     "genericBody": "Probá de nuevo en un momento.",
     "backHome": "Ir al inicio"
+  },
+  "auth": {
+    "title": "Entrá a Sideline",
+    "subtitle": "Sin contraseñas. Te mandamos un enlace y listo.",
+    "emailLabel": "Tu email",
+    "emailPlaceholder": "vos@ejemplo.com",
+    "sendLink": "Mandame el enlace",
+    "sending": "Enviando…",
+    "google": "Continuar con Google",
+    "or": "o",
+    "checkInbox": "Revisá tu correo",
+    "checkInboxBody": "Si esa dirección tiene cuenta, te va a llegar un enlace para entrar. Vence en 15 minutos.",
+    "backToEmail": "Usar otro email",
+    "legal": "Al entrar aceptás los términos y la política de privacidad.",
+    "minAge": "Tenés que tener 16 años o más para usar Sideline.",
+    "errors": {
+      "invalid_email": "Ese email no parece válido.",
+      "rate_limited": "Demasiados intentos. Esperá unos minutos.",
+      "unavailable": "No pudimos enviar el enlace. Probá de nuevo.",
+      "missing_code": "El enlace está incompleto. Pedí uno nuevo.",
+      "invalid_code": "El enlace venció o ya se usó. Pedí uno nuevo."
+    }
+  },
+  "onboarding": {
+    "stepOf": "Paso {current} de {total}",
+    "next": "Continuar",
+    "back": "Atrás",
+    "finish": "Crear mi perfil",
+    "saving": "Creando…",
+    "name": {
+      "title": "¿Cómo te llamás?",
+      "subtitle": "Así te van a ver los demás jugadores.",
+      "label": "Nombre y apellido",
+      "placeholder": "Brian Fischer"
+    },
+    "birth": {
+      "title": "¿Cuándo naciste?",
+      "subtitle": "Lo usamos solo para verificar la edad mínima. No se muestra a nadie.",
+      "label": "Fecha de nacimiento"
+    },
+    "country": {
+      "title": "¿De dónde sos?",
+      "subtitle": "Define tu bandera y cómo se muestra tu categoría.",
+      "label": "País"
+    },
+    "game": {
+      "title": "¿Cómo jugás?",
+      "subtitle": "Tu mano hábil y el lado de la cancha donde te sentís cómodo.",
+      "handLabel": "Mano hábil",
+      "left": "Zurdo",
+      "right": "Diestro",
+      "sideLabel": "Lado",
+      "drive": "Drive (derecha)",
+      "reves": "Revés (izquierda)",
+      "indistinto": "Indistinto",
+      "racketLabel": "Pala (opcional)",
+      "racketPlaceholder": "Nox AT10 Genius"
+    },
+    "level": {
+      "title": "¿Cuál es tu nivel?",
+      "subtitle": "Sé sincero: lo podés cambiar después, y la comunidad también opina.",
+      "communityNote": "A medida que juegues, los que compartan cancha con vos van a valorar tu nivel. Tu declaración y esas valoraciones se combinan en el nivel que usamos para emparejarte."
+    },
+    "errors": {
+      "invalid_input": "Revisá los datos, algo no está bien.",
+      "under_minimum_age": "Tenés que tener 16 años o más para crear una cuenta.",
+      "already_exists": "Tu perfil ya estaba creado.",
+      "unavailable": "No pudimos crear el perfil. Probá de nuevo.",
+      "not_authenticated": "Se cerró tu sesión. Entrá de nuevo."
+    }
   }
 }
