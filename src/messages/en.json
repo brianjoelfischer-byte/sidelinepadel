@@ -46,7 +46,10 @@
       "advanced": "Advanced",
       "expert": "Expert",
       "elite": "Elite"
-    }
+    },
+    "categoryApprox": "Approximate category, estimated from your declared level and what other players rated you. Not an official tournament category.",
+    "categoryApproxWithRange": "Estimated from your declared level and what other players rated you. Covers {min} to {max}. Not an official tournament category.",
+    "categoryHint": "(approximate)"
   },
   "common": {
     "loading": "Loading…",

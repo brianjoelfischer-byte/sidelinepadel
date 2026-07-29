@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  categoryRange,
   clampLevel,
   defaultLevelBand,
   formatLevel,
@@ -32,14 +33,37 @@ describe('escala canónica', () => {
   });
 });
 
-describe('categoría local', () => {
+describe('categoría estimada', () => {
   /**
    * El punto del §11: el valor canónico es el mismo, solo cambia la etiqueta.
    * Sin esto, un argentino y un sueco nunca aparecerían en el mismo turno.
    */
   it('traduce el mismo nivel a la categoría de cada país', () => {
-    expect(localCategory(4.2, 'AR')).toBe('3ra');
-    expect(localCategory(4.2, 'ES')).toBe('Media-Alta');
+    expect(localCategory(4.2, 'AR')).toBe('4ta');
+    expect(localCategory(4.2, 'ES')).toBe('Media');
+  });
+
+  /**
+   * Anclajes tomados de fuentes del deporte: 7ma es principiante con
+   * dificultad en las paredes, 6ta ya tiene regularidad, y quien juega 2-3
+   * veces por semana hace más de un año cae entre 5ta y 4ta.
+   */
+  it('cubre las ocho categorías del sistema argentino', () => {
+    expect(localCategory(1.5, 'AR')).toBe('8va');
+    expect(localCategory(2.5, 'AR')).toBe('7ma');
+    expect(localCategory(3.0, 'AR')).toBe('6ta');
+    expect(localCategory(3.8, 'AR')).toBe('5ta');
+    expect(localCategory(4.5, 'AR')).toBe('4ta');
+    expect(localCategory(5.0, 'AR')).toBe('3ra');
+    expect(localCategory(5.7, 'AR')).toBe('2da');
+    expect(localCategory(6.8, 'AR')).toBe('1ra');
+  });
+
+  it('devuelve el rango que cubre cada categoría', () => {
+    // Mostrarlo evita que la estimación parezca más precisa de lo que es.
+    expect(categoryRange(4.5, 'AR')).toEqual({ min: 4.1, max: 4.6 });
+    expect(categoryRange(1.2, 'AR')).toEqual({ min: 1.0, max: 1.9 });
+    expect(categoryRange(4.5, 'SE')).toBeNull();
   });
 
   it('Chile y Uruguay usan el sistema argentino', () => {
@@ -56,7 +80,7 @@ describe('categoría local', () => {
   });
 
   it('no distingue mayúsculas en el código de país', () => {
-    expect(localCategory(4.2, 'ar')).toBe('3ra');
+    expect(localCategory(4.2, 'ar')).toBe('4ta');
   });
 });
 

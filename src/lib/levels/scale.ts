@@ -29,29 +29,52 @@ const BANDS = [
 export type LevelBandKey = (typeof BANDS)[number]['key'];
 
 /**
- * Categoría local por país. La etiqueta es cosmética: dos jugadores con el
- * mismo valor canónico son equivalentes aunque su país los llame distinto.
+ * Categoría estimada a partir del nivel canónico.
+ *
+ * **Es una APROXIMACIÓN, no una categoría oficial.** Las categorías argentinas
+ * salen de resultados en torneos federados: se asciende por puntos, no por
+ * cómo jugás un martes. Alguien que nunca compitió no tiene categoría, y dos
+ * personas con el mismo nivel real pueden estar en categorías distintas según
+ * cuánto torneo hayan jugado.
+ *
+ * Sirve igual, y bastante: "4.2" no le dice nada a alguien que toda su vida
+ * habló de cuartas y quintas. La estimación traduce a un vocabulario que ya
+ * entiende, siempre etiquetada como lo que es.
+ *
+ * Anclajes usados, de fuentes del deporte:
+ *   · 7ma — principiante, golpes básicos, dificultad con las paredes
+ *   · 6ta — regularidad, control moderado de derecha y revés
+ *   · 5ta/4ta — juega 2 o 3 veces por semana desde hace más de un año
+ *   · 1ra — nivel profesional
  */
-const LOCAL_CATEGORIES: Record<string, Partial<Record<LevelBandKey, string>>> = {
-  // Argentina, Uruguay, Paraguay, Bolivia, Chile — categorías numeradas al revés
-  AR: {
-    beginner: '8va',
-    improver: '7ma / 6ta',
-    intermediate: '5ta / 4ta',
-    advanced: '3ra',
-    expert: '2da',
-    elite: '1ra',
-  },
-  // España — categorías por nombre
-  ES: {
-    beginner: 'Iniciación',
-    improver: 'Baja',
-    intermediate: 'Media',
-    advanced: 'Media-Alta',
-    expert: 'Alta',
-    elite: 'Competición',
-  },
-};
+interface CategoryRange {
+  max: number;
+  label: string;
+}
+
+/** Argentina, Uruguay, Paraguay, Bolivia y Chile: numeradas al revés. */
+const CATEGORIES_AR: CategoryRange[] = [
+  { max: 1.9, label: '8va' },
+  { max: 2.7, label: '7ma' },
+  { max: 3.4, label: '6ta' },
+  { max: 4.0, label: '5ta' },
+  { max: 4.6, label: '4ta' },
+  { max: 5.3, label: '3ra' },
+  { max: 6.0, label: '2da' },
+  { max: 7.0, label: '1ra' },
+];
+
+/** España: por nombre, no por número. */
+const CATEGORIES_ES: CategoryRange[] = [
+  { max: 1.9, label: 'Iniciación' },
+  { max: 2.7, label: 'Iniciación alta' },
+  { max: 3.4, label: 'Baja' },
+  { max: 4.0, label: 'Media-Baja' },
+  { max: 4.6, label: 'Media' },
+  { max: 5.3, label: 'Media-Alta' },
+  { max: 6.0, label: 'Alta' },
+  { max: 7.0, label: 'Competición' },
+];
 
 /** Países que comparten el sistema de categorías argentino. */
 const SHARES_AR_SYSTEM = new Set(['AR', 'UY', 'PY', 'BO', 'CL']);
@@ -73,16 +96,53 @@ export function levelBand(value: number): LevelBandKey {
 }
 
 /**
- * Etiqueta local del nivel, o `null` si el país no tiene un sistema propio.
+ * Categoría estimada para el país, o `null` si ese país no usa categorías.
  * Cuando es `null`, la interfaz muestra la banda genérica traducida.
+ *
+ * Siempre se muestra etiquetada como aproximación: nunca como la categoría
+ * oficial de nadie.
  */
 export function localCategory(value: number, countryCode: string): string | null {
   const country = countryCode.toUpperCase();
-  const table = SHARES_AR_SYSTEM.has(country)
-    ? LOCAL_CATEGORIES.AR
-    : LOCAL_CATEGORIES[country];
 
-  return table?.[levelBand(value)] ?? null;
+  const table = SHARES_AR_SYSTEM.has(country)
+    ? CATEGORIES_AR
+    : country === 'ES'
+      ? CATEGORIES_ES
+      : null;
+
+  if (!table) return null;
+
+  const level = clampLevel(value);
+  return table.find((range) => level <= range.max)?.label ?? null;
+}
+
+/**
+ * Rango de nivel que cubre una categoría, para poder mostrar "4ta ≈ 4.1–4.6".
+ * Sin eso la estimación parece más precisa de lo que es.
+ */
+export function categoryRange(
+  value: number,
+  countryCode: string,
+): { min: number; max: number } | null {
+  const country = countryCode.toUpperCase();
+  const table = SHARES_AR_SYSTEM.has(country)
+    ? CATEGORIES_AR
+    : country === 'ES'
+      ? CATEGORIES_ES
+      : null;
+
+  if (!table) return null;
+
+  const level = clampLevel(value);
+  const index = table.findIndex((range) => level <= range.max);
+  if (index === -1) return null;
+
+  const previous = table[index - 1];
+  return {
+    min: previous ? clampLevel(previous.max + 0.1) : LEVEL_MIN,
+    max: table[index]!.max,
+  };
 }
 
 /**

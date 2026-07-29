@@ -787,6 +787,35 @@ El jugador declara su nivel, pero **la comunidad tiene voto**. Son tres valores 
 
 Los tres son **públicos** en el perfil. Que se vean juntos es el punto: si declarás 5.0 y el percibido dice 3.8, cualquiera lo nota antes de invitarte.
 
+#### Categoría estimada
+
+El número 1–7 es el que manda: es lo que compara, lo que empareja y lo que se
+muestra grande. Pero "4,2" no le dice nada a alguien que toda su vida habló de
+cuartas y quintas, así que **al lado** aparece una categoría estimada.
+
+| Nivel | AR · UY · PY · BO · CL | ES |
+|---|---|---|
+| 1.0–1.9 | 8va | Iniciación |
+| 2.0–2.7 | 7ma | Iniciación alta |
+| 2.8–3.4 | 6ta | Baja |
+| 3.5–4.0 | 5ta | Media-Baja |
+| 4.1–4.6 | 4ta | Media |
+| 4.7–5.3 | 3ra | Media-Alta |
+| 5.4–6.0 | 2da | Alta |
+| 6.1–7.0 | 1ra | Competición |
+
+Anclada en fuentes del deporte: 7ma es principiante consolidando golpes básicos
+con dificultad en las paredes; 6ta ya tiene regularidad y control moderado de
+derecha y revés; quien juega dos o tres veces por semana desde hace más de un
+año cae entre 5ta y 4ta.
+
+**Siempre se muestra como aproximación, nunca como categoría oficial.** Las
+categorías argentinas salen de resultados en torneos federados —se asciende por
+puntos— así que alguien que nunca compitió no tiene categoría, y dos personas
+con el mismo nivel real pueden estar en categorías distintas según cuánto
+torneo hayan jugado. Se muestra también el rango que cubre ("4ta ≈ 4.1–4.6")
+para que la estimación no parezca más precisa de lo que es.
+
 ### 12.2 Cómo se calcula el percibido
 
 Cuando registrás un partido, le asignás un nivel a cada rival y compañero. Eso genera una fila en `level_ratings`. El percibido de una persona se calcula así:

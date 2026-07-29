@@ -213,8 +213,18 @@ export function OnboardingFlow({
                 {draft.declaredLevel.toFixed(1).replace('.', locale === 'es' ? ',' : '.')}
               </p>
               <p className="mt-2 text-sm uppercase tracking-widest text-fg-secondary">
-                {localLabel ?? bandLabel}
+                {bandLabel}
               </p>
+
+              {/* La equivalencia ayuda a elegir: "4,2" no le dice nada a quien
+                  toda su vida habló de cuartas y quintas. Va marcada como
+                  aproximación — la categoría real sale de torneos. */}
+              {localLabel ? (
+                <p className="mt-3 text-sm text-accent-2">
+                  ≈ {localLabel}{' '}
+                  <span className="text-fg-muted">{tLevel('categoryHint')}</span>
+                </p>
+              ) : null}
 
               <input
                 type="range"

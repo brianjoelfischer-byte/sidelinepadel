@@ -46,7 +46,10 @@
       "advanced": "Media-Alta",
       "expert": "Alta",
       "elite": "Competición"
-    }
+    },
+    "categoryApprox": "Categoría aproximada, estimada a partir de tu nivel declarado y de lo que valoraron otros jugadores. No es una categoría oficial de torneo.",
+    "categoryApproxWithRange": "Aproximación a partir de tu nivel declarado y de lo que valoraron otros jugadores. Cubre de {min} a {max}. No es una categoría oficial de torneo.",
+    "categoryHint": "(aproximado)"
   },
   "common": {
     "loading": "Cargando…",
