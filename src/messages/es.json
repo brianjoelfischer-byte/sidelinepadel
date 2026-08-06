@@ -135,5 +135,61 @@
       "unavailable": "No pudimos crear el perfil. Probá de nuevo.",
       "not_authenticated": "Se cerró tu sesión. Entrá de nuevo."
     }
+  },
+  "session": {
+    "title": "Registrar sesión",
+    "kind": {
+      "match": "Partido",
+      "quick": "Partido rápido",
+      "training": "Entrenamiento"
+    },
+    "kindHint": {
+      "match": "Con el marcador set por set. El resultado sale solo.",
+      "quick": "Solo quién ganó, sin anotar los juegos.",
+      "training": "Práctica o clase, sin resultado."
+    },
+    "date": "Fecha",
+    "venue": "Dónde jugaste",
+    "venuePlaceholder": "Club, cancha o lugar",
+    "score": "Marcador",
+    "setNumber": "Set {n}",
+    "you": "Vos",
+    "them": "Rivales",
+    "addSet": "Agregar set",
+    "removeSet": "Quitar el último set",
+    "result": {
+      "label": "Resultado",
+      "win": "Victoria",
+      "loss": "Derrota",
+      "draw": "Empate",
+      "auto": "Se calcula del marcador"
+    },
+    "players": "Jugadores",
+    "playersHint": "Opcional. Podés anotar a quién no usa la app: se guarda solo como nombre.",
+    "partner": "Compañero",
+    "opponents": "Rivales",
+    "addPlayer": "Agregar jugador",
+    "playerName": "Nombre",
+    "theirLevel": "Su nivel (opcional)",
+    "side": {
+      "label": "De qué lado jugaste",
+      "drive": "Drive (derecha)",
+      "reves": "Revés (izquierda)"
+    },
+    "selfRating": "Cómo te sentiste",
+    "notes": "Notas",
+    "notesPlaceholder": "¿Cómo fue el partido?",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "saved": "Sesión guardada",
+    "errors": {
+      "invalid_input": "Revisá los datos, algo no está bien.",
+      "invalid_score": "Ese marcador no es posible en pádel. Revisá los sets.",
+      "future_date": "No se puede registrar un partido que todavía no jugaste.",
+      "not_authenticated": "Se cerró tu sesión. Entrá de nuevo.",
+      "no_profile": "Todavía no completaste tu perfil.",
+      "unavailable": "No pudimos guardar. Probá de nuevo."
+    },
+    "empty": "Todavía no registraste ningún partido. El primero es el que arranca todo."
   }
 }

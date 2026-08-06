@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { LevelSummary } from '@/components/profile/level-summary';
+import { Link } from '@/i18n/navigation';
 import { Logo } from '@/components/logo';
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import { getProfile, requireUser } from '@/lib/auth/session';
@@ -48,7 +49,20 @@ export default async function PanelPage({
         />
       </div>
 
-      <p className="mt-10 text-sm text-fg-muted">{t('panel')}</p>
+      <div className="mt-10 flex flex-wrap gap-3">
+        <Link
+          href="/sesiones/nueva"
+          className="touch-target grid place-items-center rounded-pill bg-accent px-6 font-semibold text-accent-ink"
+        >
+          {t('addSession')}
+        </Link>
+        <Link
+          href="/sesiones"
+          className="touch-target grid place-items-center rounded-pill border border-border px-6 font-semibold"
+        >
+          {t('sessions')}
+        </Link>
+      </div>
     </main>
   );
 }

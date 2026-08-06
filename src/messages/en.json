@@ -135,5 +135,61 @@
       "unavailable": "We couldn't create the profile. Please try again.",
       "not_authenticated": "Your session ended. Please sign in again."
     }
+  },
+  "session": {
+    "title": "Log a session",
+    "kind": {
+      "match": "Match",
+      "quick": "Quick match",
+      "training": "Training"
+    },
+    "kindHint": {
+      "match": "With the set-by-set score. The result works itself out.",
+      "quick": "Just who won, without recording games.",
+      "training": "Practice or a lesson, no result."
+    },
+    "date": "Date",
+    "venue": "Where you played",
+    "venuePlaceholder": "Club, court or place",
+    "score": "Score",
+    "setNumber": "Set {n}",
+    "you": "You",
+    "them": "Opponents",
+    "addSet": "Add set",
+    "removeSet": "Remove last set",
+    "result": {
+      "label": "Result",
+      "win": "Win",
+      "loss": "Loss",
+      "draw": "Draw",
+      "auto": "Derived from the score"
+    },
+    "players": "Players",
+    "playersHint": "Optional. You can note people who don't use the app — just their name is stored.",
+    "partner": "Partner",
+    "opponents": "Opponents",
+    "addPlayer": "Add player",
+    "playerName": "Name",
+    "theirLevel": "Their level (optional)",
+    "side": {
+      "label": "Which side you played",
+      "drive": "Drive (right)",
+      "reves": "Backhand (left)"
+    },
+    "selfRating": "How you felt",
+    "notes": "Notes",
+    "notesPlaceholder": "How did it go?",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Session saved",
+    "errors": {
+      "invalid_input": "Something's off — check the fields.",
+      "invalid_score": "That score isn't possible in padel. Check the sets.",
+      "future_date": "You can't log a match you haven't played yet.",
+      "not_authenticated": "Your session ended. Please sign in again.",
+      "no_profile": "You haven't finished your profile yet.",
+      "unavailable": "We couldn't save it. Please try again."
+    },
+    "empty": "You haven't logged a match yet. The first one gets everything started."
   }
 }
