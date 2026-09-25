@@ -1,0 +1,8 @@
+# Países cuyas sedes se bajan de OpenStreetMap.
+# Un código ISO 3166-1 por línea. Cambiar este archivo dispara
+# .github/workflows/venues-seed.yml, que regenera los SQL de esta carpeta.
+#
+# Brasil, Estados Unidos y México NO van acá todavía: una sola consulta por
+# todo el país excede el tiempo de Overpass, y hay que trocearlos por estado
+# (§13). Queda pendiente.
+AR
