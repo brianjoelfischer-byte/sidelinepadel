@@ -151,7 +151,9 @@ async function fetchCountry(cc, timezoneOf) {
   let extra = [];
   let complete = true;
   try {
-    extra = await overpass(extraQuery(cc), `${cc} extra`, 2);
+    // Cuatro intentos: la extra es la que más sufre cuando Overpass está
+    // saturado (504), y eso pasa por ratos. Con esperas crecientes, alguno entra.
+    extra = await overpass(extraQuery(cc), `${cc} extra`, 4);
     console.log(`  ${extra.length} elementos`);
   } catch (error) {
     complete = false;
