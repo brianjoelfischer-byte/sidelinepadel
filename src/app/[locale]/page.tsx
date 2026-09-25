@@ -4,6 +4,7 @@ import { use } from 'react';
 
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { Logo } from '@/components/logo';
+import { Link } from '@/i18n/navigation';
 
 export default function LandingPage({
   params,
@@ -43,19 +44,21 @@ export default function LandingPage({
           {t('heroSubtitle')}
         </p>
 
+        {/* Enlaces, no botones: navegan. Funcionan sin JavaScript, se abren en
+            otra pestaña y el lector de pantalla los anuncia como lo que son. */}
         <div className="mt-10 flex flex-wrap gap-3">
-          <button
-            type="button"
-            className="touch-target rounded-pill bg-accent px-8 py-3 font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
+          <Link
+            href="/entrar"
+            className="touch-target inline-flex items-center rounded-pill bg-accent px-8 py-3 font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
           >
             {t('cta')}
-          </button>
-          <button
-            type="button"
-            className="touch-target rounded-pill border border-border px-8 py-3 font-semibold text-fg transition-colors hover:bg-bg-surface"
+          </Link>
+          <a
+            href="#como-funciona"
+            className="touch-target inline-flex items-center rounded-pill border border-border px-8 py-3 font-semibold text-fg transition-colors hover:bg-bg-surface"
           >
             {t('ctaSecondary')}
-          </button>
+          </a>
         </div>
 
         {/* §12.7 · El aviso vive en la landing desde el primer día.
@@ -65,7 +68,10 @@ export default function LandingPage({
         </p>
       </section>
 
-      <section className="mx-auto grid max-w-5xl gap-4 px-6 pb-24 sm:grid-cols-3">
+      <section
+        id="como-funciona"
+        className="mx-auto grid max-w-5xl scroll-mt-6 gap-4 px-6 pb-24 sm:grid-cols-3"
+      >
         {features.map(({ key, icon }) => (
           <article
             key={key}

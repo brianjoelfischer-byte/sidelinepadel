@@ -40,3 +40,9 @@ yarn-error.log*
 
 # generado por scripts/db-bundle.mjs — se regenera, no se versiona
 supabase/bundle.sql
+
+# generados por `next dev` (Next 16.3+) en cada arranque. No se versionan:
+# cada máquina los crea sola, y si estuvieran en el repo el `git pull` de una
+# compu que ya los generó fallaría con "untracked files would be overwritten".
+AGENTS.md
+CLAUDE.md
