@@ -200,6 +200,7 @@
       "won": "Won",
       "lost": "Lost",
       "incomplete": "Incomplete"
-    }
+    },
+    "openInMaps": "Open in Google Maps"
   }
 }

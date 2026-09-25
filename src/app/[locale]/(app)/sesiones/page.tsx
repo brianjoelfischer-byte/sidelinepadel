@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Scoreboard } from '@/components/sessions/scoreboard';
 import type { SetScore } from '@/lib/sessions/score';
+import { mapsSearchUrl } from '@/lib/venues/maps';
 import { requireUser } from '@/lib/auth/session';
 import { toLocale } from '@/i18n/routing';
 
@@ -66,7 +67,7 @@ export default async function SessionsPage({
                     })}
                   </p>
                   {session.venue_freetext ? (
-                    <p className="text-xs text-fg-muted">{session.venue_freetext}</p>
+                    <VenueLink name={session.venue_freetext} label={t('openInMaps')} />
                   ) : null}
                 </div>
 
@@ -114,5 +115,28 @@ export default async function SessionsPage({
         </div>
       )}
     </main>
+  );
+}
+
+/**
+ * El lugar del partido, como enlace a Google Maps.
+ *
+ * Nueva pestaña para no sacarte de tu historial. `noreferrer` para que Google
+ * no reciba desde qué página de la app llegaste.
+ */
+function VenueLink({ name, label }: { name: string; label: string }) {
+  const href = mapsSearchUrl(name);
+  if (!href) return null;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`${name} · ${label}`}
+      className="mt-0.5 inline-flex items-center gap-1 text-xs text-fg-secondary underline decoration-border underline-offset-4 hover:text-fg hover:decoration-fg-secondary"
+    >
+      <span aria-hidden="true">📍</span>
+      {name}
+    </a>
   );
 }

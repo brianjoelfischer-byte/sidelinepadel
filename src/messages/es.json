@@ -200,6 +200,7 @@
       "won": "Ganado",
       "lost": "Perdido",
       "incomplete": "Incompleto"
-    }
+    },
+    "openInMaps": "Ver en Google Maps"
   }
 }
