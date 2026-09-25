@@ -19,16 +19,19 @@ on:
 permissions:
   contents: write
 
-# Nunca dos a la vez sobre la misma rama: la segunda chocaría al subir.
+# Nunca dos a la vez sobre la misma rama: la segunda chocaría al subir. La
+# nueva reemplaza a la vieja: si se cambió el código, la corrida anterior ya
+# está bajando con la versión equivocada (y puede estar trabada esperando a
+# Overpass, como pasó con la consulta sin índice espacial).
 concurrency:
   group: venues-seed-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   fetch:
     name: Bajar sedes
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4

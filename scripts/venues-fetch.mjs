@@ -46,7 +46,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function overpass(query, label) {
   let lastError;
-  for (let attempt = 0; attempt < 6; attempt += 1) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
     const endpoint = ENDPOINTS[attempt % ENDPOINTS.length];
     try {
       const res = await fetch(endpoint, {
@@ -94,11 +94,17 @@ const area = (cc) => `area["ISO3166-1"="${cc}"][admin_level=2]->.a;`;
  *
  * `bb` trae la caja de cada vía, que es lo que permite saber qué cancha cae
  * dentro de qué lugar.
+ *
+ * El segundo paso NO lleva `(area.a)`, y eso importa: con el área, Overpass
+ * junta primero todo lo que tiene nombre en el país (millones de elementos) y
+ * recién después filtra por cercanía. Así escrita, esa corrida no terminó en
+ * 30 minutos. Sin el área, arranca por el índice espacial alrededor de cada
+ * cancha, y las canchas ya son solo las del país.
  */
 const padelQuery = (cc) => `[out:json][timeout:280];
 ${area(cc)}
 nwr(area.a)["sport"~"(^|;) *padel *(;|$)",i]->.padel;
-nwr(area.a)["name"][!"highway"][!"railway"][!"waterway"][!"boundary"][!"place"][!"route"][!"power"](around.padel:80)->.named;
+nwr(around.padel:80)["name"][!"highway"][!"railway"][!"waterway"][!"boundary"][!"place"][!"route"][!"power"]->.named;
 (.padel; .named;);
 out bb tags;`;
 
