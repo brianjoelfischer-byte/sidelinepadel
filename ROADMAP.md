@@ -7,18 +7,20 @@ Estado y próximos pasos. El **qué** y el **por qué** de cada decisión están
 
 ## Dónde estamos
 
-**Bloques 1, 2, 3 y 5 terminados.** Cimientos, capa de datos, autenticación y
-registro de partidos.
+**Bloques 1, 2, 3 y 5 terminados, y la primera parte del 7.** Cimientos, capa
+de datos, autenticación, registro de partidos y buscador de clubes. Probado de
+punta a punta en la máquina del owner: login, onboarding y guardado.
 
 | | Qué quedó funcionando |
 |---|---|
 | **Diseño** | 17 secciones y 37 reglas no negociables, con la investigación de matchmaking, formatos de torneo y sistemas de rango competitivos |
 | **App** | Next.js 16, TypeScript estricto, Tailwind 4 con los tokens, español e inglés, CI con typecheck + lint + audit + escaneo de secretos |
-| **Datos** | 11 migraciones, RLS activo y forzado en todas las tablas, PostGIS para las sedes |
+| **Datos** | 12 migraciones, RLS activo y forzado en todas las tablas, PostGIS para las sedes |
 | **Auth** | Login sin contraseñas (magic link + Google), guard de sesión en el layout, verificación de 16 años, onboarding de 5 pasos |
 | **Niveles** | Declarado + percibido + efectivo, con confianza adaptativa, límite de ±2,5 por voto y categoría estimada |
-| **Sesiones** | Partido con sets, partido rápido y entrenamiento; resultado derivado en el servidor; participantes y confirmación de etiqueta |
-| **Seguridad** | 110 tests de base que prueban que un usuario no puede leer ni escribir lo de otro, más 48 de lógica |
+| **Sesiones** | Partido con sets, partido rápido y entrenamiento; resultado derivado en el servidor; participantes y confirmación de etiqueta; marcador set por set en el historial |
+| **Sedes** | Clubes de Argentina desde OpenStreetMap, buscador en "Dónde jugaste" sin importar tildes, cada lugar abre en Google Maps |
+| **Seguridad** | 123 tests de base que prueban que un usuario no puede leer ni escribir lo de otro, más 78 de lógica y guardas de código |
 
 Se levanta en cualquier máquina con `npm install && npm run db:reset`.
 
@@ -30,14 +32,10 @@ progresión de nivel.
 
 ## Pendiente del owner
 
-- ~~Aplicar las migraciones pendientes~~ **Hecho:** las 11 aplicadas y
-  registradas en `app.schema_migrations`.
-- **Agregar el Redirect URL** en Supabase → Authentication → URL Configuration:
-  `http://localhost:3000/**`. La ruta exacta `/auth/callback` no alcanza,
-  porque el enlace vuelve con `?locale=es` y Supabase compara la URL entera.
-- **Probar el login de punta a punta.** No se pudo verificar acá: el entorno de
-  desarrollo bloquea el acceso a `supabase.co`, así que el magic link real
-  nunca se vio llegar.
+- **Aplicar la migración `venue_search`** (la 12) y **cargar los clubes** de
+  `supabase/seed/venues/AR.sql`. Pasos en [`GUIA.md`](./GUIA.md), paso 6.
+- ~~Login de punta a punta~~ **Hecho:** probado en la máquina del owner, con
+  guardado de partido incluido.
 
 ---
 
@@ -72,7 +70,7 @@ Encontrás gente, publicás turnos, coordinás.
 
 | Bloque | Qué trae |
 |---|---|
-| **7** · Sedes | Seed de OpenStreetMap en 27 países, búsqueda por cercanía, alta por usuario con moderación, atribución ODbL |
+| **7** · Sedes | ✅ Seed de OpenStreetMap para AR (vía GitHub Actions), ✅ buscador en "Dónde jugaste", ✅ atribución ODbL. Falta: los otros 26 países, búsqueda por cercanía en pantalla, **alta por usuario con moderación** — ver la nota de cobertura abajo |
 | **8** · Social | Directorio, conexiones derivadas de haber jugado, seguir, bloquear, reportar |
 | **9** · Turnos · cupo | Crear turno de 4, banda de nivel, solicitar, aceptar, los cuatro estados de asistencia |
 | **9b** · Turnos · cancha | `court_status`, empujón al creador, "se cayó la cancha" sin perder el grupo, los cinco avisos de "no reservamos" |

@@ -147,24 +147,24 @@ por mail no te trae de vuelta a la app.
 
 ## 6 · Aplicar las migraciones
 
-Hay **11 archivos** en `supabase/migrations/`. Ya aplicaste los 8 primeros
-—las tablas que viste con RLS activado—, pero faltan tres:
+Hay **12 archivos** en `supabase/migrations/`. Las 11 primeras ya están en tu
+base. Falta una:
 
 | Falta | Qué hace |
 |---|---|
-| `rating_bounds` | El límite de ±2,5 en las valoraciones |
-| `level_confidence` | La confianza del nivel |
-| `fix_sessions_returning` | **Sin esta, guardar un partido falla.** Arregla un permiso de lectura que rechazaba el alta |
+| `venue_search` | El buscador de clubes de "Dónde jugaste" |
 
 ### La forma simple: copiar y pegar
 
 En la terminal, dentro de la carpeta del proyecto:
 
 ```bash
-npm run db:bundle -- --from 20260729000001
+npm run db:bundle -- --from 20260729000004
 ```
 
-Eso crea `supabase/bundle.sql` con **solo las tres que faltan**. Abrilo:
+✅ Tiene que decir `1 migración (desde 20260729000004_venue_search.sql)`.
+
+Eso crea `supabase/bundle.sql` con **solo la que falta**. Abrilo:
 
 ```bash
 notepad supabase\bundle.sql
@@ -209,6 +209,34 @@ supabase db push
 
 `db push` mira qué migraciones faltan y aplica solo esas. Es más prolijo, y de
 acá en adelante cada vez que yo agregue una, con ese comando alcanza.
+
+### Cargar los clubes de pádel
+
+Los clubes no son una migración: son datos, bajados de OpenStreetMap. Están en
+`supabase/seed/venues/`, un archivo por país. Se pegan igual que una migración,
+**después** de aplicar la migración `venue_search`:
+
+```bash
+notepad supabase\seed\venues\AR.sql
+```
+
+✅ Las primeras líneas dicen cuántas sedes trae, por ejemplo `255 sedes`.
+
+Ctrl+A, Ctrl+C, SQL Editor → **pestaña nueva** → pegar → **Run**.
+
+✅ Abajo tiene que decir **Success**. Para comprobar:
+
+```sql
+SELECT count(*) FROM venues;
+```
+
+> **Se puede pegar más de una vez.** Lo que ya está cargado no se toca, así
+> que si lo corrés dos veces no se duplica nada. Cuando haya una versión
+> nueva del archivo, se pega encima de la anterior sin problema.
+
+> **Si dice "Este archivo tiene que correr en el SQL Editor"** es que lo
+> ejecutaste desde otro lado. Los clubes de OpenStreetMap entran ya aprobados,
+> y eso solo lo puede hacer el SQL Editor de Supabase.
 
 ---
 
