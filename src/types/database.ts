@@ -159,6 +159,7 @@ export interface Database {
           subject_id: string;
           value: number;
           created_at: string;
+          subject_level_at_rating: number | null;
         };
         Insert: {
           id?: string;
@@ -167,6 +168,7 @@ export interface Database {
           subject_id: string;
           value: number;
           created_at?: string;
+          subject_level_at_rating?: number | null;
         };
         Update: Partial<Database['public']['Tables']['level_ratings']['Insert']>;
         Relationships: [];
@@ -315,6 +317,7 @@ export interface Database {
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
+          level_confidence: number;
         };
         Insert: {
           id: string;
@@ -339,6 +342,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           deleted_at?: string | null;
+          level_confidence?: number;
         };
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
         Relationships: [];
@@ -481,6 +485,9 @@ export interface Database {
           approved_by: string | null;
           created_at: string;
           updated_at: string;
+          lat: number | null;
+          lng: number | null;
+          search_text: string | null;
         };
         Insert: {
           id?: string;
@@ -501,13 +508,73 @@ export interface Database {
           approved_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          lat?: never;
+          lng?: never;
+          search_text?: never;
         };
         Update: Partial<Database['public']['Tables']['venues']['Insert']>;
         Relationships: [];
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      my_connections: {
+        Args: {
+          max_results?: number;
+        };
+        Returns: {
+            other_id: string | null;
+            display_name: string | null;
+            slug: string | null;
+            effective_level: number | null;
+            times_played: number | null;
+            last_played_on: string | null;
+          }[];
+      };
+      rating_bounds_for: {
+        Args: {
+          subject: string;
+        };
+        Returns: {
+            min_value: number | null;
+            max_value: number | null;
+          }[];
+      };
+      search_venues: {
+        Args: {
+          q: string;
+          prefer_country?: string;
+          max_results?: number;
+        };
+        Returns: {
+            id: string | null;
+            name: string | null;
+            city: string | null;
+            admin_area: string | null;
+            address: string | null;
+            country_code: string | null;
+            courts_count: number | null;
+            lat: number | null;
+            lng: number | null;
+          }[];
+      };
+      venues_nearby: {
+        Args: {
+          lat: number;
+          lng: number;
+          radius_m?: number;
+          max_results?: number;
+        };
+        Returns: {
+            id: string | null;
+            name: string | null;
+            city: string | null;
+            country_code: string | null;
+            courts_count: number | null;
+            distance_m: number | null;
+          }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

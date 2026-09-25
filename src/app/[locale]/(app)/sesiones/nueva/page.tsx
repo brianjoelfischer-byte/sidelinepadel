@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 
 import { Link } from '@/i18n/navigation';
 import { SessionForm } from '@/components/sessions/session-form';
+import { getProfile, requireUser } from '@/lib/auth/session';
 import { toLocale } from '@/i18n/routing';
 
 export async function generateMetadata({
@@ -24,6 +25,9 @@ export default async function NewSessionPage({
   const locale = toLocale(raw);
   setRequestLocale(locale);
 
+  const user = await requireUser(locale);
+  const profile = await getProfile(user.id);
+
   const t = await getTranslations({ locale, namespace: 'session' });
   const tCommon = await getTranslations({ locale, namespace: 'common' });
 
@@ -39,7 +43,7 @@ export default async function NewSessionPage({
       <h1 className="mt-6 text-3xl">{t('title')}</h1>
 
       <div className="mt-10">
-        <SessionForm locale={locale} />
+        <SessionForm locale={locale} preferCountry={profile?.country_code ?? null} />
       </div>
     </main>
   );

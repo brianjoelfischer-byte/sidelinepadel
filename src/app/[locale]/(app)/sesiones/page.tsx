@@ -34,9 +34,23 @@ export default async function SessionsPage({
   const supabase = await createClient();
   const { data: sessions } = await supabase
     .from('sessions')
-    .select('id, kind, played_on, result, sets, venue_freetext, notes')
+    .select('id, kind, played_on, result, sets, venue_id, venue_freetext, notes')
     .order('played_on', { ascending: false })
     .limit(50);
+
+  /**
+   * Los clubes de la lista, en una sola consulta aparte. No como join: los
+   * tipos generados no declaran relaciones, y un select anidado perdería el
+   * tipado. Si el club dejó de ser visible (lo rechazó un moderador), se cae
+   * al texto libre, y si no hay, no se muestra lugar.
+   */
+  const venueIds = [
+    ...new Set((sessions ?? []).map((s) => s.venue_id).filter((id): id is string => Boolean(id))),
+  ];
+  const { data: venues } = venueIds.length
+    ? await supabase.from('venues').select('id, name, city').in('id', venueIds)
+    : { data: [] };
+  const venueById = new Map((venues ?? []).map((v) => [v.id, v]));
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
@@ -66,9 +80,13 @@ export default async function SessionsPage({
                       year: 'numeric',
                     })}
                   </p>
-                  {session.venue_freetext ? (
-                    <VenueLink name={session.venue_freetext} label={t('openInMaps')} />
-                  ) : null}
+                  <VenueLink
+                    venue={
+                      (session.venue_id ? venueById.get(session.venue_id) : undefined) ??
+                      (session.venue_freetext ? { name: session.venue_freetext, city: null } : null)
+                    }
+                    label={t('openInMaps')}
+                  />
                 </div>
 
                 {/* El color nunca es el único portador: va con texto (§10). */}
@@ -124,19 +142,29 @@ export default async function SessionsPage({
  * Nueva pestaña para no sacarte de tu historial. `noreferrer` para que Google
  * no reciba desde qué página de la app llegaste.
  */
-function VenueLink({ name, label }: { name: string; label: string }) {
-  const href = mapsSearchUrl(name);
+function VenueLink({
+  venue,
+  label,
+}: {
+  venue: { name: string; city: string | null } | null;
+  label: string;
+}) {
+  if (!venue) return null;
+  // Nombre y ciudad, no coordenadas: con coordenadas Google muestra un pin
+  // suelto; con el nombre abre la ficha del club, que es "el lugar real".
+  const text = venue.city ? `${venue.name}, ${venue.city}` : venue.name;
+  const href = mapsSearchUrl(text);
   if (!href) return null;
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`${name} · ${label}`}
+      aria-label={`${text} · ${label}`}
       className="mt-0.5 inline-flex items-center gap-1 text-xs text-fg-secondary underline decoration-border underline-offset-4 hover:text-fg hover:decoration-fg-secondary"
     >
       <span aria-hidden="true">📍</span>
-      {name}
+      {text}
     </a>
   );
 }

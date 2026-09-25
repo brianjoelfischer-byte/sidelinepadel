@@ -21,7 +21,8 @@
     "db:stop": "./scripts/db-local.sh stop",
     "db:reset": "./scripts/db-local.sh reset && node scripts/db-migrate.mjs --reset",
     "db:migrate": "node scripts/db-migrate.mjs",
-    "db:bundle": "node scripts/db-bundle.mjs"
+    "db:bundle": "node scripts/db-bundle.mjs",
+    "db:types": "node scripts/db-types.mjs"
   },
   "overrides": {
     "@eslint/config-array": "^0.23.5",

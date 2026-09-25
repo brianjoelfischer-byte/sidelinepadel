@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 
 import { createSession } from '@/actions/sessions';
+import { VenuePicker, emptyVenue, type VenueValue } from '@/components/sessions/venue-picker';
 import { resultFromSets, setWinner, type SetScore } from '@/lib/sessions/score';
 import { useRouter } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
@@ -27,14 +28,21 @@ type ErrorKey =
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function SessionForm({ locale: _locale }: { locale: Locale }) {
+export function SessionForm({
+  locale: _locale,
+  preferCountry,
+}: {
+  locale: Locale;
+  /** País del jugador: sus clubes aparecen primero en el buscador. */
+  preferCountry: string | null;
+}) {
   const t = useTranslations('session');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const [kind, setKind] = useState<Kind>('match');
   const [playedOn, setPlayedOn] = useState(today());
-  const [venue, setVenue] = useState('');
+  const [venue, setVenue] = useState<VenueValue>(emptyVenue);
   const [sets, setSets] = useState<SetScore[]>([{ me: 6, opp: 3 }]);
   const [quickResult, setQuickResult] = useState<'win' | 'loss' | 'draw'>('win');
   const [players, setPlayers] = useState<PlayerDraft[]>([]);
@@ -70,7 +78,12 @@ export function SessionForm({ locale: _locale }: { locale: Locale }) {
     const common = {
       playedOn,
       participants,
-      ...(venue.trim() ? { venueFreetext: venue.trim() } : {}),
+      // Un club de la lista va por id; si no, el texto tal como se escribió.
+      ...(venue.id
+        ? { venueId: venue.id }
+        : venue.name.trim()
+          ? { venueFreetext: venue.name.trim() }
+          : {}),
       ...(notes.trim() ? { notes: notes.trim() } : {}),
       ...(side ? { sidePlayed: side } : {}),
       ...(kind !== 'training' ? { selfRating } : {}),
@@ -144,16 +157,12 @@ export function SessionForm({ locale: _locale }: { locale: Locale }) {
           />
         </Field>
 
-        <Field label={t('venue')} htmlFor="venue">
-          <input
-            id="venue"
-            value={venue}
-            onChange={(e) => setVenue(e.target.value)}
-            placeholder={t('venuePlaceholder')}
-            maxLength={120}
-            className="touch-target w-full rounded-card border border-border bg-bg-surface px-4 py-3"
-          />
-        </Field>
+        <VenuePicker
+          value={venue}
+          onChange={setVenue}
+          preferCountry={preferCountry}
+          label={t('venue')}
+        />
       </div>
 
       {/* Marcador */}

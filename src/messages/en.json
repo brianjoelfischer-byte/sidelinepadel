@@ -150,7 +150,7 @@
     },
     "date": "Date",
     "venue": "Where you played",
-    "venuePlaceholder": "Club, court or place",
+    "venuePlaceholder": "Club name or city",
     "score": "Score",
     "setNumber": "Set {n}",
     "you": "You",
@@ -201,6 +201,12 @@
       "lost": "Lost",
       "incomplete": "Incomplete"
     },
-    "openInMaps": "Open in Google Maps"
+    "openInMaps": "Open in Google Maps",
+    "venueChosen": "Club from the list",
+    "venueChosenIn": "Club from the list · {city}",
+    "venueCourts": "{count, plural, one {# court} other {# courts}}",
+    "venueAttribution": "Clubs: © OpenStreetMap contributors",
+    "venueNoResults": "Not on the list. It'll be saved just as you typed it.",
+    "venueResults": "{count, plural, =0 {No clubs} one {# club} other {# clubs}}"
   }
 }

@@ -58,7 +58,7 @@ function unionFromCheck(definition, column) {
 async function main() {
   const columns = await sql`
     SELECT c.table_name, c.column_name, c.udt_name, c.is_nullable,
-           c.column_default
+           c.column_default, c.is_generated
     FROM information_schema.columns c
     JOIN pg_class pc ON pc.relname = c.table_name
     JOIN pg_namespace pn ON pn.oid = pc.relnamespace AND pn.nspname = 'public'
@@ -101,8 +101,11 @@ async function main() {
       return `          ${col.column_name}: ${base}${nullable ? ' | null' : ''};`;
     });
 
-    // En Insert son opcionales las nullables y las que tienen default.
+    // En Insert son opcionales las nullables y las que tienen default. Las
+    // generadas (lat/lng de una sede) las calcula la base: escribirlas es un
+    // error, y `never` hace que el compilador lo diga antes que Postgres.
     const inserts = cols.map((col) => {
+      if (col.is_generated === 'ALWAYS') return `          ${col.column_name}?: never;`;
       const union = (checksByTable.get(table) ?? [])
         .map((def) => unionFromCheck(def, col.column_name))
         .find(Boolean);
@@ -122,6 +125,62 @@ ${inserts.join('\n')}
         };
         Update: Partial<Database['public']['Tables']['${table}']['Insert']>;
         Relationships: [];
+      };`;
+  });
+
+  /**
+   * Funciones de `public` que se llaman por RPC. Se excluyen las de
+   * extensiones (PostGIS trae cientos) y las de triggers.
+   */
+  const procs = await sql`
+    SELECT p.proname,
+           p.proretset,
+           p.pronargdefaults,
+           p.proargnames,
+           p.proargmodes,
+           array(SELECT t.typname FROM unnest(coalesce(p.proallargtypes, p.proargtypes::oid[]))
+                   WITH ORDINALITY AS a(oid, n)
+                   JOIN pg_type t ON t.oid = a.oid ORDER BY a.n) AS argtypes,
+           rt.typname AS rettype
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace AND n.nspname = 'public'
+    JOIN pg_type rt ON rt.oid = p.prorettype
+    WHERE p.prokind = 'f'
+      AND rt.typname <> 'trigger'
+      AND NOT EXISTS (
+        SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype = 'e'
+      )
+    ORDER BY p.proname
+  `;
+
+  const functionBlocks = procs.map((p) => {
+    const names = p.proargnames ?? [];
+    const modes = p.proargmodes ?? p.argtypes.map(() => 'i');
+    const inputs = [];
+    const outputs = [];
+    p.argtypes.forEach((type, i) => {
+      const mode = modes[i];
+      const entry = { name: names[i] ?? `arg${i}`, type: tsType(type) };
+      if (mode === 'i' || mode === 'b' || mode === 'v') inputs.push(entry);
+      if (mode === 'o' || mode === 'b' || mode === 't') outputs.push(entry);
+    });
+    // Los últimos `pronargdefaults` parámetros de entrada tienen valor por
+    // defecto: se pueden omitir.
+    const firstOptional = inputs.length - p.pronargdefaults;
+    const args = inputs
+      .map((a, i) => `          ${a.name}${i >= firstOptional ? '?' : ''}: ${a.type};`)
+      .join('\n');
+
+    let returns;
+    if (outputs.length > 0) {
+      returns = `{\n${outputs.map((o) => `            ${o.name}: ${o.type} | null;`).join('\n')}\n          }[]`;
+    } else {
+      returns = `${tsType(p.rettype)}${p.proretset ? '[]' : ''}`;
+    }
+
+    return `      ${p.proname}: {
+        Args: ${args ? `{\n${args}\n        }` : 'Record<string, never>'};
+        Returns: ${returns};
       };`;
   });
 
@@ -147,7 +206,9 @@ export interface Database {
 ${blocks.join('\n')}
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+${functionBlocks.join('\n')}
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
