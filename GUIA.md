@@ -147,15 +147,34 @@ Hay **11 archivos** en `supabase/migrations/`. Ya aplicaste los 8 primeros
 En la terminal, dentro de la carpeta del proyecto:
 
 ```bash
-npm run db:bundle
+npm run db:bundle -- --from 20260729000001
 ```
 
-Eso crea `supabase/bundle.sql`, un archivo con **todas** las migraciones
-juntas. Abrilo con el Bloc de notas, copiá todo, y en Supabase andá a
-**SQL Editor → New query**, pegalo y apretá **Run**.
+Eso crea `supabase/bundle.sql` con **solo las tres que faltan**. Abrilo:
 
-Es seguro correrlo aunque ya hayas aplicado parte: va todo en una sola
-operación, y si algo falla no queda nada a medias.
+```bash
+notepad supabase\bundle.sql
+```
+
+Copiá todo (Ctrl+A, Ctrl+C), y en Supabase andá a **SQL Editor → New query**,
+pegalo y apretá **Run**.
+
+> **Por qué `--from` y no el bundle entero.** Las migraciones no se pueden
+> volver a aplicar: `CREATE TABLE profiles` falla con *"already exists"* si esa
+> tabla ya está. El bundle completo es para una base vacía; sobre una base a
+> medio camino hay que mandar solo el tramo que falta.
+>
+> Si te equivocás y mandás de más, no rompés nada: va todo en una sola
+> transacción, así que al fallar revierte sola y la base queda como estaba.
+
+**De acá en adelante no vas a tener que acordarte de qué falta.** Este bundle
+deja anotado en la base qué se aplicó, así que la próxima vez alcanza con:
+
+```bash
+npm run db:bundle -- --pending
+```
+
+Si dice *"No hay migraciones pendientes"*, estás al día.
 
 ### La otra forma: el CLI
 
@@ -204,7 +223,19 @@ git pull
 npm install
 ```
 
-Y si te aviso que hay una migración nueva, repetís el **paso 6**.
+> **Si el `git pull` dice "your local changes would be overwritten:
+> package-lock.json"** — es porque `npm install` reescribe ese archivo, y git
+> no quiere pisarlo. Se descarta sin problema, porque no lo escribiste vos:
+>
+> ```bash
+> git checkout -- package-lock.json
+> ```
+>
+> Y volvés a hacer el `git pull`. **El orden importa:** primero el pull, después
+> el install. Al revés se repite el bloqueo.
+
+Y si te aviso que hay una migración nueva, repetís el **paso 6** — con
+`--pending`, que ya sabe cuáles faltan.
 
 ---
 
@@ -215,8 +246,9 @@ Y si te aviso que hay una migración nueva, repetís el **paso 6**.
 | `npm run dev` | Levanta la app en localhost:3000 |
 | `git pull` | Trae los cambios nuevos |
 | `npm install` | Actualiza las piezas necesarias |
-| `npm run db:bundle` | Arma el archivo SQL para pegar en Supabase |
+| `npm run db:bundle -- --pending` | Arma el SQL con lo que le falte a tu base |
 | `npm run check` | Revisa que no haya errores |
+| `cd sidelinepadel` | Lo primero en cada ventana nueva de terminal |
 
 ---
 
@@ -241,6 +273,13 @@ hace falta ser administrador. Es lo que recomienda la documentación de Node.
 > `npm.cmd` en lugar de `npm` en **todos** los comandos de esta guía.
 
 **"Cannot find module"** — corré `npm install`.
+
+**"not a git repository"** — la ventana está parada en la carpeta equivocada.
+Fijate que el prompt termine en `\sidelinepadel`; si no, `cd sidelinepadel`.
+
+**`relation "..." already exists` al pegar el SQL en Supabase** — mandaste más
+migraciones de las que faltaban. No rompiste nada (la transacción revirtió
+sola): generá el bundle de nuevo con `--pending` y pegá ese.
 
 **La página tira error** — fijate en la terminal: ahí está el mensaje real.
 Copialo y pasámelo.
