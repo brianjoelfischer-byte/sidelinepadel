@@ -29,13 +29,31 @@
  *
  *   SELECT filename, applied_at FROM app.schema_migrations ORDER BY filename;
  */
-import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MIGRATIONS_DIR = join(root, 'supabase', 'migrations');
 const OUT = join(root, 'supabase', 'bundle.sql');
+
+/**
+ * Cualquier salida que no escriba un bundle nuevo borra el anterior.
+ *
+ * Sin esto, un `--pending` que falla por falta de DATABASE_URL deja en disco
+ * el bundle de la corrida anterior. Abrirlo muestra SQL con buena pinta, y se
+ * termina pegando el lote equivocado en el SQL Editor — que es exactamente
+ * cómo apareció "relation profiles already exists" por segunda vez.
+ */
+async function abort(...lines) {
+  for (const line of lines) console.error(line);
+  if (existsSync(OUT)) {
+    await rm(OUT);
+    console.error(`\n  (borré ${OUT} para que no pegues el de antes por error)`);
+  }
+  process.exit(1);
+}
 
 const argv = process.argv.slice(2);
 const reset = argv.includes('--reset');
@@ -60,9 +78,16 @@ if (all.length === 0) throw new Error('No hay migraciones en supabase/migrations
 async function pendingFiles() {
   const url = process.env.DATABASE_URL;
   if (!url) {
-    console.error('✗ --pending necesita DATABASE_URL apuntando a la base destino.');
-    console.error('  Sin eso, usá --from con el nombre de la primera que falte.');
-    process.exit(1);
+    await abort(
+      '✗ --pending necesita DATABASE_URL apuntando a la base destino.',
+      '',
+      '  Si aplicás las migraciones pegando SQL en el dashboard de Supabase,',
+      '  no la tenés configurada — y no hace falta. Usá --from en su lugar:',
+      '',
+      `      npm run db:bundle -- --from ${all[1] ?? all[0]}`,
+      '',
+      '  (el nombre es el de la primera migración que te falte aplicar)',
+    );
   }
   const { default: postgres } = await import('postgres');
   const sql = postgres(url, { max: 1, onnotice: () => {} });
@@ -88,15 +113,21 @@ if (pending) {
 } else if (from) {
   files = all.filter((f) => f >= from);
   if (files.length === 0) {
-    console.error(`✗ Ninguna migración coincide con --from ${from}.`);
-    console.error(`  La primera es ${all[0]}.`);
-    process.exit(1);
+    await abort(
+      `✗ Ninguna migración coincide con --from ${from}.`,
+      '',
+      '  Las que hay:',
+      ...all.map((f) => `    ${f}`),
+    );
   }
 } else {
   files = all;
 }
 
 if (files.length === 0) {
+  // Nada que aplicar: el bundle viejo tampoco sirve, y dejarlo invita a
+  // pegarlo de nuevo.
+  if (existsSync(OUT)) await rm(OUT);
   console.log('▸ No hay migraciones pendientes: la base está al día.');
   process.exit(0);
 }

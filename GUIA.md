@@ -167,14 +167,22 @@ pegalo y apretá **Run**.
 > Si te equivocás y mandás de más, no rompés nada: va todo en una sola
 > transacción, así que al fallar revierte sola y la base queda como estaba.
 
-**De acá en adelante no vas a tener que acordarte de qué falta.** Este bundle
-deja anotado en la base qué se aplicó, así que la próxima vez alcanza con:
+> **`--pending` no te sirve si aplicás por el dashboard.** Esa opción le
+> pregunta a la base qué le falta, y para eso necesita `DATABASE_URL` — la
+> cadena de conexión con la contraseña. Si pegás el SQL a mano en el SQL
+> Editor, no la tenés configurada y no hace falta que la configures: usá
+> `--from`. La opción existe para cuando uses el CLI de Supabase.
 
-```bash
-npm run db:bundle -- --pending
+**Cómo saber desde cuál pedir el `--from`.** Desde ahora el bundle deja
+anotado en la base qué se aplicó. Corré esto en el SQL Editor:
+
+```sql
+SELECT filename FROM app.schema_migrations ORDER BY filename;
 ```
 
-Si dice *"No hay migraciones pendientes"*, estás al día.
+Lo que **no** esté en esa lista es lo que te falta, y la primera de esas es la
+que va en el `--from`. (Si la tabla no existe todavía, es porque nunca
+aplicaste un bundle de los nuevos — en ese caso avisame y te digo yo.)
 
 ### La otra forma: el CLI
 
@@ -234,8 +242,8 @@ npm install
 > Y volvés a hacer el `git pull`. **El orden importa:** primero el pull, después
 > el install. Al revés se repite el bloqueo.
 
-Y si te aviso que hay una migración nueva, repetís el **paso 6** — con
-`--pending`, que ya sabe cuáles faltan.
+Y si te aviso que hay una migración nueva, repetís el **paso 6**. Te voy a
+decir yo desde cuál va el `--from`.
 
 ---
 
@@ -246,7 +254,7 @@ Y si te aviso que hay una migración nueva, repetís el **paso 6** — con
 | `npm run dev` | Levanta la app en localhost:3000 |
 | `git pull` | Trae los cambios nuevos |
 | `npm install` | Actualiza las piezas necesarias |
-| `npm run db:bundle -- --pending` | Arma el SQL con lo que le falte a tu base |
+| `npm run db:bundle -- --from <mig>` | Arma el SQL desde esa migración en adelante |
 | `npm run check` | Revisa que no haya errores |
 | `cd sidelinepadel` | Lo primero en cada ventana nueva de terminal |
 
@@ -278,8 +286,13 @@ hace falta ser administrador. Es lo que recomienda la documentación de Node.
 Fijate que el prompt termine en `\sidelinepadel`; si no, `cd sidelinepadel`.
 
 **`relation "..." already exists` al pegar el SQL en Supabase** — mandaste más
-migraciones de las que faltaban. No rompiste nada (la transacción revirtió
-sola): generá el bundle de nuevo con `--pending` y pegá ese.
+migraciones de las que faltaban. No rompiste nada: la transacción revirtió
+sola. Generá el bundle de nuevo con el `--from` correcto y pegá ese.
+
+Si te pasa **dos veces seguidas**, fijate que el comando haya terminado bien
+antes de abrir el archivo: si el script falla, borra `supabase/bundle.sql` a
+propósito, y entonces `notepad` te va a decir que no existe. Si te muestra
+contenido, es el bundle nuevo.
 
 **La página tira error** — fijate en la terminal: ahí está el mensaje real.
 Copialo y pasámelo.
