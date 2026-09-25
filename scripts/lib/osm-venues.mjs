@@ -325,10 +325,21 @@ function sqlNumber(value) {
  * corrigió un club, la re-sincronización no le deshace el trabajo (§13). La
  * actualización de clubes ya cargados queda para el job mensual.
  */
-export function toSql(rows, { countryCode, generatedAt, stats }) {
+/**
+ * Marca de consulta completa en la cabecera del SQL. `venues-fetch.mjs` la
+ * lee para no pisar un archivo completo con uno parcial.
+ */
+export const COMPLETE_MARK = '--  Consulta: completa';
+
+export function isCompleteSql(sql) {
+  return sql.includes(COMPLETE_MARK);
+}
+
+export function toSql(rows, { countryCode, generatedAt, stats, complete = true }) {
   const header = `-- ===========================================================================
 --  Sideline Padel · sedes de pádel de ${countryCode} desde OpenStreetMap
 --  Generado por scripts/venues-fetch.mjs · ${generatedAt}
+${complete ? COMPLETE_MARK : '--  Consulta: parcial (falló la consulta extra; solo clubes etiquetados)'}
 --
 --  ${rows.length} sedes · ${stats.courtsAttributed + stats.courtsNearby} canchas atribuidas a su club (${stats.courtsNearby} por cercanía)
 --  ${stats.duplicatesMerged} duplicados unidos · ${stats.unnamedSkipped} canchas sin nombre ni club

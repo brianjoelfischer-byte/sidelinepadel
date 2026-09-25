@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildVenues, fold, nearestPlace, sqlText, toSql } from './osm-venues.mjs';
+import { buildVenues, fold, isCompleteSql, nearestPlace, sqlText, toSql } from './osm-venues.mjs';
 
 const tz = () => 'America/Argentina/Cordoba';
 const opts = { countryCode: 'AR', timezoneOf: tz };
@@ -253,6 +253,21 @@ describe('SQL', () => {
     expect(sql).toContain('ON CONFLICT (osm_type, osm_id) DO NOTHING');
     expect(sql).toContain('ODbL');
     expect(sql.trim().startsWith('--')).toBe(true);
+  });
+});
+
+describe('marca de consulta completa', () => {
+  /** Es lo que impide que una corrida parcial pise 355 sedes con 283. */
+  it('distingue una corrida completa de una parcial', () => {
+    const { rows, stats } = buildVenues(
+      [{ type: 'node', id: 1, lat: -31.4, lon: -64.2, tags: { sport: 'padel', name: 'Top Pádel' } }],
+      opts,
+    );
+    const full = toSql(rows, { countryCode: 'AR', generatedAt: 'hoy', stats, complete: true });
+    const partial = toSql(rows, { countryCode: 'AR', generatedAt: 'hoy', stats, complete: false });
+    expect(isCompleteSql(full)).toBe(true);
+    expect(isCompleteSql(partial)).toBe(false);
+    expect(isCompleteSql('')).toBe(false);
   });
 });
 

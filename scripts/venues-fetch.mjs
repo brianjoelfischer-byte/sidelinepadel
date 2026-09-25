@@ -17,11 +17,11 @@
  * a la vez, pausa entre países, y reintento con espera creciente si el
  * servidor está ocupado — no insistir es parte del acuerdo.
  */
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildVenues, toSql } from './lib/osm-venues.mjs';
+import { buildVenues, isCompleteSql, toSql } from './lib/osm-venues.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIR = join(root, 'supabase', 'seed', 'venues');
@@ -149,10 +149,12 @@ async function fetchCountry(cc, timezoneOf) {
   // pero nunca un país en cero por culpa de la parte opcional.
   console.log(`▸ ${cc}: consultando otros lugares con canchas…`);
   let extra = [];
+  let complete = true;
   try {
     extra = await overpass(extraQuery(cc), `${cc} extra`, 2);
     console.log(`  ${extra.length} elementos`);
   } catch (error) {
+    complete = false;
     console.warn(`  ! ${cc} extra: ${error.message} — sigo solo con la principal`);
   }
 
@@ -182,13 +184,26 @@ async function fetchCountry(cc, timezoneOf) {
     throw new Error(`${cc}: 0 sedes. No se escribe el archivo.`);
   }
 
+  const out = join(OUT_DIR, `${cc}.sql`);
+
+  // Una corrida parcial nunca pisa una completa. Pasó: con Overpass
+  // saturado, una corrida sin la consulta extra reemplazó 355 sedes por 283.
+  // El archivo anterior queda, y la próxima corrida completa lo actualiza.
+  if (!complete) {
+    const previous = await readFile(out, 'utf8').catch(() => '');
+    if (isCompleteSql(previous)) {
+      console.warn(`  ! ${cc}: corrida parcial — se conserva el archivo anterior, que es completo`);
+      return;
+    }
+  }
+
   const sql = toSql(rows, {
     countryCode: cc,
     generatedAt: new Date().toISOString().slice(0, 10),
     stats,
+    complete,
   });
   await mkdir(OUT_DIR, { recursive: true });
-  const out = join(OUT_DIR, `${cc}.sql`);
   await writeFile(out, sql, 'utf8');
   console.log(`  ✓ ${out}`);
 }
