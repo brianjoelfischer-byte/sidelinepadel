@@ -190,6 +190,16 @@
       "no_profile": "Todavía no completaste tu perfil.",
       "unavailable": "No pudimos guardar. Probá de nuevo."
     },
-    "empty": "Todavía no registraste ningún partido. El primero es el que arranca todo."
+    "empty": "Todavía no registraste ningún partido. El primero es el que arranca todo.",
+    "scoreboard": {
+      "caption": "Marcador: vos ganaste {me} sets y tus rivales {opp}.",
+      "side": "Equipo",
+      "sets": "Sets"
+    },
+    "setState": {
+      "won": "Ganado",
+      "lost": "Perdido",
+      "incomplete": "Incompleto"
+    }
   }
 }

@@ -190,6 +190,16 @@
       "no_profile": "You haven't finished your profile yet.",
       "unavailable": "We couldn't save it. Please try again."
     },
-    "empty": "You haven't logged a match yet. The first one gets everything started."
+    "empty": "You haven't logged a match yet. The first one gets everything started.",
+    "scoreboard": {
+      "caption": "Score: you won {me} sets and your opponents {opp}.",
+      "side": "Team",
+      "sets": "Sets"
+    },
+    "setState": {
+      "won": "Won",
+      "lost": "Lost",
+      "incomplete": "Incomplete"
+    }
   }
 }

@@ -71,6 +71,27 @@ export function resultFromSets(sets: SetScore[]): MatchResult | null {
   return 'draw';
 }
 
+/**
+ * Quién ganó un set. `null` si el set no es válido todavía — mientras se está
+ * cargando, un 5-3 no tiene ganador, y mostrarle uno confundiría.
+ */
+export function setWinner(set: SetScore): 'me' | 'opp' | null {
+  if (!isValidSet(set)) return null;
+  return set.me > set.opp ? 'me' : 'opp';
+}
+
+/** Sets ganados por cada lado. Solo cuenta los sets válidos. */
+export function setsWon(sets: SetScore[]): { me: number; opp: number } {
+  return sets.reduce(
+    (acc, set) => {
+      const winner = setWinner(set);
+      if (winner) acc[winner] += 1;
+      return acc;
+    },
+    { me: 0, opp: 0 },
+  );
+}
+
 /** Juegos ganados y perdidos en total. Alimenta las estadísticas del bloque 6. */
 export function gameTotals(sets: SetScore[]): { for: number; against: number } {
   return sets.reduce(

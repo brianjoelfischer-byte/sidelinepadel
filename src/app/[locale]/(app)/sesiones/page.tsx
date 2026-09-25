@@ -2,7 +2,8 @@ import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/serve
 
 import { Link } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { formatSets, type SetScore } from '@/lib/sessions/score';
+import { Scoreboard } from '@/components/sessions/scoreboard';
+import type { SetScore } from '@/lib/sessions/score';
 import { requireUser } from '@/lib/auth/session';
 import { toLocale } from '@/i18n/routing';
 
@@ -90,9 +91,9 @@ export default async function SessionsPage({
               </div>
 
               {session.sets ? (
-                <p className="mt-3 font-display text-lg">
-                  {formatSets(session.sets as unknown as SetScore[])}
-                </p>
+                <div className="mt-4">
+                  <Scoreboard sets={session.sets as unknown as SetScore[]} />
+                </div>
               ) : null}
 
               {session.notes ? (

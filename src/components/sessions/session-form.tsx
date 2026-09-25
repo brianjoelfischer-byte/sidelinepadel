@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 
 import { createSession } from '@/actions/sessions';
-import { resultFromSets, type SetScore } from '@/lib/sessions/score';
+import { resultFromSets, setWinner, type SetScore } from '@/lib/sessions/score';
 import { useRouter } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
 
@@ -175,38 +175,80 @@ export function SessionForm({ locale: _locale }: { locale: Locale }) {
               >
                 {t(`result.${derived}` as 'result.win')}
               </span>
-            ) : (
-              <span className="text-xs text-accent-2">{t('errors.invalid_score')}</span>
-            )}
+            ) : null}
           </div>
 
-          <div className="mt-4 space-y-3">
-            {sets.map((set, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <span className="w-14 text-xs uppercase tracking-wider text-fg-muted">
-                  {t('setNumber', { n: index + 1 })}
-                </span>
-                <GameInput
-                  label={`${t('you')} · ${t('setNumber', { n: index + 1 })}`}
-                  value={set.me}
-                  onChange={(v) => updateSet(index, 'me', v)}
-                />
-                <span className="text-fg-muted">–</span>
-                <GameInput
-                  label={`${t('them')} · ${t('setNumber', { n: index + 1 })}`}
-                  value={set.opp}
-                  onChange={(v) => updateSet(index, 'opp', v)}
-                />
-              </div>
-            ))}
+          {/* Encabezado visible de las columnas. Antes "Vos" y "Rivales" solo
+              estaban en el aria-label: a la vista, "6 – 3" no decía de quién
+              era cada número. Oculto para el lector, que ya los oye en cada
+              campo. */}
+          <div aria-hidden="true" className="mt-4 flex items-center gap-3">
+            <span className="w-14 shrink-0" />
+            <span className="w-16 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-fg-secondary">
+              {t('you')}
+            </span>
+            <span className="invisible shrink-0">–</span>
+            <span className="w-16 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-fg-secondary">
+              {t('them')}
+            </span>
           </div>
 
-          <div className="mt-4 flex gap-2">
+          <div className="mt-2 space-y-3">
+            {sets.map((set, index) => {
+              const winner = setWinner(set);
+              return (
+                <div key={index} className="flex items-center gap-3">
+                  <span className="w-14 shrink-0 text-xs uppercase tracking-wider text-fg-muted">
+                    {t('setNumber', { n: index + 1 })}
+                  </span>
+                  <GameInput
+                    label={`${t('you')} · ${t('setNumber', { n: index + 1 })}`}
+                    value={set.me}
+                    onChange={(v) => updateSet(index, 'me', v)}
+                  />
+                  <span className="shrink-0 text-fg-muted">–</span>
+                  <GameInput
+                    label={`${t('them')} · ${t('setNumber', { n: index + 1 })}`}
+                    value={set.opp}
+                    onChange={(v) => updateSet(index, 'opp', v)}
+                  />
+                  {/* Quién se llevó este set, en vivo. Un número mal tipeado
+                      se ve acá, set por set, antes que en el resultado final. */}
+                  {/* En celular no entra la palabra al lado de los dos números:
+                      va un símbolo, y la palabra desde `sm`. Los símbolos
+                      tienen forma distinta, así que no dependen del color, y
+                      el lector de pantalla siempre oye la palabra. */}
+                  <span
+                    className={
+                      winner === 'me'
+                        ? 'shrink-0 text-sm font-semibold text-win'
+                        : winner === 'opp'
+                          ? 'shrink-0 text-sm font-semibold text-loss'
+                          : 'shrink-0 text-sm text-fg-muted'
+                    }
+                  >
+                    <span aria-hidden="true" className="sm:hidden">
+                      {winner === 'me' ? '✓' : winner === 'opp' ? '✗' : '…'}
+                    </span>
+                    <span className="sr-only sm:not-sr-only sm:text-xs">
+                      {winner === 'me'
+                        ? t('setState.won')
+                        : winner === 'opp'
+                          ? t('setState.lost')
+                          : t('setState.incomplete')}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
             {sets.length < 5 ? (
               <button
                 type="button"
                 onClick={() => setSets((s) => [...s, { me: 6, opp: 4 }])}
-                className="touch-target rounded-pill border border-border px-4 text-sm font-semibold"
+                className="touch-target whitespace-nowrap rounded-pill border border-border px-4 text-sm font-semibold"
               >
                 {t('addSet')}
               </button>
@@ -215,14 +257,20 @@ export function SessionForm({ locale: _locale }: { locale: Locale }) {
               <button
                 type="button"
                 onClick={() => setSets((s) => s.slice(0, -1))}
-                className="touch-target rounded-pill border border-border px-4 text-sm font-semibold text-fg-secondary"
+                className="touch-target whitespace-nowrap rounded-pill border border-border px-4 text-sm font-semibold text-fg-secondary"
               >
                 {t('removeSet')}
               </button>
             ) : null}
           </div>
 
-          <p className="mt-3 text-xs text-fg-muted">{t('result.auto')}</p>
+          {/* Mientras un set está a medio cargar, el aviso va acá abajo y no al
+              lado del título: ahí no entraba en un celular y se partía. */}
+          {derived ? (
+            <p className="mt-3 text-xs text-fg-muted">{t('result.auto')}</p>
+          ) : (
+            <p className="mt-3 text-xs text-accent-2">{t('errors.invalid_score')}</p>
+          )}
         </section>
       ) : null}
 
@@ -433,7 +481,7 @@ function GameInput({
       value={value}
       aria-label={label}
       onChange={(e) => onChange(Number(e.target.value))}
-      className="touch-target w-16 rounded-card border border-border bg-bg-elevated px-3 py-2 text-center text-lg font-semibold"
+      className="touch-target w-16 shrink-0 rounded-card border border-border bg-bg-elevated px-3 py-2 text-center text-lg font-semibold"
     />
   );
 }

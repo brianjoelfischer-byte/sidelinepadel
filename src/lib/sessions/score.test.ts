@@ -6,6 +6,8 @@ import {
   isComeback,
   isValidSet,
   resultFromSets,
+  setWinner,
+  setsWon,
 } from './score';
 
 describe('validez de un set', () => {
@@ -117,5 +119,33 @@ describe('remontada', () => {
 
   it('perder el primero y el partido tampoco', () => {
     expect(isComeback([{ me: 3, opp: 6 }, { me: 4, opp: 6 }])).toBe(false);
+  });
+});
+
+describe('ganador de cada set', () => {
+  it('marca quién ganó cada set', () => {
+    expect(setWinner({ me: 6, opp: 3 })).toBe('me');
+    expect(setWinner({ me: 5, opp: 7 })).toBe('opp');
+    expect(setWinner({ me: 7, opp: 6 })).toBe('me');
+  });
+
+  /** Mientras se tipea, "5-3" no tiene ganador todavía: no hay que inventarle uno. */
+  it('un set a medio cargar no tiene ganador', () => {
+    expect(setWinner({ me: 5, opp: 3 })).toBeNull();
+    expect(setWinner({ me: 6, opp: 5 })).toBeNull();
+  });
+
+  it('cuenta los sets de cada lado', () => {
+    expect(
+      setsWon([
+        { me: 6, opp: 3 },
+        { me: 4, opp: 6 },
+        { me: 7, opp: 5 },
+      ]),
+    ).toEqual({ me: 2, opp: 1 });
+  });
+
+  it('no cuenta los sets inválidos', () => {
+    expect(setsWon([{ me: 6, opp: 3 }, { me: 5, opp: 3 }])).toEqual({ me: 1, opp: 0 });
   });
 });
