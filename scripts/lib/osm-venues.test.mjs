@@ -65,6 +65,59 @@ describe('de OpenStreetMap a sedes', () => {
     expect(rows.map((r) => r.name)).toEqual(['Polideportivo']);
   });
 
+  /**
+   * De la primera corrida real: 562 canchas quedaron sin sede porque estaban
+   * dentro de lugares que nadie etiquetó como club.
+   */
+  it('una cancha dentro de un colegio o un barrio cerrado va a ese lugar', () => {
+    const { rows } = buildVenues(
+      [
+        { type: 'way', id: 1, bounds: box(-31.4, -64.2), tags: { amenity: 'school', name: 'Colegio San José' } },
+        { type: 'way', id: 2, bounds: box(-31.4, -64.2, 0.0001), tags: { leisure: 'pitch', sport: 'padel' } },
+      ],
+      opts,
+    );
+    expect(rows.map((r) => r.name)).toEqual(['Colegio San José']);
+  });
+
+  /** Un club cargado como un punto no tiene área: nunca "contiene" nada. */
+  it('una cancha al lado de un club cargado como punto va a ese club', () => {
+    const { rows, stats } = buildVenues(
+      [
+        { type: 'node', id: 1, lat: -31.4, lon: -64.2, tags: { leisure: 'sports_centre', name: 'Complejo Norte' } },
+        // ~30 m al norte
+        { type: 'way', id: 2, bounds: box(-31.39973, -64.2, 0.0001), tags: { leisure: 'pitch', sport: 'padel' } },
+      ],
+      opts,
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ name: 'Complejo Norte', courts_count: 1 });
+    expect(stats.courtsNearby).toBe(1);
+  });
+
+  it('pero no a un negocio cualquiera que está al lado', () => {
+    const { rows } = buildVenues(
+      [
+        { type: 'node', id: 1, lat: -31.4, lon: -64.2, tags: { amenity: 'restaurant', name: 'Parrilla Don Juan' } },
+        { type: 'way', id: 2, bounds: box(-31.39973, -64.2, 0.0001), tags: { leisure: 'pitch', sport: 'padel' } },
+      ],
+      opts,
+    );
+    expect(rows).toHaveLength(0);
+  });
+
+  it('ni a un club que está a más de 60 m', () => {
+    const { rows } = buildVenues(
+      [
+        { type: 'node', id: 1, lat: -31.4, lon: -64.2, tags: { leisure: 'sports_centre', name: 'Complejo Norte' } },
+        // ~110 m
+        { type: 'way', id: 2, bounds: box(-31.399, -64.2, 0.0001), tags: { leisure: 'pitch', sport: 'padel' } },
+      ],
+      opts,
+    );
+    expect(rows).toHaveLength(0);
+  });
+
   it('una cancha suelta sin nombre ni club no entra', () => {
     const { rows, stats } = buildVenues(
       [{ type: 'way', id: 1, bounds: box(-31.4, -64.2, 0.0001), tags: { leisure: 'pitch', sport: 'padel' } }],
@@ -124,6 +177,24 @@ describe('de OpenStreetMap a sedes', () => {
 });
 
 describe('localidad más cercana', () => {
+  /** Real: "Sociedad Tiro Suizo Rosario · Tiro Suizo" en vez de Rosario. */
+  it('prefiere la ciudad aunque un barrio esté más cerca', () => {
+    expect(
+      nearestPlace({ lat: -32.95, lng: -60.66 }, [
+        { name: 'Tiro Suizo', kind: 'suburb', lat: -32.951, lng: -60.661 },
+        { name: 'Rosario', kind: 'city', lat: -32.94, lng: -60.65 },
+      ]),
+    ).toBe('Rosario');
+  });
+
+  it('usa el barrio si no hay ninguna localidad en rango', () => {
+    expect(
+      nearestPlace({ lat: -32.95, lng: -60.66 }, [
+        { name: 'Barrio Aislado', kind: 'suburb', lat: -32.951, lng: -60.661 },
+      ]),
+    ).toBe('Barrio Aislado');
+  });
+
   it('un pueblo lejano no cuenta', () => {
     expect(
       nearestPlace({ lat: -31.4, lng: -64.2 }, [{ name: 'Lejano', kind: 'village', lat: -31.5, lng: -64.2 }]),

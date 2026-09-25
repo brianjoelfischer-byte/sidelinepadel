@@ -15,9 +15,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const LOCAL = join(root, '.env.local');
 const EXAMPLE = join(root, '.env.example');
 
-const dim = (s) => `[2m${s}[0m`;
-const bold = (s) => `[1m${s}[0m`;
-const amber = (s) => `[33m${s}[0m`;
+const dim = (s) => `\x1b[2m${s}\x1b[0m`;
+const bold = (s) => `\x1b[1m${s}\x1b[0m`;
+const amber = (s) => `\x1b[33m${s}\x1b[0m`;
 
 if (!existsSync(LOCAL)) {
   await copyFile(EXAMPLE, LOCAL);

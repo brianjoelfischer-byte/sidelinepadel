@@ -83,16 +83,23 @@ async function overpass(query, label) {
 const area = (cc) => `area["ISO3166-1"="${cc}"][admin_level=2]->.a;`;
 
 /**
- * Lo que tiene pádel, más los clubes con nombre que están a menos de 30 m de
- * algo de pádel: ahí adentro suelen estar las canchas sin nombre.
+ * Lo que tiene pádel, más todo lo que tiene nombre a menos de 80 m de algo de
+ * pádel: ahí adentro, o al lado, suelen estar las canchas sin nombre.
+ *
+ * "Todo lo que tiene nombre" y no solo clubes: la primera corrida sobre
+ * Argentina, limitada a sports_centre/club/…, dejó 562 canchas sin sede. Están
+ * dentro de colegios, barrios cerrados y complejos que nadie etiquetó como
+ * club. Se excluyen calles, vías, ríos, límites y barrios, que tienen nombre
+ * pero nunca son la sede. `osm-venues.mjs` decide qué se usa y cómo.
+ *
  * `bb` trae la caja de cada vía, que es lo que permite saber qué cancha cae
- * dentro de qué club.
+ * dentro de qué lugar.
  */
 const padelQuery = (cc) => `[out:json][timeout:280];
 ${area(cc)}
 nwr(area.a)["sport"~"(^|;) *padel *(;|$)",i]->.padel;
-nwr(area.a)["leisure"~"^(sports_centre|sports_hall|club|fitness_centre|recreation_ground)$"]["name"](around.padel:30)->.hosts;
-(.padel; .hosts;);
+nwr(area.a)["name"][!"highway"][!"railway"][!"waterway"][!"boundary"][!"place"][!"route"][!"power"](around.padel:80)->.named;
+(.padel; .named;);
 out bb tags;`;
 
 /** Localidades, para mostrar y buscar por ciudad cuando el club no la trae. */
@@ -117,7 +124,7 @@ async function fetchCountry(cc, timezoneOf) {
 
   const { rows, stats } = buildVenues(elements, { countryCode: cc, timezoneOf, places });
   console.log(
-    `  → ${rows.length} sedes · ${stats.courtsAttributed} canchas atribuidas · ` +
+    `  → ${rows.length} sedes · ${stats.courtsAttributed} canchas dentro de su club · ${stats.courtsNearby} al lado · ` +
       `${stats.duplicatesMerged} duplicados · ${stats.unnamedSkipped} sin nombre`,
   );
 

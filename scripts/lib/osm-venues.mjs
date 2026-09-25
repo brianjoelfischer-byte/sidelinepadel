@@ -26,8 +26,8 @@
 
 const PADEL = /(^|;)\s*padel\s*(;|$)/i;
 
-/** Estas etiquetas marcan un lugar que puede contener canchas. */
-const HOST_LEISURE = new Set([
+/** Etiquetas de un lugar deportivo. */
+const SPORT_LEISURE = new Set([
   'sports_centre',
   'sports_hall',
   'club',
@@ -35,11 +35,22 @@ const HOST_LEISURE = new Set([
   'recreation_ground',
 ]);
 
+/**
+ * Nombres que suenan a lugar deportivo. Solo se usa para asignar por
+ * cercanía: sin este filtro, una cancha al lado de "Parrilla Don Juan"
+ * terminaría llamándose así.
+ */
+const SPORTY_NAME =
+  /\b(club|p[aá]del|complejo|deportiv|polideportivo|sport|tenis|tennis|country|arena|indoor|squash|gimnasio|gym|f[uú]tbol|golf|atl[eé]tico|athletic)/i;
+
+/** Una cancha sin club que la contenga va al lugar deportivo a menos de esto. */
+const NEAR_M = 60;
+
 /** Minúsculas y sin tildes, para comparar nombres: "Pádel Club" = "padel club". */
 export function fold(text) {
   return text
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/\p{M}/gu, '') // las tildes, separadas por NFD
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();
@@ -53,8 +64,13 @@ export function isPitch(tags = {}) {
   return tags.leisure === 'pitch';
 }
 
-function isHost(tags = {}) {
-  return HOST_LEISURE.has(tags.leisure ?? '') || tags.club === 'sport';
+function isSporty(tags = {}) {
+  return (
+    SPORT_LEISURE.has(tags.leisure ?? '') ||
+    tags.club === 'sport' ||
+    Boolean(tags.sport) ||
+    SPORTY_NAME.test(tags.name ?? '')
+  );
 }
 
 /** Nombre utilizable: 2 a 120 caracteres, como exige el CHECK de la tabla. */
@@ -115,19 +131,27 @@ function addressOf(tags = {}) {
  *
  * Radios distintos por tipo: a 15 km de una ciudad seguís "en" esa ciudad; a
  * 15 km de un pueblo, probablemente no.
+ *
+ * Ciudad, pueblo o villa antes que barrio: con los datos reales, tomar lo más
+ * cercano daba "Sociedad Tiro Suizo Rosario · Tiro Suizo", el barrio en lugar
+ * de Rosario. El barrio queda solo si no hay ninguna localidad en rango.
  */
-const PLACE_RADIUS_M = { city: 20_000, town: 10_000, village: 4_000, suburb: 3_000 };
+const SETTLEMENT_RADIUS_M = { city: 20_000, town: 10_000, village: 4_000 };
+const SUBURB_RADIUS_M = 3_000;
 
 export function nearestPlace(point, places) {
-  let best = null;
+  let settlement = null;
+  let suburb = null;
   for (const place of places) {
-    const limit = PLACE_RADIUS_M[place.kind];
-    if (!limit) continue;
     const d = distanceM(point, place);
-    if (d > limit) continue;
-    if (!best || d < best.d) best = { name: place.name, d };
+    const limit = SETTLEMENT_RADIUS_M[place.kind];
+    if (limit !== undefined) {
+      if (d <= limit && (!settlement || d < settlement.d)) settlement = { name: place.name, d };
+    } else if (place.kind === 'suburb' && d <= SUBURB_RADIUS_M) {
+      if (!suburb || d < suburb.d) suburb = { name: place.name, d };
+    }
   }
-  return best?.name ?? null;
+  return (settlement ?? suburb)?.name ?? null;
 }
 
 /**
@@ -143,6 +167,7 @@ export function buildVenues(elements, { countryCode, timezoneOf, places = [] }) 
   const stats = {
     padelElements: 0,
     courtsAttributed: 0,
+    courtsNearby: 0,
     unnamedSkipped: 0,
     duplicatesMerged: 0,
     invalidSkipped: 0,
@@ -151,12 +176,31 @@ export function buildVenues(elements, { countryCode, timezoneOf, places = [] }) 
   const padel = elements.filter((el) => isPadel(el.tags));
   stats.padelElements = padel.length;
 
-  // Contenedores con nombre y caja, del más chico al más grande: una cancha
-  // dentro de un club dentro de un parque va al club, no al parque.
-  const hosts = elements
-    .filter((el) => el.bounds && cleanName(el.tags?.name) && (isHost(el.tags) || isPadel(el.tags)))
-    .filter((el) => !isPitch(el.tags))
+  // Contenedores: CUALQUIER área con nombre que no sea una cancha. Un colegio,
+  // un barrio cerrado o un complejo sin etiqueta de club también cuentan — las
+  // canchas están adentro, y así es como la gente nombra el lugar. La consulta
+  // ya descarta calles, límites y barrios. Del más chico al más grande: una
+  // cancha dentro de un club dentro de un parque va al club, no al parque.
+  const containers = elements
+    .filter((el) => el.bounds && cleanName(el.tags?.name) && !isPitch(el.tags))
     .sort((a, b) => area(a.bounds) - area(b.bounds));
+
+  // Por cercanía, en cambio, solo lugares deportivos: sin contención, un nombre
+  // cualquiera al lado no alcanza. Incluye clubes cargados como un punto, que
+  // no tienen área y nunca pueden "contener" nada.
+  const nearbyHosts = elements
+    .filter((el) => cleanName(el.tags?.name) && !isPitch(el.tags) && isSporty(el.tags))
+    .map((el) => ({ el, point: centerOf(el) }))
+    .filter((h) => h.point);
+
+  const nearestSporty = (point) => {
+    let best = null;
+    for (const h of nearbyHosts) {
+      const d = distanceM(point, h.point);
+      if (d <= NEAR_M && (!best || d < best.d)) best = { el: h.el, d };
+    }
+    return best?.el ?? null;
+  };
 
   /** @type {Map<string, { el: OsmElement, courts: number }>} */
   const candidates = new Map();
@@ -177,10 +221,16 @@ export function buildVenues(elements, { countryCode, timezoneOf, places = [] }) 
     if (isPitch(el.tags)) {
       // Una cancha va al club que la contiene, tenga nombre o no: un nombre de
       // cancha es "Cancha 2", no el de la sede.
-      const host = hosts.find((h) => h !== el && contains(h.bounds, point));
+      const host = containers.find((h) => h !== el && contains(h.bounds, point));
       if (host) {
         upsert(host).courts += 1;
         stats.courtsAttributed += 1;
+        continue;
+      }
+      const near = nearestSporty(point);
+      if (near) {
+        upsert(near).courts += 1;
+        stats.courtsNearby += 1;
         continue;
       }
       // Cancha suelta con nombre: se toma como sede de una cancha.
@@ -263,7 +313,7 @@ export function toSql(rows, { countryCode, generatedAt, stats }) {
 --  Sideline Padel · sedes de pádel de ${countryCode} desde OpenStreetMap
 --  Generado por scripts/venues-fetch.mjs · ${generatedAt}
 --
---  ${rows.length} sedes · ${stats.courtsAttributed} canchas atribuidas a su club
+--  ${rows.length} sedes · ${stats.courtsAttributed + stats.courtsNearby} canchas atribuidas a su club (${stats.courtsNearby} por cercanía)
 --  ${stats.duplicatesMerged} duplicados unidos · ${stats.unnamedSkipped} canchas sin nombre ni club
 --
 --  Datos © colaboradores de OpenStreetMap, bajo licencia ODbL 1.0.
