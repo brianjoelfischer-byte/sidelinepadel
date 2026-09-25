@@ -3,8 +3,8 @@
 --  Generado por scripts/venues-fetch.mjs · 2026-09-25
 --  Consulta: completa
 --
---  355 sedes · 472 canchas atribuidas a su club (32 por cercanía)
---  3 duplicados unidos · 381 canchas sin nombre ni club
+--  345 sedes · 444 canchas atribuidas a su club (36 por cercanía)
+--  3 duplicados unidos · 408 canchas sin nombre ni club
 --
 --  Datos © colaboradores de OpenStreetMap, bajo licencia ODbL 1.0.
 --  https://www.openstreetmap.org/copyright
@@ -39,7 +39,6 @@ VALUES
   ('Alvear Football Club', 'AR', NULL, 'Intendente Alvear', 'Avenida San Martín 659', ST_SetSRID(ST_MakePoint(-63.5964601, -35.235224), 4326)::geography, 'America/Argentina/Salta', 1, 'osm', 'way', 429063597, 'approved'),
   ('Aránzazu', 'AR', NULL, 'Garín', NULL, ST_SetSRID(ST_MakePoint(-58.72879535, -34.43849605), 4326)::geography, 'America/Argentina/Buenos_Aires', 6, 'osm', 'way', 620769820, 'approved'),
   ('Arauca', 'AR', NULL, 'Tigre', NULL, ST_SetSRID(ST_MakePoint(-58.582869900000006, -34.4217618), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 1526649269, 'approved'),
-  ('area urbana de la ciudad de general alvear', 'AR', NULL, 'General Alvear', NULL, ST_SetSRID(ST_MakePoint(-67.6953839, -34.974051900000006), 4326)::geography, 'America/Argentina/Mendoza', 1, 'osm', 'way', 1408935209, 'approved'),
   ('Arena Paddle', 'AR', NULL, 'Posadas', 'Avenida Quaranta 3753', ST_SetSRID(ST_MakePoint(-55.91855985, -27.40336285), 4326)::geography, 'America/Argentina/Cordoba', 3, 'osm', 'way', 1443822315, 'approved'),
   ('Asociación Empleados de Comercio', 'AR', NULL, 'Crespo', NULL, ST_SetSRID(ST_MakePoint(-60.3014917, -32.0112082), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'way', 500003246, 'approved'),
   ('Asociación Italiana "Leonardo Da Vinci"', 'AR', 'Buenos Aires', 'José León Suarez', '55 - Buenos Aires 7008', ST_SetSRID(ST_MakePoint(-58.570500949999996, -34.53259815), 4326)::geography, 'America/Argentina/Buenos_Aires', NULL, 'osm', 'way', 1185614758, 'approved'),
@@ -50,7 +49,6 @@ VALUES
   ('Balneario y Camping Municipal', 'AR', NULL, 'Coronel Pringles', NULL, ST_SetSRID(ST_MakePoint(-61.36500395, -37.99997425), 4326)::geography, 'America/Argentina/Buenos_Aires', 3, 'osm', 'way', 169017461, 'approved'),
   ('Barrio El Tribal', 'AR', NULL, 'Las Piedritas', NULL, ST_SetSRID(ST_MakePoint(-68.4876093, -31.5251273), 4326)::geography, 'America/Argentina/San_Juan', 1, 'osm', 'way', 902733363, 'approved'),
   ('Barrio Procrear Ex Radio Nacional', 'AR', NULL, 'Yerba Buena', NULL, ST_SetSRID(ST_MakePoint(-65.267122, -26.8116958), 4326)::geography, 'America/Argentina/Tucuman', 2, 'osm', 'way', 666101355, 'approved'),
-  ('Base Aerea Militar Mar del Plata', 'AR', NULL, 'Mar del Plata', NULL, ST_SetSRID(ST_MakePoint(-57.5752504, -37.939664699999994), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 1493947922, 'approved'),
   ('Basticourt', 'AR', NULL, 'Villa Bosch', '808 - Martín Miguens 7886', ST_SetSRID(ST_MakePoint(-58.5902679, -34.57363255), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 1194194023, 'approved'),
   ('Belmur Padel CLub', 'AR', NULL, 'Villa Mercedes', NULL, ST_SetSRID(ST_MakePoint(-65.44003035, -33.6773271), 4326)::geography, 'America/Argentina/San_Luis', 1, 'osm', 'way', 1357804873, 'approved'),
   ('Black', 'AR', NULL, 'Posadas', 'Avenida Tomás Guido', ST_SetSRID(ST_MakePoint(-55.9152457, -27.3867371), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'node', 9711892123, 'approved'),
@@ -200,10 +198,8 @@ VALUES
   ('Condor Club', 'AR', NULL, 'Godoy Cruz', 'Arístides Villanueva', ST_SetSRID(ST_MakePoint(-68.81023160000001, -32.949839), 4326)::geography, 'America/Argentina/Mendoza', NULL, 'osm', 'way', 1553530379, 'approved'),
   ('Corner Paddle', 'AR', NULL, 'General Las Heras', NULL, ST_SetSRID(ST_MakePoint(-58.9442883, -34.9239218), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'node', 12188256484, 'approved'),
   ('Costa Padel Club', 'AR', NULL, 'Neuquén', 'Río Senguer 731', ST_SetSRID(ST_MakePoint(-68.0695544, -38.97870675), 4326)::geography, 'America/Argentina/Salta', 4, 'osm', 'way', 1084339017, 'approved'),
-  ('Costanera', 'AR', NULL, 'Viedma', NULL, ST_SetSRID(ST_MakePoint(-62.99244635, -40.8037085), 4326)::geography, 'America/Argentina/Salta', 1, 'osm', 'relation', 16086862, 'approved'),
   ('Country Club Roque Pérez', 'AR', NULL, 'Roque Pérez', NULL, ST_SetSRID(ST_MakePoint(-59.3401015, -35.39004425), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 1472720912, 'approved'),
   ('Country Piedras Blancas', 'AR', NULL, 'Córdoba', NULL, ST_SetSRID(ST_MakePoint(-64.1629729, -31.48313715), 4326)::geography, 'America/Argentina/Cordoba', 5, 'osm', 'way', 865146540, 'approved'),
-  ('Cruz del Eje', 'AR', NULL, 'Cruz del Eje', NULL, ST_SetSRID(ST_MakePoint(-64.8021991, -30.729464999999998), 4326)::geography, 'America/Argentina/Cordoba', 7, 'osm', 'way', 239382313, 'approved'),
   ('Cuvio Tenis', 'AR', NULL, 'Rosario', 'Pueyrredón 2555', ST_SetSRID(ST_MakePoint(-60.6648574, -32.97503035), 4326)::geography, 'America/Argentina/Cordoba', 4, 'osm', 'way', 585712301, 'approved'),
   ('Deportivo Estrella Andina', 'AR', NULL, 'La Vega', 'Callejón de Bello 120', ST_SetSRID(ST_MakePoint(-71.29599529999999, -40.13854775), 4326)::geography, 'America/Argentina/Salta', NULL, 'osm', 'way', 1359707422, 'approved'),
   ('Deportivo Italiano', 'AR', NULL, 'Rosario', 'Avenida Presidente Perón 6565', ST_SetSRID(ST_MakePoint(-60.7090353, -32.967452699999996), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'way', 1282040345, 'approved'),
@@ -227,11 +223,9 @@ VALUES
   ('Estadio Municipal', 'AR', NULL, 'General Las Heras', NULL, ST_SetSRID(ST_MakePoint(-58.94744365, -34.920650699999996), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 1194027889, 'approved'),
   ('Estadio Nestor Zenklusen', 'AR', NULL, 'Rafaela', 'Ituzaingó 1025', ST_SetSRID(ST_MakePoint(-61.497157, -31.2636876), 4326)::geography, 'America/Argentina/Cordoba', 2, 'osm', 'way', 174450183, 'approved'),
   ('Estadio Ubaldo Matildo Filliol', 'AR', NULL, 'San Miguel del Monte', NULL, ST_SetSRID(ST_MakePoint(-58.81255755, -35.444189449999996), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 1202956959, 'approved'),
-  ('Fincas de San Vicente', 'AR', NULL, 'San Vicente', NULL, ST_SetSRID(ST_MakePoint(-58.4586572, -35.022139100000004), 4326)::geography, 'America/Argentina/Buenos_Aires', 4, 'osm', 'relation', 15587280, 'approved'),
   ('First Padel Center', 'AR', NULL, 'Villa Lynch', NULL, ST_SetSRID(ST_MakePoint(-58.4924778, -34.5943412), 4326)::geography, 'America/Argentina/Buenos_Aires', NULL, 'osm', 'node', 12459833490, 'approved'),
   ('Fpadel', 'AR', NULL, 'Villa Animí', NULL, ST_SetSRID(ST_MakePoint(-64.27382, -31.0189897), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'node', 12902316111, 'approved'),
   ('Frana Complejo Padel', 'AR', NULL, 'Posadas', 'Comandante Miño', ST_SetSRID(ST_MakePoint(-55.91907615, -27.4018856), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'way', 1443821834, 'approved'),
-  ('Fuerza Aérea Argentina', 'AR', NULL, 'San Benito', NULL, ST_SetSRID(ST_MakePoint(-60.4694822, -31.78537945), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'way', 813212414, 'approved'),
   ('Fusion Padel', 'AR', NULL, 'Neuquén', 'Martín Fierro 44', ST_SetSRID(ST_MakePoint(-68.059759, -38.97332015), 4326)::geography, 'America/Argentina/Salta', NULL, 'osm', 'way', 1085459323, 'approved'),
   ('Galpon Paddle', 'AR', NULL, 'General Las Heras', NULL, ST_SetSRID(ST_MakePoint(-58.9531322, -34.9185895), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'node', 13116952498, 'approved'),
   ('Garden Fit', 'AR', NULL, 'Saldán', NULL, ST_SetSRID(ST_MakePoint(-64.2483978, -31.3435057), 4326)::geography, 'America/Argentina/Cordoba', NULL, 'osm', 'node', 13078326400, 'approved'),
@@ -249,6 +243,7 @@ VALUES
   ('Hospital Juan G. Las Heras - Tupungato', 'AR', NULL, 'Tupungato', NULL, ST_SetSRID(ST_MakePoint(-69.14726354999999, -33.3640489), 4326)::geography, 'America/Argentina/Mendoza', 2, 'osm', 'way', 179194489, 'approved'),
   ('Impacto', 'AR', NULL, 'Cipolletti', 'General San Martín 562', ST_SetSRID(ST_MakePoint(-67.9944793, -38.9405182), 4326)::geography, 'America/Argentina/Salta', NULL, 'osm', 'node', 12103718946, 'approved'),
   ('Invictus', 'AR', NULL, 'Formosa', 'Obispo Scozzina 2705', ST_SetSRID(ST_MakePoint(-58.1997654, -26.1792095), 4326)::geography, 'America/Argentina/Cordoba', NULL, 'osm', 'node', 13675359329, 'approved'),
+  ('Jockey Club', 'AR', NULL, 'Cruz del Eje', NULL, ST_SetSRID(ST_MakePoint(-64.7700728, -30.7558837), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'node', 2459447676, 'approved'),
   ('Jockey Club', 'AR', NULL, 'Villa Mercedes', NULL, ST_SetSRID(ST_MakePoint(-65.46365675000001, -33.67890655), 4326)::geography, 'America/Argentina/San_Luis', 1, 'osm', 'way', 1384665249, 'approved'),
   ('Kentucky Club House', 'AR', NULL, 'Funes', NULL, ST_SetSRID(ST_MakePoint(-60.83238985, -32.944158900000005), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'relation', 6016118, 'approved'),
   ('Kick', 'AR', NULL, 'Lomas del Mirador', NULL, ST_SetSRID(ST_MakePoint(-58.5164177, -34.6622714), 4326)::geography, 'America/Argentina/Buenos_Aires', NULL, 'osm', 'way', 949221115, 'approved'),
@@ -267,6 +262,7 @@ VALUES
   ('La Rural Paddle Center', 'AR', NULL, 'Concordia', 'Carlos Pellegrini 1440', ST_SetSRID(ST_MakePoint(-58.013701749999996, -31.38327245), 4326)::geography, 'America/Argentina/Cordoba', 3, 'osm', 'way', 816403404, 'approved'),
   ('La Torre Paddle Club', 'AR', NULL, 'Vera', NULL, ST_SetSRID(ST_MakePoint(-60.2107791, -29.4594008), 4326)::geography, 'America/Argentina/Cordoba', 2, 'osm', 'node', 13270535836, 'approved'),
   ('La Virazón', 'AR', NULL, 'Quequén', NULL, ST_SetSRID(ST_MakePoint(-58.691925350000005, -38.57457835), 4326)::geography, 'America/Argentina/Buenos_Aires', 2, 'osm', 'way', 1462606220, 'approved'),
+  ('Lalo''s Padel', 'AR', NULL, 'Cruz del Eje', NULL, ST_SetSRID(ST_MakePoint(-64.7895574, -30.7404962), 4326)::geography, 'America/Argentina/Cordoba', 3, 'osm', 'node', 6208501417, 'approved'),
   ('Las Barricas Padel', 'AR', NULL, 'Cipolletti', 'Avenida Mariano Moreno 435', ST_SetSRID(ST_MakePoint(-68.0064557, -38.93207265), 4326)::geography, 'America/Argentina/Salta', NULL, 'osm', 'way', 1162338659, 'approved'),
   ('Las Palmeras', 'AR', NULL, 'Villa Maipú', NULL, ST_SetSRID(ST_MakePoint(-58.48394155, -34.560596450000006), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 1547458316, 'approved'),
   ('Liceo Rugby Club (LRC)', 'AR', NULL, 'Russell', 'Boedo', ST_SetSRID(ST_MakePoint(-68.82663785, -32.9879107), 4326)::geography, 'America/Argentina/Mendoza', 3, 'osm', 'way', 239991242, 'approved'),
@@ -274,7 +270,6 @@ VALUES
   ('Macabi Noar', 'AR', NULL, 'Córdoba', 'Duarte Quirós', ST_SetSRID(ST_MakePoint(-64.24607535, -31.4011804), 4326)::geography, 'America/Argentina/Cordoba', 2, 'osm', 'way', 1336575220, 'approved'),
   ('Mall & Convention Center Luján', 'AR', NULL, 'Luján', NULL, ST_SetSRID(ST_MakePoint(-59.1283859, -34.542153150000004), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 239530324, 'approved'),
   ('Mario Calandri e Hijos', 'AR', NULL, 'Pergamino', 'Doctor Rodríguez Jáuregui 3480', ST_SetSRID(ST_MakePoint(-60.6010582, -33.885592700000004), 4326)::geography, 'America/Argentina/Buenos_Aires', 2, 'osm', 'way', 620990483, 'approved'),
-  ('Mayling', 'AR', NULL, 'Villa Rosa', NULL, ST_SetSRID(ST_MakePoint(-58.8729066, -34.4334981), 4326)::geography, 'America/Argentina/Buenos_Aires', 3, 'osm', 'relation', 15551157, 'approved'),
   ('Me Pinta', 'AR', NULL, 'Santa Rosa', NULL, ST_SetSRID(ST_MakePoint(-64.3203378, -36.6290979), 4326)::geography, 'America/Argentina/Salta', 1, 'osm', 'node', 12320382725, 'approved'),
   ('Médanos Verdes Pádel Club', 'AR', NULL, 'Santa Rosa', 'Avenida Doctor Palacios 1821', ST_SetSRID(ST_MakePoint(-64.25647985, -36.6254139), 4326)::geography, 'America/Argentina/Salta', NULL, 'osm', 'way', 1458638103, 'approved'),
   ('Megafútbol San Justo', 'AR', NULL, 'Ramos Mejía', 'Rincón 2875', ST_SetSRID(ST_MakePoint(-58.556986699999996, -34.671273), 4326)::geography, 'America/Argentina/Buenos_Aires', 4, 'osm', 'way', 560617723, 'approved'),
@@ -286,6 +281,7 @@ VALUES
   ('Naturgy', 'AR', NULL, 'Villa Maipú', NULL, ST_SetSRID(ST_MakePoint(-58.51142045, -34.5704214), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 329379441, 'approved'),
   ('New Balance', 'AR', NULL, 'Martinez', 'Vélez Sarsfield 3180', ST_SetSRID(ST_MakePoint(-58.53296055, -34.505745899999994), 4326)::geography, 'America/Argentina/Buenos_Aires', NULL, 'osm', 'way', 463800895, 'approved'),
   ('New Face', 'AR', NULL, 'San Fernando del Valle de Catamarca', NULL, ST_SetSRID(ST_MakePoint(-65.8100454, -28.4715419), 4326)::geography, 'America/Argentina/Catamarca', 2, 'osm', 'way', 1469468832, 'approved'),
+  ('New Padel', 'AR', NULL, 'Cruz del Eje', NULL, ST_SetSRID(ST_MakePoint(-64.7880169, -30.7493756), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'node', 10722845142, 'approved'),
   ('Nico La Canchita', 'AR', NULL, 'Las Toninas', NULL, ST_SetSRID(ST_MakePoint(-56.702982500000005, -36.4843623), 4326)::geography, 'America/Argentina/Buenos_Aires', NULL, 'osm', 'way', 1473492480, 'approved'),
   ('NorPádel', 'AR', NULL, 'Federacíon', 'Avenida del Lago', ST_SetSRID(ST_MakePoint(-57.937630150000004, -30.9645819), 4326)::geography, 'America/Argentina/Cordoba', NULL, 'osm', 'way', 1334986573, 'approved'),
   ('Open Padel & Tennis', 'AR', NULL, 'Villa Chacabuco', NULL, ST_SetSRID(ST_MakePoint(-58.50342405, -34.58001015), 4326)::geography, 'America/Argentina/Buenos_Aires', 3, 'osm', 'way', 1532353250, 'approved'),
@@ -305,8 +301,6 @@ VALUES
   ('Paraíso Tenis Club', 'AR', NULL, 'Adrogué', 'Avenida Segurola (LdZ) / 30 de Septiembre (AB) 1300', ST_SetSRID(ST_MakePoint(-58.3945832, -34.7896865), 4326)::geography, 'America/Argentina/Buenos_Aires', 4, 'osm', 'way', 1443035745, 'approved'),
   ('Paraná Soccer II', 'AR', NULL, 'Paraná', 'Churruarín 1551', ST_SetSRID(ST_MakePoint(-60.4976792, -31.7456001), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'node', 11382068371, 'approved'),
   ('Parque Berduc', 'AR', NULL, 'Paraná', NULL, ST_SetSRID(ST_MakePoint(-60.52050125, -31.72599245), 4326)::geography, 'America/Argentina/Cordoba', 2, 'osm', 'way', 146300805, 'approved'),
-  ('Parque Ecológico Municipal', 'AR', NULL, 'Transradio', NULL, ST_SetSRID(ST_MakePoint(-58.0724733, -34.86595335), 4326)::geography, 'America/Argentina/Buenos_Aires', 4, 'osm', 'relation', 11925488, 'approved'),
-  ('Parque Miguel Lillo', 'AR', NULL, 'Necochea', NULL, ST_SetSRID(ST_MakePoint(-58.765261100000004, -38.592907350000004), 4326)::geography, 'America/Argentina/Buenos_Aires', 2, 'osm', 'way', 134058258, 'approved'),
   ('Parque Provincial Costanera Río V', 'AR', NULL, 'Villa Mercedes', NULL, ST_SetSRID(ST_MakePoint(-65.46853995000001, -33.69539155), 4326)::geography, 'America/Argentina/San_Luis', 2, 'osm', 'relation', 18696207, 'approved'),
   ('Pico deporte', 'AR', NULL, 'Tandil', NULL, ST_SetSRID(ST_MakePoint(-59.1288689, -37.3006334), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 1348628717, 'approved'),
   ('Pileta', 'AR', NULL, 'Monte Buey', NULL, ST_SetSRID(ST_MakePoint(-62.4573288, -32.9221132), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'way', 951328540, 'approved'),
@@ -324,12 +318,9 @@ VALUES
   ('Polideportivo Municipal Horacio José Imberti', 'AR', NULL, 'Villa Mercedes', NULL, ST_SetSRID(ST_MakePoint(-65.4587823, -33.6655364), 4326)::geography, 'America/Argentina/San_Luis', NULL, 'osm', 'way', 1512138799, 'approved'),
   ('Polideportivo Municipal Lozada', 'AR', NULL, 'Lozada', NULL, ST_SetSRID(ST_MakePoint(-64.08505105, -31.64827215), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'way', 1389641531, 'approved'),
   ('Polideportivo Trevelin', 'AR', NULL, 'Trevelin', NULL, ST_SetSRID(ST_MakePoint(-71.46688069999999, -43.0788456), 4326)::geography, 'America/Argentina/Catamarca', 1, 'osm', 'way', 1244161249, 'approved'),
-  ('Poliducto La Matanza - Dársena Sur', 'AR', NULL, 'Villa Fiorito', NULL, ST_SetSRID(ST_MakePoint(-58.43815015, -34.69261705), 4326)::geography, 'America/Argentina/Buenos_Aires', 3, 'osm', 'way', 1011722329, 'approved'),
   ('Power Padel', 'AR', NULL, 'Villa Mercedes', NULL, ST_SetSRID(ST_MakePoint(-65.44415695, -33.69429495), 4326)::geography, 'America/Argentina/San_Luis', 1, 'osm', 'way', 1522833492, 'approved'),
   ('Predio CPCEPSL', 'AR', NULL, 'Juana Koslay', NULL, ST_SetSRID(ST_MakePoint(-66.2631218, -33.2907192), 4326)::geography, 'America/Argentina/San_Luis', 1, 'osm', 'way', 1388285506, 'approved'),
-  ('Primero de Julio', 'AR', NULL, 'Matheu', NULL, ST_SetSRID(ST_MakePoint(-58.8245072, -34.377860749999996), 4326)::geography, 'America/Argentina/Buenos_Aires', 2, 'osm', 'way', 1222248304, 'approved'),
   ('pucura', 'AR', NULL, 'Tandil', NULL, ST_SetSRID(ST_MakePoint(-59.124503000000004, -37.358930900000004), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 1329988404, 'approved'),
-  ('Punta Mogotes', 'AR', NULL, 'Mar del Plata', NULL, ST_SetSRID(ST_MakePoint(-57.5401059, -38.0683431), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 131748418, 'approved'),
   ('Punta Verde', 'AR', NULL, 'Beccar', NULL, ST_SetSRID(ST_MakePoint(-58.5527468, -34.4735631), 4326)::geography, 'America/Argentina/Buenos_Aires', NULL, 'osm', 'node', 5415578487, 'approved'),
   ('Punto Padel', 'AR', NULL, 'Montecarlo', 'Erwin Tito Geisert', ST_SetSRID(ST_MakePoint(-54.7775738, -26.570088650000002), 4326)::geography, 'America/Argentina/Cordoba', 2, 'osm', 'way', 1319021303, 'approved'),
   ('Punto Urbano', 'AR', NULL, 'Alta Gracia', 'Ingeniero Olmos 325', ST_SetSRID(ST_MakePoint(-64.4311168, -31.654620700000002), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'way', 757448900, 'approved'),
@@ -345,7 +336,6 @@ VALUES
   ('Salón de Empleados del IPPV', 'AR', NULL, 'Viedma', NULL, ST_SetSRID(ST_MakePoint(-63.0020284, -40.8250601), 4326)::geography, 'America/Argentina/Salta', 2, 'osm', 'way', 758782995, 'approved'),
   ('Samaa', 'AR', NULL, 'Ituzaingó', NULL, ST_SetSRID(ST_MakePoint(-58.6814701, -34.6637881), 4326)::geography, 'America/Argentina/Buenos_Aires', NULL, 'osm', 'node', 14156125325, 'approved'),
   ('San Andrés Padel Club', 'AR', NULL, 'Roldán', 'Formosa', ST_SetSRID(ST_MakePoint(-60.893973450000004, -32.90078285), 4326)::geography, 'America/Argentina/Cordoba', NULL, 'osm', 'way', 1417561170, 'approved'),
-  ('Santa Lucia', 'AR', NULL, 'Santiago del Estero', NULL, ST_SetSRID(ST_MakePoint(-64.2800306, -27.8213859), 4326)::geography, 'America/Argentina/Cordoba', 2, 'osm', 'way', 507428609, 'approved'),
   ('Santos Lugares Padel - Fútbol 5', 'AR', NULL, 'Santos Lugares', '528 - Dante 3965', ST_SetSRID(ST_MakePoint(-58.550278899999995, -34.59817765), 4326)::geography, 'America/Argentina/Buenos_Aires', NULL, 'osm', 'way', 1546208980, 'approved'),
   ('Sede Social Centro Recreativo Calchaquí', 'AR', NULL, 'Calchaquí', 'San Martín 917', ST_SetSRID(ST_MakePoint(-60.28665605, -29.8851354), 4326)::geography, 'America/Argentina/Cordoba', NULL, 'osm', 'way', 287305289, 'approved'),
   ('Sindicato de Farmacia', 'AR', NULL, 'Córdoba', NULL, ST_SetSRID(ST_MakePoint(-64.17250519999999, -31.486466), 4326)::geography, 'America/Argentina/Cordoba', 4, 'osm', 'way', 484722115, 'approved'),
