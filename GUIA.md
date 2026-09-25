@@ -225,6 +225,21 @@ Y si te aviso que hay una migración nueva, repetís el **paso 6**.
 **"no se reconoce el comando"** — falta instalar Node o Git, o hay que cerrar
 y reabrir la terminal.
 
+**"la ejecución de scripts está deshabilitada en este sistema"** (Windows) —
+le pasa a casi todos la primera vez. `git` es un programa y pasa, pero `npm`
+es un script y PowerShell lo bloquea. Se arregla una sola vez con:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+Confirmás con **S**. Permite correr scripts que están en tu máquina, sigue
+exigiendo firma a los bajados de internet, y solo afecta a tu usuario — no
+hace falta ser administrador. Es lo que recomienda la documentación de Node.
+
+> Si preferís no cambiar nada del sistema, la alternativa es escribir
+> `npm.cmd` en lugar de `npm` en **todos** los comandos de esta guía.
+
 **"Cannot find module"** — corré `npm install`.
 
 **La página tira error** — fijate en la terminal: ahí está el mensaje real.
