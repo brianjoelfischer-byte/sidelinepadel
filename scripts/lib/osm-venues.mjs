@@ -41,10 +41,19 @@ const SPORT_LEISURE = new Set([
  * terminaría llamándose así.
  */
 const SPORTY_NAME =
-  /\b(club|p[aá]del|complejo|deportiv|polideportivo|sport|tenis|tennis|country|arena|indoor|squash|gimnasio|gym|f[uú]tbol|golf|atl[eé]tico|athletic)/i;
+  /\b(club|p[aá]dd?(el|le)|complejo|deportiv|polideportivo|sport|tenis|tennis|country|arena|indoor|squash|gimnasio|gym|f[uú]tbol|golf|atl[eé]tico|athletic)/i;
 
 /** Una cancha sin club que la contenga va al lugar deportivo a menos de esto. */
 const NEAR_M = 60;
+
+/**
+ * Tope para contenedores que NO son deportivos. Un colegio o un barrio
+ * cerrado con canchas adentro es una sede; un área de varios kilómetros con el
+ * nombre de la ciudad ("Cruz del Eje") o de una costanera, no: la cancha cae
+ * dentro por casualidad. La diagonal de la caja, no el área, porque las áreas
+ * alargadas (una costanera) tienen poca superficie y mucho largo.
+ */
+const MAX_PLAIN_CONTAINER_M = 1_500;
 
 /** Minúsculas y sin tildes, para comparar nombres: "Pádel Club" = "padel club". */
 export function fold(text) {
@@ -106,6 +115,13 @@ function contains(bounds, point) {
 
 function area(bounds) {
   return (bounds.maxlat - bounds.minlat) * (bounds.maxlon - bounds.minlon);
+}
+
+function diagonalM(bounds) {
+  return distanceM(
+    { lat: bounds.minlat, lng: bounds.minlon },
+    { lat: bounds.maxlat, lng: bounds.maxlon },
+  );
 }
 
 /** Distancia en metros entre dos puntos (haversine). */
@@ -183,6 +199,7 @@ export function buildVenues(elements, { countryCode, timezoneOf, places = [] }) 
   // cancha dentro de un club dentro de un parque va al club, no al parque.
   const containers = elements
     .filter((el) => el.bounds && cleanName(el.tags?.name) && !isPitch(el.tags))
+    .filter((el) => isSporty(el.tags) || diagonalM(el.bounds) <= MAX_PLAIN_CONTAINER_M)
     .sort((a, b) => area(a.bounds) - area(b.bounds));
 
   // Por cercanía, en cambio, solo lugares deportivos: sin contención, un nombre

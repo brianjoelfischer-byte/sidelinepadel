@@ -118,6 +118,41 @@ describe('de OpenStreetMap a sedes', () => {
     expect(rows).toHaveLength(0);
   });
 
+  /** Real: "Hit Paddle", "Corner Paddle". En Argentina se escribe así. */
+  it('"paddle" con doble d también es deportivo', () => {
+    const { rows } = buildVenues(
+      [
+        { type: 'node', id: 1, lat: -31.4, lon: -64.2, tags: { name: 'Hit Paddle' } },
+        { type: 'way', id: 2, bounds: box(-31.39973, -64.2, 0.0001), tags: { leisure: 'pitch', sport: 'padel' } },
+      ],
+      opts,
+    );
+    expect(rows.map((r) => r.name)).toEqual(['Hit Paddle']);
+  });
+
+  /** Real: una cancha suelta terminó llamándose "Cruz del Eje", como la ciudad. */
+  it('un área enorme no deportiva no se lleva las canchas', () => {
+    const { rows } = buildVenues(
+      [
+        { type: 'way', id: 1, bounds: box(-30.72, -64.8, 0.02), tags: { landuse: 'residential', name: 'Cruz del Eje' } },
+        { type: 'way', id: 2, bounds: box(-30.72, -64.8, 0.0001), tags: { leisure: 'pitch', sport: 'padel' } },
+      ],
+      opts,
+    );
+    expect(rows).toHaveLength(0);
+  });
+
+  it('pero un club grande sí, aunque sea enorme', () => {
+    const { rows } = buildVenues(
+      [
+        { type: 'way', id: 1, bounds: box(-34.5, -58.5, 0.02), tags: { leisure: 'club', name: 'Club Náutico' } },
+        { type: 'way', id: 2, bounds: box(-34.5, -58.5, 0.0001), tags: { leisure: 'pitch', sport: 'padel' } },
+      ],
+      opts,
+    );
+    expect(rows.map((r) => r.name)).toEqual(['Club Náutico']);
+  });
+
   it('una cancha suelta sin nombre ni club no entra', () => {
     const { rows, stats } = buildVenues(
       [{ type: 'way', id: 1, bounds: box(-31.4, -64.2, 0.0001), tags: { leisure: 'pitch', sport: 'padel' } }],
