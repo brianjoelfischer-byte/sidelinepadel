@@ -7,28 +7,32 @@ Estado y próximos pasos. El **qué** y el **por qué** de cada decisión están
 
 ## Dónde estamos
 
-**Bloques 1, 2 y 3 terminados.** Cimientos, capa de datos y autenticación.
+**Bloques 1, 2, 3 y 5 terminados.** Cimientos, capa de datos, autenticación y
+registro de partidos.
 
 | | Qué quedó funcionando |
 |---|---|
 | **Diseño** | 17 secciones y 37 reglas no negociables, con la investigación de matchmaking, formatos de torneo y sistemas de rango competitivos |
 | **App** | Next.js 16, TypeScript estricto, Tailwind 4 con los tokens, español e inglés, CI con typecheck + lint + audit + escaneo de secretos |
-| **Datos** | 10 migraciones, RLS activo y forzado en todas las tablas, PostGIS para las sedes |
+| **Datos** | 11 migraciones, RLS activo y forzado en todas las tablas, PostGIS para las sedes |
 | **Auth** | Login sin contraseñas (magic link + Google), guard de sesión en el layout, verificación de 16 años, onboarding de 5 pasos |
 | **Niveles** | Declarado + percibido + efectivo, con confianza adaptativa, límite de ±2,5 por voto y categoría estimada |
-| **Seguridad** | 85 tests de base que prueban que un usuario no puede leer ni escribir lo de otro, más 32 de lógica |
+| **Sesiones** | Partido con sets, partido rápido y entrenamiento; resultado derivado en el servidor; participantes y confirmación de etiqueta |
+| **Seguridad** | 110 tests de base que prueban que un usuario no puede leer ni escribir lo de otro, más 48 de lógica |
 
 Se levanta en cualquier máquina con `npm install && npm run db:reset`.
 
-**Lo que todavía no existe:** registrar un partido. El perfil se crea y se ve,
-pero no hay forma de cargar lo que jugaste — que es el corazón de la app.
+**Lo que todavía no existe:** las estadísticas. Los partidos ya se cargan, pero
+todavía no se convierten en nada — no hay ratio de victorias, ni racha, ni
+progresión de nivel.
 
 ---
 
 ## Pendiente del owner
 
-- **Aplicar las dos migraciones nuevas** (`rating_bounds` y `level_confidence`).
-  Con `npm run db:bundle` y pegando el resultado en el SQL Editor, o con
+- **Aplicar la migración `fix_sessions_returning`.** Sin ella **guardar un
+  partido falla**: la política de lectura vieja rechazaba el `RETURNING` del
+  alta. Con `npm run db:bundle` y pegando el resultado en el SQL Editor, o con
   `supabase db push` si usás el CLI. Ver [`GUIA.md`](./GUIA.md).
 - **Agregar el Redirect URL** en Supabase → Authentication → URL Configuration:
   `http://localhost:3000/auth/callback`. Sin eso el enlace de acceso no vuelve
@@ -55,8 +59,8 @@ convence a nadie, pero un registro de partidos que funciona, sí.
 | Bloque | Qué trae |
 |---|---|
 | **3** · Auth y onboarding ✅ | Magic link + Google, guard de sesión, verificación de 16 años, onboarding de 5 pasos |
-| **4** · Perfil y niveles | Los tres niveles en pantalla, escala canónica ↔ categoría local, tarjeta de jugador, público/privado |
-| **5** · Sesiones | Cargar partido / entrenamiento / partido rápido, participantes, confirmación de etiqueta, historial |
+| **4** · Perfil y niveles | Los tres niveles en pantalla ✅, escala canónica ↔ categoría local ✅, tarjeta de jugador, público/privado |
+| **5** · Sesiones ✅ | Cargar partido / entrenamiento / partido rápido, participantes, confirmación de etiqueta, historial |
 | **6** · Estadísticas | Ratio de victorias, racha, forma reciente, progresión, calendario |
 
 **Al terminar:** se puede usar de verdad, aunque seas el único usuario.
@@ -136,8 +140,8 @@ Ninguna frena los hitos 1 y 2, pero conviene cerrarlas antes del bloque 9.
 
 ```bash
 npm install
-npm run db:reset     # base limpia + las 10 migraciones
-npm run test:rls     # 85 tests de aislamiento
+npm run db:reset     # base limpia + las 11 migraciones
+npm run test:rls     # 110 tests de aislamiento
 npm run dev
 ```
 
