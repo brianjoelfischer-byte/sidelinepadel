@@ -30,13 +30,11 @@ progresión de nivel.
 
 ## Pendiente del owner
 
-- **Aplicar la migración `fix_sessions_returning`.** Sin ella **guardar un
-  partido falla**: la política de lectura vieja rechazaba el `RETURNING` del
-  alta. Con `npm run db:bundle` y pegando el resultado en el SQL Editor, o con
-  `supabase db push` si usás el CLI. Ver [`GUIA.md`](./GUIA.md).
+- ~~Aplicar las migraciones pendientes~~ **Hecho:** las 11 aplicadas y
+  registradas en `app.schema_migrations`.
 - **Agregar el Redirect URL** en Supabase → Authentication → URL Configuration:
-  `http://localhost:3000/auth/callback`. Sin eso el enlace de acceso no vuelve
-  a la app.
+  `http://localhost:3000/**`. La ruta exacta `/auth/callback` no alcanza,
+  porque el enlace vuelve con `?locale=es` y Supabase compara la URL entera.
 - **Probar el login de punta a punta.** No se pudo verificar acá: el entorno de
   desarrollo bloquea el acceso a `supabase.co`, así que el magic link real
   nunca se vio llegar.

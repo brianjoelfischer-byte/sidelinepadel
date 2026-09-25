@@ -124,7 +124,21 @@ En el panel de Supabase, **Authentication → URL Configuration**:
 | Campo | Valor |
 |---|---|
 | **Site URL** | `http://localhost:3000` |
-| **Redirect URLs** | `http://localhost:3000/auth/callback` ← con **Add URL** |
+| **Redirect URLs** | `http://localhost:3000/**` ← con **Add URL** |
+
+> **Por qué `/**` y no `/auth/callback`.** El enlace vuelve a
+> `/auth/callback?locale=es`, con el idioma al final, y Supabase compara la
+> dirección entera: la exacta sin `?locale=es` no coincide. Si no coincide, no
+> tira error. Te manda a la portada sin la sesión, y parece que el login no
+> hizo nada. `/**` acepta cualquier ruta de localhost.
+>
+> **Abrí el enlace del mail en la misma computadora y el mismo navegador** en
+> que lo pediste. El login deja una marca en ese navegador y la necesita para
+> terminar. Si lo abrís desde el celular, falla con *"El enlace venció o ya se
+> usó"*.
+>
+> **Pedí el enlace una sola vez.** El correo de prueba de Supabase manda muy
+> pocos mails por hora. Si apretás varias veces, te bloquea un rato.
 
 En tu captura el segundo estaba vacío. Sin eso, el enlace de acceso que llega
 por mail no te trae de vuelta a la app.
