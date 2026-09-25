@@ -57,7 +57,12 @@ git --version
 
 ---
 
-## 3 · Bajar el proyecto (una sola vez)
+## 3 · Bajar el proyecto (una vez por computadora)
+
+> **Cambiaste de máquina, o borraste la carpeta?** No se pierde nada: el
+> proyecto vive en GitHub, y la computadora es solo una copia de trabajo. Se
+> baja de nuevo con estos mismos comandos. Lo único que **no** viaja es el
+> archivo `.env.local` del paso 4 — a propósito, porque lleva tu clave.
 
 Abrí la terminal. Vas a estar parado en tu carpeta de usuario; está bien.
 
@@ -128,9 +133,14 @@ por mail no te trae de vuelta a la app.
 
 ## 6 · Aplicar las migraciones
 
-Hay **10 archivos** en `supabase/migrations/`. Ya aplicaste los 8 primeros
-—las tablas que viste con RLS activado—, pero faltan dos nuevos: el límite de
-±2,5 en las valoraciones y la confianza del nivel.
+Hay **11 archivos** en `supabase/migrations/`. Ya aplicaste los 8 primeros
+—las tablas que viste con RLS activado—, pero faltan tres:
+
+| Falta | Qué hace |
+|---|---|
+| `rating_bounds` | El límite de ±2,5 en las valoraciones |
+| `level_confidence` | La confianza del nivel |
+| `fix_sessions_returning` | **Sin esta, guardar un partido falla.** Arregla un permiso de lectura que rechazaba el alta |
 
 ### La forma simple: copiar y pegar
 
