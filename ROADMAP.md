@@ -109,6 +109,29 @@ el día que exista la invitación por email.
 
 ---
 
+## Nota de cobertura · OpenStreetMap en Argentina
+
+Medido, no estimado: la mejor corrida sobre Argentina trajo **355 sedes con
+nombre** y dejó **381 canchas** sin sede identificable. Clubes de pádel
+reales en el país hay varios miles. Capital Federal aparece con 4.
+
+El §13 esperaba cobertura "buena en Argentina". No lo es: OSM sirve de
+arranque, pero en Argentina va a pasar lo que el diseño preveía para
+Centroamérica. **El alta de club por el propio jugador es la fuente
+principal, no un complemento.** Eso sube de prioridad dentro del bloque 7:
+conviene tenerla antes de mostrarle la app a un grupo de prueba, o cada uno
+va a buscar su club y no lo va a encontrar.
+
+Mientras tanto nadie queda bloqueado: si el club no está, se escribe a mano y
+se guarda igual.
+
+El SQL de cada país se regenera solo cuando cambia
+`supabase/seed/venues/countries.txt` o el código que lo procesa
+(`.github/workflows/venues-seed.yml`). Si Overpass está saturado, la corrida
+queda "parcial" y no pisa un archivo completo anterior.
+
+---
+
 ## Después de la v1
 
 - **App nativa** (Expo, reutilizando Supabase)
