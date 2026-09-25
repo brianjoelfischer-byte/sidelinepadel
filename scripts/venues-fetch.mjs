@@ -44,9 +44,9 @@ const PAUSE = process.env.OVERPASS_URL ? 0 : 1;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function overpass(query, label) {
+async function overpass(query, label, attempts = 4) {
   let lastError;
-  for (let attempt = 0; attempt < 4; attempt += 1) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
     const endpoint = ENDPOINTS[attempt % ENDPOINTS.length];
     try {
       const res = await fetch(endpoint, {
@@ -72,6 +72,7 @@ async function overpass(query, label) {
       return json.elements ?? [];
     } catch (error) {
       lastError = error;
+      if (attempt === attempts - 1) break;
       const wait = 15_000 * 2 ** attempt * PAUSE;
       console.warn(`  ! ${label}: ${error.message} — reintento en ${wait / 1000}s`);
       await sleep(wait);
@@ -82,30 +83,53 @@ async function overpass(query, label) {
 
 const area = (cc) => `area["ISO3166-1"="${cc}"][admin_level=2]->.a;`;
 
+const PADEL_SET = (cc) => `${area(cc)}
+nwr(area.a)["sport"~"(^|;) *padel *(;|$)",i]->.padel;`;
+
 /**
- * Lo que tiene pádel, más todo lo que tiene nombre a menos de 80 m de algo de
- * pádel: ahí adentro, o al lado, suelen estar las canchas sin nombre.
+ * Consulta principal: lo que tiene pádel, más los lugares deportivos con
+ * nombre a menos de 80 m. Es la forma de la primera corrida sobre Argentina,
+ * que terminó en un minuto: el filtro por etiqueta `leisure` usa un índice
+ * chico, así que es barata. Garantiza el piso de sedes.
  *
- * "Todo lo que tiene nombre" y no solo clubes: la primera corrida sobre
- * Argentina, limitada a sports_centre/club/…, dejó 562 canchas sin sede. Están
- * dentro de colegios, barrios cerrados y complejos que nadie etiquetó como
- * club. Se excluyen calles, vías, ríos, límites y barrios, que tienen nombre
- * pero nunca son la sede. `osm-venues.mjs` decide qué se usa y cómo.
- *
- * `bb` trae la caja de cada vía, que es lo que permite saber qué cancha cae
+ * `bb` trae la caja de cada vía: es lo que permite saber qué cancha cae
  * dentro de qué lugar.
- *
- * El segundo paso NO lleva `(area.a)`, y eso importa: con el área, Overpass
- * junta primero todo lo que tiene nombre en el país (millones de elementos) y
- * recién después filtra por cercanía. Así escrita, esa corrida no terminó en
- * 30 minutos. Sin el área, arranca por el índice espacial alrededor de cada
- * cancha, y las canchas ya son solo las del país.
  */
-const padelQuery = (cc) => `[out:json][timeout:280];
-${area(cc)}
-nwr(area.a)["sport"~"(^|;) *padel *(;|$)",i]->.padel;
-nwr(around.padel:80)["name"][!"highway"][!"railway"][!"waterway"][!"boundary"][!"place"][!"route"][!"power"]->.named;
-(.padel; .named;);
+const coreQuery = (cc) => `[out:json][timeout:280];
+${PADEL_SET(cc)}
+nwr(around.padel:80)["leisure"~"^(sports_centre|sports_hall|club|fitness_centre|recreation_ground)$"]["name"]->.hosts;
+(.padel; .hosts;);
+out bb tags;`;
+
+/**
+ * Consulta extra: los otros lugares que contienen canchas. Esa misma primera
+ * corrida dejó 562 canchas sin sede: estaban dentro de colegios, barrios
+ * cerrados y complejos que nadie etiquetó como club.
+ *
+ * Acotada a propósito. La versión "todo lo que tenga nombre a 80 m" traía cada
+ * negocio y cada casa con nombre alrededor de 1.100 canchas: el servidor
+ * principal respondió 504 y los espejos no contestaron en 5 minutos, cuatro
+ * veces seguidas. Ahora:
+ *  · vías con nombre (áreas: pueden CONTENER canchas), sin calles, ríos,
+ *    límites ni barrios;
+ *  · puntos solo si son deportivos: un punto nunca contiene nada, y para
+ *    asignar por cercanía `osm-venues.mjs` solo acepta lugares deportivos;
+ *  · relaciones solo con `leisure`: calcular la geometría de cualquier
+ *    relación con nombre cercana (parques nacionales, municipios) es lo caro.
+ *
+ * Sin `(area.a)` en estos pasos: con el área, Overpass junta primero todo el
+ * país y recién después filtra por cercanía. Así arranca por el índice
+ * espacial alrededor de cada cancha, que ya son solo las del país.
+ */
+const extraQuery = (cc) => `[out:json][timeout:280];
+${PADEL_SET(cc)}
+(
+  way(around.padel:80)["name"][!"highway"][!"railway"][!"waterway"][!"boundary"][!"place"][!"route"][!"power"];
+  node(around.padel:80)["name"]["sport"];
+  node(around.padel:80)["name"]["club"];
+  node(around.padel:80)["name"]["leisure"];
+  rel(around.padel:80)["name"]["leisure"];
+);
 out bb tags;`;
 
 /** Localidades, para mostrar y buscar por ciudad cuando el club no la trae. */
@@ -116,8 +140,26 @@ out;`;
 
 async function fetchCountry(cc, timezoneOf) {
   console.log(`▸ ${cc}: consultando sedes…`);
-  const elements = await overpass(padelQuery(cc), `${cc} sedes`);
-  console.log(`  ${elements.length} elementos`);
+  const core = await overpass(coreQuery(cc), `${cc} sedes`);
+  console.log(`  ${core.length} elementos`);
+
+  await sleep(10_000 * PAUSE);
+
+  // Si la extra falla, se sigue con la principal: menos canchas atribuidas,
+  // pero nunca un país en cero por culpa de la parte opcional.
+  console.log(`▸ ${cc}: consultando otros lugares con canchas…`);
+  let extra = [];
+  try {
+    extra = await overpass(extraQuery(cc), `${cc} extra`, 2);
+    console.log(`  ${extra.length} elementos`);
+  } catch (error) {
+    console.warn(`  ! ${cc} extra: ${error.message} — sigo solo con la principal`);
+  }
+
+  // Un mismo elemento puede venir en las dos: se une por tipo e id.
+  const byKey = new Map();
+  for (const el of [...core, ...extra]) byKey.set(`${el.type}/${el.id}`, el);
+  const elements = [...byKey.values()];
 
   await sleep(10_000 * PAUSE);
 
