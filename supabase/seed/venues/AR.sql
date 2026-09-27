@@ -1,6 +1,6 @@
 -- ===========================================================================
 --  Sideline Padel · sedes de pádel de AR desde OpenStreetMap
---  Generado por scripts/venues-fetch.mjs · 2026-09-25
+--  Generado por scripts/venues-fetch.mjs · 2026-09-27
 --  Consulta: completa
 --
 --  345 sedes · 444 canchas atribuidas a su club (36 por cercanía)
