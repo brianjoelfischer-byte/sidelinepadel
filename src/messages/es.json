@@ -1,0 +1,212 @@
+{
+  "meta": {
+    "title": "Sideline Padel",
+    "tagline": "Jugá. Registrá. Progresá.",
+    "description": "Registrá tus partidos, seguí tu progreso y coordiná turnos con jugadores de tu nivel."
+  },
+  "nav": {
+    "panel": "Panel",
+    "sessions": "Mis partidos",
+    "stats": "Estadísticas",
+    "players": "Jugadores",
+    "offers": "Turnos",
+    "venues": "Sedes",
+    "profile": "Perfil",
+    "settings": "Ajustes",
+    "addSession": "Registrar",
+    "signOut": "Cerrar sesión"
+  },
+  "landing": {
+    "heroTitle": "Tu pádel, medido de verdad",
+    "heroSubtitle": "Registrá cada partido, mirá cómo evoluciona tu nivel y encontrá gente para jugar cerca tuyo.",
+    "cta": "Empezar",
+    "ctaSecondary": "Ver cómo funciona",
+    "features": {
+      "trackTitle": "Registrá y medí",
+      "trackBody": "Cada partido suma. Ratio de victorias, racha, progresión de nivel y con quién jugaste.",
+      "levelTitle": "Tu nivel, honesto",
+      "levelBody": "Vos declarás tu categoría y la comunidad opina. El nivel que te empareja sale de los dos.",
+      "matchTitle": "Coordiná turnos",
+      "matchBody": "Publicá que te falta gente o sumate al turno de otro. Con recordatorio antes de jugar."
+    }
+  },
+  "disclaimer": {
+    "noBooking": "Sideline no reserva canchas. Reservá vos en el club y publicá el turno cuando lo tengas.",
+    "noBookingShort": "No reservamos canchas"
+  },
+  "level": {
+    "declared": "Declarado",
+    "perceived": "Percibido",
+    "effective": "Efectivo",
+    "raters": "{count, plural, =0 {sin valoraciones} =1 {1 valoración} other {# valoraciones}}",
+    "scale": {
+      "beginner": "Iniciación",
+      "improver": "Baja",
+      "intermediate": "Media",
+      "advanced": "Media-Alta",
+      "expert": "Alta",
+      "elite": "Competición"
+    },
+    "categoryApprox": "Categoría aproximada, estimada a partir de tu nivel declarado y de lo que valoraron otros jugadores. No es una categoría oficial de torneo.",
+    "categoryApproxWithRange": "Aproximación a partir de tu nivel declarado y de lo que valoraron otros jugadores. Cubre de {min} a {max}. No es una categoría oficial de torneo.",
+    "categoryHint": "(aproximado)"
+  },
+  "common": {
+    "loading": "Cargando…",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "back": "Volver",
+    "continue": "Continuar",
+    "language": "Idioma"
+  },
+  "errors": {
+    "notFoundTitle": "No encontramos esta página",
+    "notFoundBody": "El enlace puede estar roto o la página se movió.",
+    "genericTitle": "Algo salió mal",
+    "genericBody": "Probá de nuevo en un momento.",
+    "backHome": "Ir al inicio"
+  },
+  "auth": {
+    "title": "Entrá a Sideline",
+    "subtitle": "Sin contraseñas. Te mandamos un enlace y listo.",
+    "emailLabel": "Tu email",
+    "emailPlaceholder": "vos@ejemplo.com",
+    "sendLink": "Mandame el enlace",
+    "sending": "Enviando…",
+    "google": "Continuar con Google",
+    "or": "o",
+    "checkInbox": "Revisá tu correo",
+    "checkInboxBody": "Si esa dirección tiene cuenta, te va a llegar un enlace para entrar. Vence en 15 minutos.",
+    "backToEmail": "Usar otro email",
+    "legal": "Al entrar aceptás los términos y la política de privacidad.",
+    "minAge": "Tenés que tener 16 años o más para usar Sideline.",
+    "errors": {
+      "invalid_email": "Ese email no parece válido.",
+      "rate_limited": "Demasiados intentos. Esperá unos minutos.",
+      "unavailable": "No pudimos enviar el enlace. Probá de nuevo.",
+      "missing_code": "El enlace está incompleto. Pedí uno nuevo.",
+      "invalid_code": "El enlace venció o ya se usó. Pedí uno nuevo."
+    }
+  },
+  "onboarding": {
+    "stepOf": "Paso {current} de {total}",
+    "next": "Continuar",
+    "back": "Atrás",
+    "finish": "Crear mi perfil",
+    "saving": "Creando…",
+    "name": {
+      "title": "¿Cómo te llamás?",
+      "subtitle": "Así te van a ver los demás jugadores.",
+      "label": "Nombre y apellido",
+      "placeholder": "Brian Fischer"
+    },
+    "birth": {
+      "title": "¿Cuándo naciste?",
+      "subtitle": "Lo usamos solo para verificar la edad mínima. No se muestra a nadie.",
+      "label": "Fecha de nacimiento"
+    },
+    "country": {
+      "title": "¿De dónde sos?",
+      "subtitle": "Define tu bandera y cómo se muestra tu categoría.",
+      "label": "País"
+    },
+    "game": {
+      "title": "¿Cómo jugás?",
+      "subtitle": "Tu mano hábil y el lado de la cancha donde te sentís cómodo.",
+      "handLabel": "Mano hábil",
+      "left": "Zurdo",
+      "right": "Diestro",
+      "sideLabel": "Lado",
+      "drive": "Drive (derecha)",
+      "reves": "Revés (izquierda)",
+      "indistinto": "Indistinto",
+      "racketLabel": "Pala (opcional)",
+      "racketPlaceholder": "Nox AT10 Genius"
+    },
+    "level": {
+      "title": "¿Cuál es tu nivel?",
+      "subtitle": "Sé sincero: lo podés cambiar después, y la comunidad también opina.",
+      "communityNote": "A medida que juegues, los que compartan cancha con vos van a valorar tu nivel. Tu declaración y esas valoraciones se combinan en el nivel que usamos para emparejarte."
+    },
+    "errors": {
+      "invalid_input": "Revisá los datos, algo no está bien.",
+      "under_minimum_age": "Tenés que tener 16 años o más para crear una cuenta.",
+      "already_exists": "Tu perfil ya estaba creado.",
+      "unavailable": "No pudimos crear el perfil. Probá de nuevo.",
+      "not_authenticated": "Se cerró tu sesión. Entrá de nuevo."
+    }
+  },
+  "session": {
+    "title": "Registrar sesión",
+    "kind": {
+      "match": "Partido",
+      "quick": "Partido rápido",
+      "training": "Entrenamiento"
+    },
+    "kindHint": {
+      "match": "Con el marcador set por set. El resultado sale solo.",
+      "quick": "Solo quién ganó, sin anotar los juegos.",
+      "training": "Práctica o clase, sin resultado."
+    },
+    "date": "Fecha",
+    "venue": "Dónde jugaste",
+    "venuePlaceholder": "Nombre del club o ciudad",
+    "score": "Marcador",
+    "setNumber": "Set {n}",
+    "you": "Vos",
+    "them": "Rivales",
+    "addSet": "Agregar set",
+    "removeSet": "Quitar el último set",
+    "result": {
+      "label": "Resultado",
+      "win": "Victoria",
+      "loss": "Derrota",
+      "draw": "Empate",
+      "auto": "Se calcula del marcador"
+    },
+    "players": "Jugadores",
+    "playersHint": "Opcional. Podés anotar a quién no usa la app: se guarda solo como nombre.",
+    "partner": "Compañero",
+    "opponents": "Rivales",
+    "addPlayer": "Agregar jugador",
+    "playerName": "Nombre",
+    "theirLevel": "Su nivel (opcional)",
+    "side": {
+      "label": "De qué lado jugaste",
+      "drive": "Drive (derecha)",
+      "reves": "Revés (izquierda)"
+    },
+    "selfRating": "Cómo te sentiste",
+    "notes": "Notas",
+    "notesPlaceholder": "¿Cómo fue el partido?",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "saved": "Sesión guardada",
+    "errors": {
+      "invalid_input": "Revisá los datos, algo no está bien.",
+      "invalid_score": "Ese marcador no es posible en pádel. Revisá los sets.",
+      "future_date": "No se puede registrar un partido que todavía no jugaste.",
+      "not_authenticated": "Se cerró tu sesión. Entrá de nuevo.",
+      "no_profile": "Todavía no completaste tu perfil.",
+      "unavailable": "No pudimos guardar. Probá de nuevo."
+    },
+    "empty": "Todavía no registraste ningún partido. El primero es el que arranca todo.",
+    "scoreboard": {
+      "caption": "Marcador: vos ganaste {me} sets y tus rivales {opp}.",
+      "side": "Equipo",
+      "sets": "Sets"
+    },
+    "setState": {
+      "won": "Ganado",
+      "lost": "Perdido",
+      "incomplete": "Incompleto"
+    },
+    "openInMaps": "Ver en Google Maps",
+    "venueChosen": "Club de la lista",
+    "venueChosenIn": "Club de la lista · {city}",
+    "venueCourts": "{count, plural, one {# cancha} other {# canchas}}",
+    "venueAttribution": "Clubes: © colaboradores de OpenStreetMap",
+    "venueNoResults": "No está en la lista. Se guarda tal como lo escribiste.",
+    "venueResults": "{count, plural, =0 {Ningún club} one {# club} other {# clubes}}"
+  }
+}

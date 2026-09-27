@@ -1,0 +1,212 @@
+{
+  "meta": {
+    "title": "Sideline Padel",
+    "tagline": "Play. Track. Improve.",
+    "description": "Log your matches, follow your progress and arrange games with players at your level."
+  },
+  "nav": {
+    "panel": "Dashboard",
+    "sessions": "My matches",
+    "stats": "Stats",
+    "players": "Players",
+    "offers": "Games",
+    "venues": "Venues",
+    "profile": "Profile",
+    "settings": "Settings",
+    "addSession": "Log match",
+    "signOut": "Sign out"
+  },
+  "landing": {
+    "heroTitle": "Your padel, actually measured",
+    "heroSubtitle": "Log every match, watch your level evolve, and find people to play with near you.",
+    "cta": "Get started",
+    "ctaSecondary": "See how it works",
+    "features": {
+      "trackTitle": "Log and measure",
+      "trackBody": "Every match counts. Win rate, streaks, level progression and who you played with.",
+      "levelTitle": "An honest level",
+      "levelBody": "You declare your category and the community weighs in. Your matchmaking level comes from both.",
+      "matchTitle": "Arrange games",
+      "matchBody": "Post that you need players, or join someone else's game. With a reminder before you play."
+    }
+  },
+  "disclaimer": {
+    "noBooking": "Sideline does not book courts. Book with your club, then post the game once you have it.",
+    "noBookingShort": "We don't book courts"
+  },
+  "level": {
+    "declared": "Declared",
+    "perceived": "Perceived",
+    "effective": "Effective",
+    "raters": "{count, plural, =0 {no ratings} =1 {1 rating} other {# ratings}}",
+    "scale": {
+      "beginner": "Beginner",
+      "improver": "Improver",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced",
+      "expert": "Expert",
+      "elite": "Elite"
+    },
+    "categoryApprox": "Approximate category, estimated from your declared level and what other players rated you. Not an official tournament category.",
+    "categoryApproxWithRange": "Estimated from your declared level and what other players rated you. Covers {min} to {max}. Not an official tournament category.",
+    "categoryHint": "(approximate)"
+  },
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "continue": "Continue",
+    "language": "Language"
+  },
+  "errors": {
+    "notFoundTitle": "We couldn't find this page",
+    "notFoundBody": "The link may be broken or the page has moved.",
+    "genericTitle": "Something went wrong",
+    "genericBody": "Please try again in a moment.",
+    "backHome": "Go home"
+  },
+  "auth": {
+    "title": "Sign in to Sideline",
+    "subtitle": "No passwords. We'll email you a link.",
+    "emailLabel": "Your email",
+    "emailPlaceholder": "you@example.com",
+    "sendLink": "Email me a link",
+    "sending": "Sending…",
+    "google": "Continue with Google",
+    "or": "or",
+    "checkInbox": "Check your inbox",
+    "checkInboxBody": "If that address has an account, a sign-in link is on its way. It expires in 15 minutes.",
+    "backToEmail": "Use another email",
+    "legal": "By signing in you accept the terms and the privacy policy.",
+    "minAge": "You must be 16 or older to use Sideline.",
+    "errors": {
+      "invalid_email": "That email doesn't look valid.",
+      "rate_limited": "Too many attempts. Wait a few minutes.",
+      "unavailable": "We couldn't send the link. Please try again.",
+      "missing_code": "That link is incomplete. Request a new one.",
+      "invalid_code": "That link expired or was already used. Request a new one."
+    }
+  },
+  "onboarding": {
+    "stepOf": "Step {current} of {total}",
+    "next": "Continue",
+    "back": "Back",
+    "finish": "Create my profile",
+    "saving": "Creating…",
+    "name": {
+      "title": "What's your name?",
+      "subtitle": "This is how other players will see you.",
+      "label": "First and last name",
+      "placeholder": "Brian Fischer"
+    },
+    "birth": {
+      "title": "When were you born?",
+      "subtitle": "Only used to check the minimum age. Never shown to anyone.",
+      "label": "Date of birth"
+    },
+    "country": {
+      "title": "Where are you from?",
+      "subtitle": "Sets your flag and how your category is displayed.",
+      "label": "Country"
+    },
+    "game": {
+      "title": "How do you play?",
+      "subtitle": "Your dominant hand and the side you're comfortable on.",
+      "handLabel": "Dominant hand",
+      "left": "Left-handed",
+      "right": "Right-handed",
+      "sideLabel": "Side",
+      "drive": "Drive (right)",
+      "reves": "Backhand (left)",
+      "indistinto": "Either",
+      "racketLabel": "Racket (optional)",
+      "racketPlaceholder": "Nox AT10 Genius"
+    },
+    "level": {
+      "title": "What's your level?",
+      "subtitle": "Be honest: you can change it later, and the community weighs in too.",
+      "communityNote": "As you play, the people you share a court with will rate your level. Your declaration and those ratings combine into the level we use to match you."
+    },
+    "errors": {
+      "invalid_input": "Something's off — check the fields.",
+      "under_minimum_age": "You must be 16 or older to create an account.",
+      "already_exists": "Your profile already exists.",
+      "unavailable": "We couldn't create the profile. Please try again.",
+      "not_authenticated": "Your session ended. Please sign in again."
+    }
+  },
+  "session": {
+    "title": "Log a session",
+    "kind": {
+      "match": "Match",
+      "quick": "Quick match",
+      "training": "Training"
+    },
+    "kindHint": {
+      "match": "With the set-by-set score. The result works itself out.",
+      "quick": "Just who won, without recording games.",
+      "training": "Practice or a lesson, no result."
+    },
+    "date": "Date",
+    "venue": "Where you played",
+    "venuePlaceholder": "Club name or city",
+    "score": "Score",
+    "setNumber": "Set {n}",
+    "you": "You",
+    "them": "Opponents",
+    "addSet": "Add set",
+    "removeSet": "Remove last set",
+    "result": {
+      "label": "Result",
+      "win": "Win",
+      "loss": "Loss",
+      "draw": "Draw",
+      "auto": "Derived from the score"
+    },
+    "players": "Players",
+    "playersHint": "Optional. You can note people who don't use the app — just their name is stored.",
+    "partner": "Partner",
+    "opponents": "Opponents",
+    "addPlayer": "Add player",
+    "playerName": "Name",
+    "theirLevel": "Their level (optional)",
+    "side": {
+      "label": "Which side you played",
+      "drive": "Drive (right)",
+      "reves": "Backhand (left)"
+    },
+    "selfRating": "How you felt",
+    "notes": "Notes",
+    "notesPlaceholder": "How did it go?",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Session saved",
+    "errors": {
+      "invalid_input": "Something's off — check the fields.",
+      "invalid_score": "That score isn't possible in padel. Check the sets.",
+      "future_date": "You can't log a match you haven't played yet.",
+      "not_authenticated": "Your session ended. Please sign in again.",
+      "no_profile": "You haven't finished your profile yet.",
+      "unavailable": "We couldn't save it. Please try again."
+    },
+    "empty": "You haven't logged a match yet. The first one gets everything started.",
+    "scoreboard": {
+      "caption": "Score: you won {me} sets and your opponents {opp}.",
+      "side": "Team",
+      "sets": "Sets"
+    },
+    "setState": {
+      "won": "Won",
+      "lost": "Lost",
+      "incomplete": "Incomplete"
+    },
+    "openInMaps": "Open in Google Maps",
+    "venueChosen": "Club from the list",
+    "venueChosenIn": "Club from the list · {city}",
+    "venueCourts": "{count, plural, one {# court} other {# courts}}",
+    "venueAttribution": "Clubs: © OpenStreetMap contributors",
+    "venueNoResults": "Not on the list. It'll be saved just as you typed it.",
+    "venueResults": "{count, plural, =0 {No clubs} one {# club} other {# clubs}}"
+  }
+}

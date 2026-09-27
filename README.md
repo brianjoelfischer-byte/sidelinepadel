@@ -1,1 +1,220 @@
-# sidelinepadel
+<div align="center">
+
+# Sideline Padel
+
+**Jugá. Registrá. Progresá.**
+
+PWA para el jugador de pádel amateur: registrá tus partidos, mirá cómo evoluciona
+tu nivel y coordiná turnos con gente que juega parecido a vos.
+
+[![CI](https://github.com/brianjoelfischer-byte/sidelinepadel/actions/workflows/ci.yml/badge.svg)](https://github.com/brianjoelfischer-byte/sidelinepadel/actions/workflows/ci.yml)
+![Next.js](https://img.shields.io/badge/Next.js-16-000?logo=nextdotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![Estado](https://img.shields.io/badge/estado-en%20construcci%C3%B3n-C8F751)
+
+</div>
+
+---
+
+## Qué es
+
+Las plataformas de reserva resuelven la cancha, pero tratan al jugador como
+cliente de un club. Acá el centro es el jugador: su historial, su progreso, su
+gente. La coordinación es una consecuencia, no el producto.
+
+> ### ⚠️ Sideline **no reserva canchas**
+>
+> La reserva la hacés vos en el club, por teléfono o por donde reserves
+> siempre. En Sideline confirmás que el turno **ya existe** y coordinás quién
+> juega. La app nunca mueve dinero ni bloquea una cancha.
+
+## Qué hace
+
+| | |
+|---|---|
+| 📊 **Registrá y medí** | Partidos, entrenamientos y partidos rápidos. Ratio de victorias, racha, forma reciente y progresión de nivel. |
+| 🎯 **Un nivel honesto** | Vos declarás tu categoría y la comunidad opina. El nivel que te empareja sale de los dos, con peso creciente de quienes jugaron con vos. |
+| 🤝 **Coordiná turnos** | Turnos de 4 con banda de nivel. El creador confirma la cancha; cada jugador confirma si va. |
+| 📍 **Sedes de todo el mundo** | Directorio con seed de OpenStreetMap en 27 países, más altas de la comunidad. |
+| 🔔 **Recordatorios** | Aviso a las 24 h para confirmar y recordatorio 30 minutos antes de jugar. |
+| 🌍 **Multi-idioma** | Español e inglés desde el día uno, con la estructura lista para más. |
+
+### El sistema de niveles
+
+El problema de todas estas apps: el nivel autodeclarado se abusa. Acá hay tres
+valores, y los tres son públicos.
+
+| Valor | Qué es | Quién manda |
+|---|---|---|
+| **Declarado** | Lo que vos decís que sos | Vos |
+| **Percibido** | Lo que dicen los que jugaron con vos | Ellos |
+| **Efectivo** | La mezcla — **es el que te empareja** | El sistema |
+
+El peso de la comunidad crece con la cantidad de votantes distintos: con 5
+votantes es 50 %, con 20 es 80 %. Hay frenos contra el abuso — una voz por
+persona, decaimiento por antigüedad, media recortada, mínimo de partidos para
+votar, y un límite de ±2,5 puntos por valoración. Tu nivel declarado **nunca se
+reescribe**; se calcula otro al lado.
+
+La velocidad del ajuste depende de cuánto se sabe de vos —idea tomada de la
+*rating deviation* de Glicko-2 y del MMR de alta incertidumbre de Valorant. Un
+jugador nuevo mal declarado converge enseguida; uno con 20 valoraciones se mueve
+la mitad de rápido, así que cuesta el doble manipularlo. Dejar de jugar devuelve
+incertidumbre, porque el nivel cambia cuando parás.
+
+Como "8va a 1ra" no es universal, internamente la escala es canónica (1.0–7.0) y
+la categoría local es solo una etiqueta. Así un jugador argentino y uno sueco
+pueden aparecer en el mismo turno sin traducir nada a mano.
+
+## El plano
+
+Todo el diseño está en **[`BLUEPRINT.md`](./BLUEPRINT.md)**: 17 secciones con el
+modelo de datos, las políticas de seguridad, el sistema de niveles, el directorio
+de sedes, los torneos y 35 reglas no negociables.
+
+Se escribió **antes** que el código y manda sobre él. Si algo del código lo
+contradice, el que está mal es el código.
+
+El plan de trabajo —dónde estamos y qué sigue— está en
+**[`ROADMAP.md`](./ROADMAP.md)**.
+
+¿Nunca programaste? **[`GUIA.md`](./GUIA.md)** explica desde cero cómo bajar el
+proyecto, conectarlo y levantarlo.
+
+## Stack
+
+| Capa | Elección | Por qué |
+|---|---|---|
+| Framework | **Next.js 16** (App Router) | SSR para perfiles y sedes, Server Actions para mutaciones con auth del lado servidor |
+| Lenguaje | **TypeScript** estricto | Más que `strict`: `noUncheckedIndexedAccess` y `exactOptionalPropertyTypes` |
+| Estilos | **Tailwind 4** + tokens CSS | La paleta se cambia sin tocar componentes |
+| Datos | **Supabase** (Postgres + PostGIS) | Row Level Security: la autorización vive en la base, no solo en el código |
+| i18n | **next-intl** | Rutas por idioma, formato por región y zona horaria |
+| Tests | **Vitest** · **Playwright** | |
+| Deploy | **Vercel** + Supabase | |
+
+**Por qué RLS y no un backend propio:** casi toda la autorización de esta app es
+"¿este usuario puede ver esta fila?". Con RLS la regla se escribe una vez en la
+base y se cumple aunque un endpoint tenga un bug. Con un backend propio, un
+`where` olvidado filtra datos de otros usuarios.
+
+## Arrancar
+
+```bash
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+Abre <http://localhost:3000>, que redirige a `/es`.
+
+### Base de datos
+
+El esquema vive en `supabase/migrations/` como SQL versionado. Nunca se toca
+el esquema de producción a mano.
+
+Todo lo que toca la base lee **`DATABASE_URL`** y no le importa de dónde sale
+esa base. Por eso el proyecto se puede seguir desde cualquier máquina:
+
+| Cómo conseguir una base | Cuándo |
+|---|---|
+| **Supabase CLI** — `supabase start` | Lo recomendado. Trae también Auth y Storage. Necesita Docker. |
+| **`npm run db:start`** | Plan B sin Docker. Levanta un Postgres local descartable. Necesita `postgresql-16` y `postgresql-16-postgis-3`. |
+| **Proyecto Supabase en la nube** | `export DATABASE_URL=…` y listo. |
+
+Las tres usan el puerto **54322**, así que el `DATABASE_URL` por defecto sirve
+para cualquiera.
+
+```bash
+npm run db:reset     # base limpia + todas las migraciones
+npm run test:rls     # verifica que un usuario no pueda leer lo de otro
+```
+
+### Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Build de producción (incluye typecheck) |
+| `npm run typecheck` | Solo tipos |
+| `npm run lint` | ESLint |
+| `npm run test:unit` | Tests de la app (sin base de datos) |
+| `npm run test:rls` | Tests de seguridad contra `DATABASE_URL` |
+| `npm run check` | Typecheck + lint + tests de unidad — lo que corre CI |
+| `npm run db:start` / `db:stop` | Postgres local sin Docker |
+| `npm run db:reset` | Recrea la base y aplica todas las migraciones |
+| `npm run db:migrate` | Aplica migraciones a `DATABASE_URL` |
+
+## Estructura
+
+```
+src/
+├── app/
+│   ├── [locale]/          # todo lo que ve el usuario, con prefijo de idioma
+│   ├── globals.css        # tokens de diseño
+│   └── not-found.tsx      # 404 cuando no hay idioma conocido
+├── components/
+├── i18n/                  # routing, navegación y carga de mensajes
+├── lib/env.ts             # ÚNICO acceso a process.env
+├── messages/              # es.json · en.json
+└── proxy.ts               # detección y prefijo de idioma
+
+supabase/
+├── migrations/            # el esquema, SQL versionado
+├── local/                 # shim de auth.* para Postgres pelado (no va a la nube)
+└── tests/                 # tests de RLS: A no puede leer lo de B
+
+scripts/
+├── db-local.sh            # Postgres local sin Docker
+└── db-migrate.mjs         # aplica migraciones a DATABASE_URL
+```
+
+## Convenciones
+
+No son sugerencias: fallan el build o el CI.
+
+- **Cero texto suelto en JSX.** Todo va en `messages/*.json`, y un test verifica
+  que los idiomas tengan exactamente las mismas claves — ese bug no lo detecta
+  ni el typecheck ni el build, pero le muestra la clave cruda al usuario.
+- **La palabra "reserva" solo se usa para negar que la app reserve canchas.**
+  Hay un test que falla si aparece en cualquier otro mensaje.
+- **`process.env` solo en `src/lib/env.ts`**, que separa lo público de lo
+  secreto para que un secreto no derive al bundle del cliente.
+- **`next/link` y `next/navigation` están prohibidos** — usá los de
+  `@/i18n/navigation`, que conservan el idioma de la URL.
+- **`any` es error**, no warning.
+- **Una vulnerabilidad alta o crítica bloquea el merge.**
+- **Toda tabla lleva RLS activado y forzado.** Un test recorre el catálogo de
+  Postgres y falla si aparece una tabla sin política, o una con permisos y sin
+  política que los acote.
+
+## Estado
+
+🚧 **En construcción.** Bloque 3 de 14 del plan de §09.
+
+| | Bloque | Estado |
+|---|---|---|
+| 1 | Fundaciones, i18n, tokens, CI | ✅ |
+| 2 | Datos y RLS | ✅ |
+| 3 | Auth y onboarding | ⏳ siguiente |
+| 4 | Perfil y niveles | ⏳ siguiente |
+| 5 | Sesiones y valoraciones | |
+| 6 | Estadísticas | |
+| 7 | Sedes | |
+| 8 | Social | |
+| 9 | Turnos | |
+| 10 | Recordatorios | |
+| 11 | PWA | |
+| 12 | Trofeos | |
+| 13 | Cumplimiento (GDPR) | |
+| 14 | Endurecimiento | |
+
+Esquema completo con RLS probado (85 tests de base), login sin contraseñas,
+onboarding de 5 pasos y el sistema de niveles con confianza adaptativa. Falta
+todo lo de registrar partidos en adelante.
+
+## Créditos y licencias
+
+Los datos de sedes vienen de **OpenStreetMap**, bajo
+[ODbL 1.0](https://opendatacommons.org/licenses/odbl/) — la atribución es una
+obligación de licencia, no una cortesía.
