@@ -23,6 +23,7 @@ entra a `main` se publica solo.
 | **Niveles** | Declarado + percibido + efectivo, con confianza adaptativa, límite de ±2,5 por voto y categoría estimada |
 | **Sesiones** | Partido con sets, partido rápido y entrenamiento; resultado derivado en el servidor; participantes y confirmación de etiqueta; marcador set por set en el historial |
 | **Sedes** | Clubes de Argentina desde OpenStreetMap, buscador en "Dónde jugaste" sin importar tildes, cada lugar abre en Google Maps |
+| **Interfaz** | Barra de navegación (inferior en celular, lateral en escritorio), panel con resumen (partidos, % de victorias, racha, forma), perfil, borrar partido con confirmación, avisos, pantallas de carga y error, ícono e instalable en el celular |
 | **Seguridad** | 123 tests de base que prueban que un usuario no puede leer ni escribir lo de otro, más 78 de lógica y guardas de código |
 
 Se levanta en cualquier máquina con `npm install && npm run db:reset`.
