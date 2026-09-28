@@ -42,11 +42,15 @@ export function LoginForm({
     setError(null);
 
     startTransition(async () => {
-      const result = await sendMagicLink({ email, locale });
-      if (result.ok) {
-        setSent(true);
-      } else {
-        setError(result.error);
+      try {
+        const result = await sendMagicLink({ email, locale });
+        if (result.ok) setSent(true);
+        else setError(result.error);
+      } catch {
+        // Sin respuesta del servidor (sin señal, servidor caído): la acción
+        // tira en vez de devolver un error. Sin este catch la pantalla
+        // quedaba muda.
+        setError('unavailable');
       }
     });
   }
@@ -54,10 +58,11 @@ export function LoginForm({
   function handleGoogle() {
     setError(null);
     startTransition(async () => {
-      const result = await startGoogleSignIn({ locale });
-      if (result.ok) {
-        window.location.href = result.url;
-      } else {
+      try {
+        const result = await startGoogleSignIn({ locale });
+        if (result.ok) window.location.href = result.url;
+        else setError('unavailable');
+      } catch {
         setError('unavailable');
       }
     });

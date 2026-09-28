@@ -17,7 +17,13 @@ export function SignOutButton() {
       disabled={isPending}
       onClick={() =>
         startTransition(async () => {
-          await signOut();
+          try {
+            await signOut();
+          } catch {
+            // Sin respuesta del servidor la sesión sigue abierta: no se
+            // redirige, para no mostrar la portada como si hubiera salido.
+            return;
+          }
           router.replace('/');
           // La sesión vive en cookies que lee el servidor: sin refresh, un
           // Server Component cacheado podría seguir mostrando datos del

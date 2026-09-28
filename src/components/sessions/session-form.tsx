@@ -97,9 +97,18 @@ export function SessionForm({
           : { ...common, kind: 'training' as const };
 
     startTransition(async () => {
-      const result = await createSession(payload);
+      let result: Awaited<ReturnType<typeof createSession>>;
+      try {
+        result = await createSession(payload);
+      } catch {
+        // Sin respuesta del servidor (sin señal, servidor caído): la acción
+        // tira en vez de devolver un error. Sin este catch la pantalla
+        // quedaba muda.
+        setError('unavailable');
+        return;
+      }
       if (result.ok) {
-        router.push('/panel');
+        router.push('/panel?aviso=guardado');
         router.refresh();
       } else {
         setError(result.error);

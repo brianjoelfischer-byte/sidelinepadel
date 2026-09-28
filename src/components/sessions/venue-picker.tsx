@@ -70,10 +70,12 @@ export function VenuePicker({
 
     const id = ++requestId.current;
     const timer = setTimeout(async () => {
+      // Si la búsqueda falla (sin señal), se trata como "sin resultados": el
+      // texto escrito igual se guarda, así que no bloquea nada.
       const found = await search({
         q: query,
         ...(preferCountry ? { country: preferCountry } : {}),
-      });
+      }).catch(() => []);
       if (id !== requestId.current) return;
       setResults({ query, options: found });
       setActive(found.length > 0 ? 0 : -1);
