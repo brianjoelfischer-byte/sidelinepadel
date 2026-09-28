@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 
 import { getUser } from '@/lib/auth/session';
 import { createClient } from '@/lib/supabase/server';
@@ -169,19 +170,25 @@ export async function respondToTag(
 
 export async function deleteSession(sessionId: unknown): Promise<{ ok: boolean }> {
   const user = await getUser();
-  if (!user || typeof sessionId !== 'string') return { ok: false };
+  const id = z.uuid().safeParse(sessionId);
+  if (!user || !id.success) return { ok: false };
 
   const supabase = await createClient();
 
   // La política de RLS ya limita el borrado al dueño; el `eq` es explícito
   // para que la intención se lea en el código y no solo en la base.
-  const { error } = await supabase
+  //
+  // `select` para saber si de verdad se borró algo: un DELETE que no
+  // encuentra la fila (id ajeno, o ya borrado en otra pestaña) no da error, y
+  // sin esto la pantalla diría "Partido borrado" sin haber borrado nada.
+  const { data, error } = await supabase
     .from('sessions')
     .delete()
-    .eq('id', sessionId)
-    .eq('owner_id', user.id);
+    .eq('id', id.data)
+    .eq('owner_id', user.id)
+    .select('id');
 
-  if (error) return { ok: false };
+  if (error || !data || data.length !== 1) return { ok: false };
 
   revalidatePath('/sesiones');
   revalidatePath('/panel');
