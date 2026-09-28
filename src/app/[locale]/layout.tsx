@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { Outfit } from 'next/font/google';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
 import { routing } from '@/i18n/routing';
@@ -17,6 +17,18 @@ const outfit = Outfit({
   variable: '--font-outfit',
   display: 'swap',
 });
+
+/**
+ * `viewportFit: cover` es lo que hace que el iPhone informe
+ * `env(safe-area-inset-bottom)`: sin esto, la barra inferior queda debajo de
+ * la línea de gestos. `themeColor` pinta la barra del navegador del celular
+ * con el fondo de la app en vez de blanco.
+ */
+export const viewport: Viewport = {
+  viewportFit: 'cover',
+  themeColor: '#14161a',
+  colorScheme: 'dark',
+};
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -33,6 +45,10 @@ export async function generateMetadata({
   return {
     title: { default: t('title'), template: `%s · ${t('title')}` },
     description: t('description'),
+    // Íconos: los toma Next de app/icon.svg y app/apple-icon.png. NO declarar
+    // `icons` acá: un `icons` escrito a mano reemplaza al de los archivos, y
+    // así se perdió el favicon la primera vez.
+    appleWebApp: { capable: true, title: 'Sideline', statusBarStyle: 'black-translucent' },
   };
 }
 
