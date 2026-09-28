@@ -1,9 +1,9 @@
 -- ===========================================================================
 --  Sideline Padel · sedes de pádel de AR desde OpenStreetMap
---  Generado por scripts/venues-fetch.mjs · 2026-09-27
+--  Generado por scripts/venues-fetch.mjs · 2026-09-28
 --  Consulta: completa
 --
---  345 sedes · 444 canchas atribuidas a su club (36 por cercanía)
+--  346 sedes · 445 canchas atribuidas a su club (36 por cercanía)
 --  3 duplicados unidos · 408 canchas sin nombre ni club
 --
 --  Datos © colaboradores de OpenStreetMap, bajo licencia ODbL 1.0.
@@ -312,6 +312,7 @@ VALUES
   ('Plaza', 'AR', NULL, 'Saldán', NULL, ST_SetSRID(ST_MakePoint(-64.2900237, -31.34749575), 4326)::geography, 'America/Argentina/Cordoba', 2, 'osm', 'way', 1267962695, 'approved'),
   ('Plaza Mitre', 'AR', NULL, 'Alta Gracia', NULL, ST_SetSRID(ST_MakePoint(-64.4283099, -31.660105), 4326)::geography, 'America/Argentina/Cordoba', 2, 'osm', 'way', 170145874, 'approved'),
   ('Plaza Padel Club', 'AR', NULL, 'Arroyito', 'Bernardo Erb 271', ST_SetSRID(ST_MakePoint(-63.0577152, -31.4226651), 4326)::geography, 'America/Argentina/Cordoba', 1, 'osm', 'way', 601816238, 'approved'),
+  ('Polideportivo Agustín E. Monge', 'AR', NULL, 'General Conesa', NULL, ST_SetSRID(ST_MakePoint(-57.32383915, -36.51906195), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 1562994510, 'approved'),
   ('Polideportivo Gorki Grana', 'AR', NULL, 'Ituzaingó', NULL, ST_SetSRID(ST_MakePoint(-58.65756865, -34.66027925), 4326)::geography, 'America/Argentina/Buenos_Aires', 1, 'osm', 'way', 146835455, 'approved'),
   ('Polideportivo Miraflores', 'AR', NULL, 'Miraflores', NULL, ST_SetSRID(ST_MakePoint(-60.9252631, -25.6486002), 4326)::geography, 'America/Argentina/Cordoba', 2, 'osm', 'node', 3737960963, 'approved'),
   ('Polideportivo Municipal Deportistas Alvearenses', 'AR', NULL, 'General Alvear', NULL, ST_SetSRID(ST_MakePoint(-67.70686330000001, -34.98110545), 4326)::geography, 'America/Argentina/Mendoza', 2, 'osm', 'way', 251391876, 'approved'),
