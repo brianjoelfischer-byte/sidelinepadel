@@ -8,8 +8,11 @@ Estado y próximos pasos. El **qué** y el **por qué** de cada decisión están
 ## Dónde estamos
 
 **Bloques 1, 2, 3 y 5 terminados, y la primera parte del 7.** Cimientos, capa
-de datos, autenticación, registro de partidos y buscador de clubes. Probado de
-punta a punta en la máquina del owner: login, onboarding y guardado.
+de datos, autenticación, registro de partidos y buscador de clubes.
+
+**Publicada en <https://sidelinepadel.vercel.app>**, conectada al Supabase del
+owner. Login y historial de partidos verificados en producción. Cada cambio que
+entra a `main` se publica solo.
 
 | | Qué quedó funcionando |
 |---|---|
@@ -20,6 +23,7 @@ punta a punta en la máquina del owner: login, onboarding y guardado.
 | **Niveles** | Declarado + percibido + efectivo, con confianza adaptativa, límite de ±2,5 por voto y categoría estimada |
 | **Sesiones** | Partido con sets, partido rápido y entrenamiento; resultado derivado en el servidor; participantes y confirmación de etiqueta; marcador set por set en el historial |
 | **Sedes** | Clubes de Argentina desde OpenStreetMap, buscador en "Dónde jugaste" sin importar tildes, cada lugar abre en Google Maps |
+| **Interfaz** | Barra de navegación (inferior en celular, lateral en escritorio), panel con resumen (partidos, % de victorias, racha, forma), perfil, borrar partido con confirmación, avisos, pantallas de carga y error, ícono e instalable en el celular |
 | **Seguridad** | 123 tests de base que prueban que un usuario no puede leer ni escribir lo de otro, más 78 de lógica y guardas de código |
 
 Se levanta en cualquier máquina con `npm install && npm run db:reset`.
@@ -36,6 +40,8 @@ progresión de nivel.
   `supabase/seed/venues/AR.sql`. Pasos en [`GUIA.md`](./GUIA.md), paso 6.
 - ~~Login de punta a punta~~ **Hecho:** probado en la máquina del owner, con
   guardado de partido incluido.
+- ~~Publicar en Vercel~~ **Hecho:** `sidelinepadel.vercel.app`. Cómo se armó y
+  qué evitar, en [`GUIA.md`](./GUIA.md), paso 9.
 
 ---
 

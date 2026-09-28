@@ -74,16 +74,25 @@ export function OnboardingFlow({
   function submit() {
     setError(null);
     startTransition(async () => {
-      const result = await completeOnboarding({
-        ...draft,
-        racket: draft.racket.trim() || undefined,
-        locale,
-        // La zona horaria la detecta el navegador. Es lo que decide a qué hora
-        // ve el usuario sus turnos, así que se toma del dispositivo y no del
-        // país: alguien de Argentina puede estar viviendo en Madrid.
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        isPublic: true,
-      });
+      let result: Awaited<ReturnType<typeof completeOnboarding>>;
+      try {
+        result = await completeOnboarding({
+          ...draft,
+          racket: draft.racket.trim() || undefined,
+          locale,
+          // La zona horaria la detecta el navegador. Es lo que decide a qué
+          // hora ve el usuario sus turnos, así que se toma del dispositivo y no
+          // del país: alguien de Argentina puede estar viviendo en Madrid.
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          isPublic: true,
+        });
+      } catch {
+        // Sin respuesta del servidor (sin señal, servidor caído): la acción
+        // tira en vez de devolver un error. Sin este catch la pantalla
+        // quedaba muda.
+        setError('unavailable');
+        return;
+      }
 
       if (result.ok) {
         router.replace('/panel');

@@ -5,7 +5,7 @@
     "description": "Log your matches, follow your progress and arrange games with players at your level."
   },
   "nav": {
-    "panel": "Dashboard",
+    "panel": "Home",
     "sessions": "My matches",
     "stats": "Stats",
     "players": "Players",
@@ -14,7 +14,13 @@
     "profile": "Profile",
     "settings": "Settings",
     "addSession": "Log match",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "sessionsShort": "Matches",
+    "addSessionLong": "Log a match",
+    "soon": "Soon",
+    "main": "Main navigation",
+    "skipToContent": "Skip to content",
+    "levelLabel": "Level {level}"
   },
   "landing": {
     "heroTitle": "Your padel, actually measured",
@@ -28,7 +34,17 @@
       "levelBody": "You declare your category and the community weighs in. Your matchmaking level comes from both.",
       "matchTitle": "Arrange games",
       "matchBody": "Post that you need players, or join someone else's game. With a reminder before you play."
-    }
+    },
+    "signIn": "Sign in",
+    "previewLabel": "App preview: a player's summary with 24 matches, a 63% win rate and a 3-match streak, and a match won 3-6, 6-3, 7-5.",
+    "previewDate": "Saturday, September 27",
+    "previewGreeting": "Hi, Martina",
+    "previewMatches": "Matches",
+    "previewWins": "Wins",
+    "previewStreak": "Streak",
+    "previewVenue": "Club Atlético Belgrano, Córdoba",
+    "previewWin": "Win",
+    "footerOsm": "Club data © contributors of"
   },
   "disclaimer": {
     "noBooking": "Sideline does not book courts. Book with your club, then post the game once you have it.",
@@ -57,14 +73,18 @@
     "cancel": "Cancel",
     "back": "Back",
     "continue": "Continue",
-    "language": "Language"
+    "language": "Language",
+    "close": "Close",
+    "retry": "Try again"
   },
   "errors": {
     "notFoundTitle": "We couldn't find this page",
     "notFoundBody": "The link may be broken or the page has moved.",
     "genericTitle": "Something went wrong",
     "genericBody": "Please try again in a moment.",
-    "backHome": "Go home"
+    "backHome": "Go home",
+    "crashTitle": "Something went wrong",
+    "crashBody": "We couldn't load this screen. It may be a temporary connection problem."
   },
   "auth": {
     "title": "Sign in to Sideline",
@@ -207,6 +227,54 @@
     "venueCourts": "{count, plural, one {# court} other {# courts}}",
     "venueAttribution": "Clubs: © OpenStreetMap contributors",
     "venueNoResults": "Not on the list. It'll be saved just as you typed it.",
-    "venueResults": "{count, plural, =0 {No clubs} one {# club} other {# clubs}}"
+    "venueResults": "{count, plural, =0 {No clubs} one {# club} other {# clubs}}",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this match?",
+    "deleteYes": "Yes, delete",
+    "deleting": "Deleting…",
+    "deleteFailed": "Couldn't delete it. Try again."
+  },
+  "panel": {
+    "greeting": "Hi, {name}",
+    "summary": "Your summary",
+    "matches": "Matches",
+    "winRate": "Wins",
+    "record": "{wins, plural, one {# won} other {# won}} · {losses, plural, one {# lost} other {# lost}}",
+    "streak": "Streak",
+    "streakWin": "{count, plural, one {won} other {won in a row}}",
+    "streakLoss": "{count, plural, one {lost} other {lost in a row}}",
+    "noStreak": "No streak",
+    "thisMonth": "This month",
+    "form": "Form",
+    "formLetter": {
+      "win": "W",
+      "loss": "L",
+      "draw": "D"
+    },
+    "formWord": {
+      "win": "Won",
+      "loss": "Lost",
+      "draw": "Draw"
+    },
+    "recent": "Recent matches",
+    "seeAll": "See all",
+    "level": "Your level",
+    "emptyTitle": "Start with your first match",
+    "emptyBody": "Log what you played and you'll see your win rate, your streak and how your level evolves.",
+    "emptyCta": "Log a match",
+    "saved": "Match saved",
+    "deleted": "Match deleted"
+  },
+  "profile": {
+    "public": "Public profile",
+    "private": "Private profile",
+    "level": "Level",
+    "game": "How you play",
+    "racket": "Racket",
+    "notSet": "Not set",
+    "account": "Account",
+    "language": "Language",
+    "email": "Email",
+    "editSoon": "Soon you'll be able to edit your details and declared level here."
   }
 }

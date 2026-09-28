@@ -1,6 +1,7 @@
 import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
+import { AppShell } from '@/components/nav/app-shell';
 import { getProfile, requireUser } from '@/lib/auth/session';
 import { redirect } from '@/i18n/navigation';
 import { toLocale } from '@/i18n/routing';
@@ -28,7 +29,14 @@ export default async function AppLayout({
   // Autenticado pero sin perfil: quedó a mitad del alta. No puede usar la app
   // hasta terminar, porque el perfil es lo que verifica la edad.
   const profile = await getProfile(user.id);
-  if (!profile) redirect({ href: '/onboarding', locale });
+  if (!profile) return redirect({ href: '/onboarding', locale });
 
-  return <>{children}</>;
+  return (
+    <AppShell
+      displayName={profile.display_name}
+      effectiveLevel={Number(profile.effective_level)}
+    >
+      {children}
+    </AppShell>
+  );
 }

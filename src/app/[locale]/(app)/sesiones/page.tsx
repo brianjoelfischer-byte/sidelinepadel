@@ -1,12 +1,29 @@
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
+import type { Metadata } from 'next';
 
-import { Link } from '@/i18n/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { PlusIcon } from '@/components/nav/icons';
+import { Notice } from '@/components/notice';
+import { DeleteSessionButton } from '@/components/sessions/delete-session-button';
+import { ResultBadge } from '@/components/sessions/result-badge';
 import { Scoreboard } from '@/components/sessions/scoreboard';
-import type { SetScore } from '@/lib/sessions/score';
-import { mapsSearchUrl } from '@/lib/venues/maps';
-import { requireUser } from '@/lib/auth/session';
+import { VenueLink } from '@/components/sessions/venue-link';
+import { Link } from '@/i18n/navigation';
 import { toLocale } from '@/i18n/routing';
+import { requireUser } from '@/lib/auth/session';
+import { noticeFrom } from '@/lib/notice';
+import type { SetScore } from '@/lib/sessions/score';
+import { loadVenueLabels, venueFor } from '@/lib/sessions/venue-names';
+import { createClient } from '@/lib/supabase/server';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale: toLocale(locale), namespace: 'nav' });
+  return { title: t('sessions') };
+}
 
 /**
  * Historial propio.
@@ -15,17 +32,23 @@ import { toLocale } from '@/i18n/routing';
  * exactamente lo que deja ver la política de RLS, sin filtro extra acá. Que la
  * consulta y el permiso digan lo mismo es a propósito: si la política cambia,
  * la pantalla la sigue sin tocarla.
+ *
+ * Borrar se ofrece solo en las propias: la base igual lo impediría en las
+ * ajenas, pero un botón que siempre falla es peor que no tenerlo.
  */
 export default async function SessionsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ aviso?: string | string[] }>;
 }) {
   const { locale: raw } = await params;
   const locale = toLocale(raw);
   setRequestLocale(locale);
 
-  await requireUser(locale);
+  const user = await requireUser(locale);
+  const notice = noticeFrom((await searchParams).aviso);
 
   const t = await getTranslations({ locale, namespace: 'session' });
   const tNav = await getTranslations({ locale, namespace: 'nav' });
@@ -34,32 +57,27 @@ export default async function SessionsPage({
   const supabase = await createClient();
   const { data: sessions } = await supabase
     .from('sessions')
-    .select('id, kind, played_on, result, sets, venue_id, venue_freetext, notes')
+    .select('id, owner_id, kind, played_on, result, sets, venue_id, venue_freetext, notes')
     .order('played_on', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(50);
 
-  /**
-   * Los clubes de la lista, en una sola consulta aparte. No como join: los
-   * tipos generados no declaran relaciones, y un select anidado perdería el
-   * tipado. Si el club dejó de ser visible (lo rechazó un moderador), se cae
-   * al texto libre, y si no hay, no se muestra lugar.
-   */
-  const venueIds = [
-    ...new Set((sessions ?? []).map((s) => s.venue_id).filter((id): id is string => Boolean(id))),
-  ];
-  const { data: venues } = venueIds.length
-    ? await supabase.from('venues').select('id, name, city').in('id', venueIds)
-    : { data: [] };
-  const venueById = new Map((venues ?? []).map((v) => [v.id, v]));
+  const labels = await loadVenueLabels(supabase, (sessions ?? []).map((s) => s.venue_id));
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-10">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl">{tNav('sessions')}</h1>
+    <main className="mx-auto max-w-3xl px-5 py-8 lg:px-10 lg:py-12">
+      {notice ? <Notice kind={notice} /> : null}
+
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-3xl sm:text-4xl">{tNav('sessions')}</h1>
+        {/* En el celular el botón central de la barra ya registra; acá
+            sobraría. En escritorio, la barra lateral lo tiene arriba, pero
+            al lado del título es donde se lo busca. */}
         <Link
           href="/sesiones/nueva"
-          className="touch-target grid place-items-center rounded-pill bg-accent px-5 font-semibold text-accent-ink"
+          className="touch-target hidden items-center gap-2 rounded-pill bg-accent px-5 font-semibold text-accent-ink transition-colors hover:bg-accent-hover sm:inline-flex"
         >
+          <PlusIcon className="h-5 w-5" />
           {tNav('addSession')}
         </Link>
       </div>
@@ -72,7 +90,7 @@ export default async function SessionsPage({
               className="rounded-card border border-border bg-bg-surface p-5"
             >
               <div className="flex items-start justify-between gap-4">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm text-fg-secondary">
                     {format.dateTime(new Date(session.played_on), {
                       day: 'numeric',
@@ -80,33 +98,11 @@ export default async function SessionsPage({
                       year: 'numeric',
                     })}
                   </p>
-                  <VenueLink
-                    venue={
-                      (session.venue_id ? venueById.get(session.venue_id) : undefined) ??
-                      (session.venue_freetext ? { name: session.venue_freetext, city: null } : null)
-                    }
-                    label={t('openInMaps')}
-                  />
+                  <div className="mt-1">
+                    <VenueLink venue={venueFor(session, labels)} label={t('openInMaps')} />
+                  </div>
                 </div>
-
-                {/* El color nunca es el único portador: va con texto (§10). */}
-                {session.result ? (
-                  <span
-                    className={
-                      session.result === 'win'
-                        ? 'rounded-pill bg-win/15 px-3 py-1 text-xs font-semibold text-win'
-                        : session.result === 'loss'
-                          ? 'rounded-pill bg-loss/15 px-3 py-1 text-xs font-semibold text-loss'
-                          : 'rounded-pill bg-bg-elevated px-3 py-1 text-xs font-semibold text-fg-secondary'
-                    }
-                  >
-                    {t(`result.${session.result}` as 'result.win')}
-                  </span>
-                ) : (
-                  <span className="rounded-pill bg-bg-elevated px-3 py-1 text-xs font-semibold text-fg-secondary">
-                    {t('kind.training')}
-                  </span>
-                )}
+                <ResultBadge result={session.result} />
               </div>
 
               {session.sets ? (
@@ -116,55 +112,29 @@ export default async function SessionsPage({
               ) : null}
 
               {session.notes ? (
-                <p className="mt-2 text-sm text-fg-secondary">{session.notes}</p>
+                <p className="mt-3 text-sm text-fg-secondary">{session.notes}</p>
+              ) : null}
+
+              {session.owner_id === user.id ? (
+                <div className="mt-3 flex justify-end border-t border-border/60 pt-2">
+                  <DeleteSessionButton sessionId={session.id} />
+                </div>
               ) : null}
             </li>
           ))}
         </ul>
       ) : (
-        <div className="mt-12 rounded-card border border-border bg-bg-surface p-10 text-center">
+        <div className="mt-12 rounded-card border border-dashed border-border bg-bg-surface p-10 text-center">
           <p className="text-fg-secondary">{t('empty')}</p>
           <Link
             href="/sesiones/nueva"
-            className="touch-target mt-6 inline-grid place-items-center rounded-pill bg-accent px-6 font-semibold text-accent-ink"
+            className="touch-target mt-6 inline-flex items-center gap-2 rounded-pill bg-accent px-6 font-semibold text-accent-ink"
           >
+            <PlusIcon className="h-5 w-5" />
             {tNav('addSession')}
           </Link>
         </div>
       )}
     </main>
-  );
-}
-
-/**
- * El lugar del partido, como enlace a Google Maps.
- *
- * Nueva pestaña para no sacarte de tu historial. `noreferrer` para que Google
- * no reciba desde qué página de la app llegaste.
- */
-function VenueLink({
-  venue,
-  label,
-}: {
-  venue: { name: string; city: string | null } | null;
-  label: string;
-}) {
-  if (!venue) return null;
-  // Nombre y ciudad, no coordenadas: con coordenadas Google muestra un pin
-  // suelto; con el nombre abre la ficha del club, que es "el lugar real".
-  const text = venue.city ? `${venue.name}, ${venue.city}` : venue.name;
-  const href = mapsSearchUrl(text);
-  if (!href) return null;
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`${text} · ${label}`}
-      className="mt-0.5 inline-flex items-center gap-1 text-xs text-fg-secondary underline decoration-border underline-offset-4 hover:text-fg hover:decoration-fg-secondary"
-    >
-      <span aria-hidden="true">📍</span>
-      {text}
-    </a>
   );
 }

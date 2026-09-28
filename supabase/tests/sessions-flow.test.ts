@@ -233,6 +233,30 @@ describe('borrar una sesión', () => {
     expect(row?.n).toBe(1);
   });
 
+  /**
+   * `deleteSession` usa DELETE … RETURNING para saber si borró algo. Tiene que
+   * devolver la fila al dueño y nada a un tercero: si no, la pantalla diría
+   * "Partido borrado" sin haberlo borrado, o al revés.
+   */
+  it('el RETURNING del borrado distingue dueño de tercero', async () => {
+    const a = await createUser();
+    const b = await createUser();
+    const [s] = await db`
+      INSERT INTO public.sessions (owner_id, kind, played_on, result)
+      VALUES (${a.id}, 'match', current_date, 'win') RETURNING id
+    `;
+
+    const ajeno = await asUser(b.id, (sql) =>
+      sql`DELETE FROM public.sessions WHERE id = ${s!.id} RETURNING id`,
+    );
+    expect(ajeno).toHaveLength(0);
+
+    const propio = await asUser(a.id, (sql) =>
+      sql`DELETE FROM public.sessions WHERE id = ${s!.id} RETURNING id`,
+    );
+    expect(propio).toHaveLength(1);
+  });
+
   /** Borrar la sesión se lleva los participantes: no quedan filas huérfanas. */
   it('borrar arrastra a los participantes', async () => {
     const a = await createUser();
