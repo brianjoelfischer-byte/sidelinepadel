@@ -8,8 +8,11 @@ Estado y próximos pasos. El **qué** y el **por qué** de cada decisión están
 ## Dónde estamos
 
 **Bloques 1, 2, 3 y 5 terminados, y la primera parte del 7.** Cimientos, capa
-de datos, autenticación, registro de partidos y buscador de clubes. Probado de
-punta a punta en la máquina del owner: login, onboarding y guardado.
+de datos, autenticación, registro de partidos y buscador de clubes.
+
+**Publicada en <https://sidelinepadel.vercel.app>**, conectada al Supabase del
+owner. Login y historial de partidos verificados en producción. Cada cambio que
+entra a `main` se publica solo.
 
 | | Qué quedó funcionando |
 |---|---|
@@ -36,6 +39,8 @@ progresión de nivel.
   `supabase/seed/venues/AR.sql`. Pasos en [`GUIA.md`](./GUIA.md), paso 6.
 - ~~Login de punta a punta~~ **Hecho:** probado en la máquina del owner, con
   guardado de partido incluido.
+- ~~Publicar en Vercel~~ **Hecho:** `sidelinepadel.vercel.app`. Cómo se armó y
+  qué evitar, en [`GUIA.md`](./GUIA.md), paso 9.
 
 ---
 

@@ -7,7 +7,12 @@ name: Sedes · OpenStreetMap
 # Se dispara al cambiar la lista de países o el código que la procesa.
 on:
   push:
-    branches: ['**']
+    # Nunca sobre main: ahí el bot subiría datos sin revisión, y cada commit
+    # en main republica la app en Vercel. Pasó al juntar el primer pull
+    # request. Los clubes llegan a main como el código, en un pull request.
+    # (Una sola lista con exclusión: GitHub no acepta branches y
+    # branches-ignore juntos en el mismo evento.)
+    branches: ['**', '!main']
     paths:
       - 'supabase/seed/venues/countries.txt'
       - 'scripts/venues-fetch.mjs'
@@ -58,8 +63,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add supabase/seed/venues/*.sql 2>/dev/null || true
-          if git diff --cached --quiet; then
-            echo "Sin cambios en las sedes."
+          # -I ignora la línea con la fecha: si es lo único distinto, los
+          # datos son los mismos y un commit no aporta nada.
+          if git diff --cached --quiet -I '^--  Generado por scripts/venues-fetch.mjs'; then
+            echo "Sin cambios en las sedes (a lo sumo, la fecha)."
+            git reset -q
             exit 0
           fi
           git commit -m "Sedes: actualizar desde OpenStreetMap" \

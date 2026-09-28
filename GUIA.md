@@ -289,6 +289,50 @@ decir yo desde cuál va el `--from`.
 
 ---
 
+## 9 · La app publicada (Vercel)
+
+La app está en **<https://sidelinepadel.vercel.app>**. Vercel la arma desde la
+rama `main` de GitHub y la vuelve a publicar sola cada vez que `main` cambia.
+
+### Cómo llegan los cambios
+
+Yo trabajo en otra rama. Cuando algo está listo, abro un *pull request* (un
+pedido de juntar esa rama con `main`), GitHub corre todas las comprobaciones,
+y si vos estás de acuerdo lo junto. Ahí Vercel publica solo, en uno o dos
+minutos. No tenés que tocar nada en Vercel.
+
+### Si alguna vez hay que armarlo de nuevo
+
+Lo que aprendimos la primera vez, para no repetirlo:
+
+- **Un solo proyecto.** Si importás el repo dos veces, quedan dos proyectos
+  publicando lo mismo. Se borra el de más en *Settings → General → Delete
+  Project*.
+- **No apretar "Add" en la integración de Supabase** que ofrece Vercel al
+  importar: puede crear otro Supabase vacío. La conexión se hace con las
+  variables.
+- **Las tres variables van como `Config`, no como `Secret`**, en *Production y
+  Preview*:
+
+  | Key | Value |
+  |---|---|
+  | `NEXT_PUBLIC_SUPABASE_URL` | `https://xajnoqtxuzpgtlzbjkxo.supabase.co` |
+  | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | la anon key (empieza con `eyJ`) |
+  | `NEXT_PUBLIC_SITE_URL` | `https://sidelinepadel.vercel.app` |
+
+  Todo lo que empieza con `NEXT_PUBLIC_` es público por diseño, y Vercel no
+  deja guardarlo como secreto. Un secreto ya guardado no se puede pasar a
+  Config: se borra y se crea de nuevo.
+- **Si no hay ningún deployment**, se crea a mano: *Deployments → Create
+  Deployment → `main`*.
+- **Cambiar una variable no alcanza**: hay que volver a publicar
+  (*Deployments → ⋯ → Redeploy*), porque se incorporan al armar la app.
+- **En Supabase**, *Authentication → URL Configuration*: Site URL
+  `https://sidelinepadel.vercel.app` y en Redirect URLs, las dos:
+  `https://sidelinepadel.vercel.app/**` y `http://localhost:3000/**`.
+
+---
+
 ## Comandos, de un vistazo
 
 | Comando | Qué hace |
