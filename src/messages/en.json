@@ -276,5 +276,17 @@
     "language": "Language",
     "email": "Email",
     "editSoon": "Soon you'll be able to edit your details and declared level here."
+  },
+  "offers": {
+    "howTitle": "How they will work",
+    "steps": {
+      "publishTitle": "Post your game",
+      "publishBody": "Got a court and missing players? Post it with the day, time, club and the level you are looking for. Always four players.",
+      "joinTitle": "Join someone else's",
+      "joinBody": "See open games near you and at your level, and ask for a spot. You can sign up as confirmed or \"to be confirmed\".",
+      "remindTitle": "Don't forget",
+      "remindBody": "We remind you 30 minutes before you play. And if someone drops out, everyone who confirmed finds out right away."
+    },
+    "meanwhile": "Meanwhile, keep logging your matches: that builds your level, which is what will match you with others."
   }
 }

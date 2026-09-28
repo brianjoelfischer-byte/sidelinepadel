@@ -276,5 +276,17 @@
     "language": "Idioma",
     "email": "Email",
     "editSoon": "Muy pronto vas a poder editar tus datos y tu nivel declarado desde acá."
+  },
+  "offers": {
+    "howTitle": "Cómo van a funcionar",
+    "steps": {
+      "publishTitle": "Publicá tu turno",
+      "publishBody": "¿Conseguiste cancha y te faltan jugadores? Publicalo con día, hora, club y el nivel que buscás. Siempre son cuatro.",
+      "joinTitle": "Sumate al de otros",
+      "joinBody": "Mirá los turnos abiertos cerca tuyo y de tu nivel, y pedí lugar. Podés anotarte como seguro o como \"a confirmar\".",
+      "remindTitle": "No te olvidés",
+      "remindBody": "Te avisamos 30 minutos antes de jugar. Y si alguien se baja, los que ya confirmaron se enteran al instante."
+    },
+    "meanwhile": "Mientras tanto, seguí cargando tus partidos: con eso se arma tu nivel, que es lo que después te empareja."
   }
 }
