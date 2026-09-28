@@ -24,7 +24,6 @@ export default function LandingPage({
 
   const t = useTranslations('landing');
   const tMeta = useTranslations('meta');
-  const tDisclaimer = useTranslations('disclaimer');
 
   const features = [
     { key: 'track', Icon: MatchesIcon },
@@ -77,11 +76,9 @@ export default function LandingPage({
               </a>
             </div>
 
-            {/* §12.7 · El aviso vive en la landing desde el primer día.
-                No es un detalle legal: es la expectativa del producto. */}
-            <p className="mt-8 max-w-xl rounded-card border border-accent-2/40 bg-accent-2/5 px-4 py-3 text-sm text-fg-secondary">
-              {tDisclaimer('noBooking')}
-            </p>
+            {/* El aviso de que la app no reserva canchas NO va acá: va donde
+                se arma un turno (§12.8), que es donde está el riesgo de
+                creer que se reservó. Ver components/offers. */}
           </div>
 
           {/* Vista previa: cómo se ve adentro, con los componentes reales de la
