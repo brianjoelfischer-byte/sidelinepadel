@@ -179,7 +179,12 @@ describe('anon no puede escribir nada', () => {
 });
 
 describe('sedes', () => {
-  it('las sedes aprobadas son públicas; las pendientes no', async () => {
+  /**
+   * Migración 13: las agregadas por jugadores (pendientes) las ve cualquiera
+   * con sesión, para que el segundo que busca el club lo encuentre en vez de
+   * crearlo de nuevo. Sin sesión, solo las verificadas. Rechazadas, nadie.
+   */
+  it('verificadas para todos; agregadas por jugadores solo con sesión; rechazadas nunca', async () => {
     await truncateAll();
     const a = await createUser();
     const b = await createUser();
@@ -191,9 +196,15 @@ describe('sedes', () => {
       RETURNING id
     `;
     const [pendiente] = await db`
-      INSERT INTO public.venues (name, country_code, location, timezone, source, status, submitted_by)
-      VALUES ('Club Pendiente', 'AR', ST_MakePoint(-58.5, -34.7)::geography,
+      INSERT INTO public.venues (name, country_code, city, location, timezone, source, status, submitted_by)
+      VALUES ('Club Pendiente', 'AR', 'Buenos Aires', ST_MakePoint(-58.5, -34.7)::geography,
               'America/Argentina/Buenos_Aires', 'user', 'pending', ${a.id})
+      RETURNING id
+    `;
+    const [rechazada] = await db`
+      INSERT INTO public.venues (name, country_code, city, location, timezone, source, status, submitted_by)
+      VALUES ('Club Inventado', 'AR', 'Buenos Aires', ST_MakePoint(-58.6, -34.8)::geography,
+              'America/Argentina/Buenos_Aires', 'user', 'rejected', ${a.id})
       RETURNING id
     `;
 
@@ -201,7 +212,11 @@ describe('sedes', () => {
     const ids = vistas.map((r) => r.id);
 
     expect(ids).toContain(aprobada!.id);
-    expect(ids).not.toContain(pendiente!.id);
+    expect(ids).toContain(pendiente!.id);
+    expect(ids).not.toContain(rechazada!.id);
+
+    const anonimas = await asAnon((sql) => sql`SELECT id FROM public.venues`);
+    expect(anonimas.map((r) => r.id)).toEqual([aprobada!.id]);
 
     // Quien la propuso sí ve la suya mientras espera moderación.
     const propias = await asUser(a.id, (sql) =>
@@ -218,8 +233,8 @@ describe('sedes', () => {
     try {
       await asUser(a.id, (sql) =>
         sql`
-          INSERT INTO public.venues (name, country_code, location, timezone, source, status, submitted_by)
-          VALUES ('Truchada', 'AR', ST_MakePoint(0, 0)::geography, 'UTC',
+          INSERT INTO public.venues (name, country_code, city, location, timezone, source, status, submitted_by)
+          VALUES ('Truchada', 'AR', 'Buenos Aires', ST_MakePoint(0, 0)::geography, 'UTC',
                   'user', 'approved', ${a.id})
         `,
       );
@@ -234,9 +249,9 @@ describe('sedes', () => {
     const a = await createUser();
 
     await db`
-      INSERT INTO public.venues (name, country_code, location, timezone, source, status)
-      VALUES ('Cerca Aprobada', 'AR', ST_MakePoint(-58.40, -34.60)::geography, 'UTC', 'import', 'approved'),
-             ('Cerca Pendiente', 'AR', ST_MakePoint(-58.41, -34.61)::geography, 'UTC', 'user', 'pending')
+      INSERT INTO public.venues (name, country_code, city, location, timezone, source, status)
+      VALUES ('Cerca Aprobada', 'AR', NULL, ST_MakePoint(-58.40, -34.60)::geography, 'UTC', 'import', 'approved'),
+             ('Cerca Pendiente', 'AR', 'Buenos Aires', ST_MakePoint(-58.41, -34.61)::geography, 'UTC', 'user', 'pending')
     `;
 
     const rows = await asUser(a.id, (sql) =>

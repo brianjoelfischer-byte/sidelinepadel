@@ -473,7 +473,7 @@ export interface Database {
           admin_area: string | null;
           city: string | null;
           address: string | null;
-          location: unknown;
+          location: unknown | null;
           timezone: string;
           courts_count: number | null;
           surface_notes: string | null;
@@ -488,6 +488,9 @@ export interface Database {
           lat: number | null;
           lng: number | null;
           search_text: string | null;
+          core_name: string | null;
+          city_key: string | null;
+          players_count: number;
         };
         Insert: {
           id?: string;
@@ -496,7 +499,7 @@ export interface Database {
           admin_area?: string | null;
           city?: string | null;
           address?: string | null;
-          location: unknown;
+          location?: unknown | null;
           timezone: string;
           courts_count?: number | null;
           surface_notes?: string | null;
@@ -511,6 +514,9 @@ export interface Database {
           lat?: never;
           lng?: never;
           search_text?: never;
+          core_name?: never;
+          city_key?: never;
+          players_count?: number;
         };
         Update: Partial<Database['public']['Tables']['venues']['Insert']>;
         Relationships: [];
@@ -556,6 +562,53 @@ export interface Database {
             courts_count: number | null;
             lat: number | null;
             lng: number | null;
+            verified: boolean | null;
+            players_count: number | null;
+          }[];
+      };
+      similar_venues: {
+        Args: {
+          p_name: string;
+          p_country: string;
+          p_admin_area?: string;
+          p_city?: string;
+          p_lat?: number;
+          p_lng?: number;
+        };
+        Returns: {
+            id: string | null;
+            name: string | null;
+            city: string | null;
+            admin_area: string | null;
+            verified: boolean | null;
+            players_count: number | null;
+            same_name: boolean | null;
+            score: number | null;
+          }[];
+      };
+      submit_venue: {
+        Args: {
+          p_name: string;
+          p_country: string;
+          p_admin_area: string;
+          p_city: string;
+          p_address?: string;
+          p_lat?: number;
+          p_lng?: number;
+        };
+        Returns: {
+            id: string | null;
+            created: boolean | null;
+          }[];
+      };
+      venue_cities: {
+        Args: {
+          p_country: string;
+          p_admin_area?: string;
+        };
+        Returns: {
+            city: string | null;
+            venues: number | null;
           }[];
       };
       venues_nearby: {

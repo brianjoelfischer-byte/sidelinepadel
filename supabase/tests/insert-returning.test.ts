@@ -159,8 +159,8 @@ describe('INSERT ... RETURNING funciona para el que inserta', () => {
     const rows = await asUser(a.id, (sql) =>
       sql`
         INSERT INTO public.venues
-          (name, country_code, location, timezone, source, status, submitted_by)
-        VALUES ('Club Nuevo', 'AR', ST_MakePoint(-58.4, -34.6)::geography,
+          (name, country_code, city, location, timezone, source, status, submitted_by)
+        VALUES ('Club Nuevo', 'AR', 'Buenos Aires', ST_MakePoint(-58.4, -34.6)::geography,
                 'America/Argentina/Buenos_Aires', 'user', 'pending', ${a.id})
         RETURNING id
       `,

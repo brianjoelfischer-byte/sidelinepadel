@@ -17,7 +17,7 @@ async function venue(
     country?: string;
     city?: string;
     osmId?: number;
-    status?: 'approved' | 'pending';
+    status?: 'approved' | 'pending' | 'rejected';
     submittedBy?: string;
   } = {},
 ) {
@@ -27,7 +27,7 @@ async function venue(
       (name, country_code, city, location, timezone, source, osm_type, osm_id,
        status, submitted_by)
     VALUES (
-      ${name}, ${opts.country ?? 'AR'}, ${opts.city ?? null},
+      ${name}, ${opts.country ?? 'AR'}, ${opts.city ?? (source === 'user' ? 'Córdoba' : null)},
       ST_SetSRID(ST_MakePoint(-64.18, -31.42), 4326)::geography,
       'America/Argentina/Cordoba', ${source},
       ${source === 'osm' ? 'node' : null},
@@ -115,28 +115,44 @@ describe('búsqueda de sedes', () => {
 describe('búsqueda de sedes · visibilidad', () => {
   beforeEach(truncateAll);
 
-  it('la propuesta pendiente de otro no aparece', async () => {
+  /**
+   * Migración 13: lo que agrega un jugador aparece enseguida para todos, así
+   * el siguiente lo encuentra en vez de crearlo de nuevo. Marcado como no
+   * verificado.
+   */
+  it('el club que agregó otro jugador aparece, marcado sin verificar', async () => {
     const a = await createUser();
     const b = await createUser();
     await venue('Club de B', { status: 'pending', submittedBy: b.id });
+    await venue('Club Oficial');
 
-    expect(await search(a.id, 'club')).toEqual([]);
+    const rows = await asUser(a.id, (sql) =>
+      sql`SELECT name, verified FROM public.search_venues('club', 'AR')`,
+    );
+    // Primero el verificado, después el de la comunidad.
+    expect(rows.map((r) => [r.name, r.verified])).toEqual([
+      ['Club Oficial', true],
+      ['Club de B', false],
+    ]);
   });
 
-  it('tu propia propuesta pendiente sí, para poder usarla ya (§13)', async () => {
+  it('un club rechazado no aparece para nadie', async () => {
     const a = await createUser();
-    await venue('Mi Club Nuevo', { status: 'pending', submittedBy: a.id });
-
-    expect(await search(a.id, 'club')).toEqual(['Mi Club Nuevo']);
-  });
-
-  /** Un moderador ve las pendientes en la moderación, no mezcladas acá. */
-  it('un moderador no ve pendientes ajenas en el buscador', async () => {
     const mod = await createUser({ role: 'moderator' });
-    const b = await createUser();
-    await venue('Club de B', { status: 'pending', submittedBy: b.id });
+    await venue('Club Inventado', { status: 'rejected', submittedBy: a.id });
 
-    expect(await search(mod.id, 'club')).toEqual([]);
+    expect(await search(a.id, 'inventado')).toEqual([]);
+    expect(await search(mod.id, 'inventado')).toEqual([]);
+  });
+
+  it('también se busca por provincia', async () => {
+    const a = await createUser();
+    await db`
+      INSERT INTO public.venues (name, country_code, admin_area, city, location, timezone, source, osm_type, osm_id, status)
+      VALUES ('Club Norte', 'AR', 'Mendoza', 'Godoy Cruz', ST_MakePoint(-68.8, -32.9)::geography,
+              'America/Argentina/Mendoza', 'osm', 'node', 1, 'approved')
+    `;
+    expect(await search(a.id, 'mendoza')).toEqual(['Club Norte']);
   });
 
   it('sin sesión no se puede buscar', async () => {
