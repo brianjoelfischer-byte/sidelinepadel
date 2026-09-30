@@ -21,7 +21,14 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildVenues, isCompleteSql, toSql } from './lib/osm-venues.mjs';
+import {
+  buildVenues,
+  canonicalRegion,
+  isCompleteSql,
+  parseRegionRows,
+  regionQuery,
+  toSql,
+} from './lib/osm-venues.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIR = join(root, 'supabase', 'seed', 'venues');
@@ -138,6 +145,37 @@ ${area(cc)}
 node(area.a)["place"~"^(city|town|village|suburb)$"]["name"];
 out;`;
 
+/**
+ * Pregunta a Overpass en qué provincia cae cada sede, de a 100 por consulta.
+ * La respuesta de OSM se traduce al nombre canónico de la app.
+ */
+async function assignRegions(rows, cc) {
+  const CHUNK = 100;
+  let ok = true;
+  let assigned = 0;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const chunk = rows.slice(i, i + CHUNK);
+    try {
+      const elements = await overpass(regionQuery(chunk), `${cc} provincias ${i / CHUNK + 1}`, 3);
+      const found = parseRegionRows(elements);
+      chunk.forEach((row, j) => {
+        const osmName = found.get(j);
+        const region = osmName ? canonicalRegion(cc, osmName) : null;
+        if (region) {
+          row.admin_area = region;
+          assigned += 1;
+        }
+      });
+    } catch (error) {
+      ok = false;
+      console.warn(`  ! ${cc} provincias: ${error.message}`);
+    }
+    await sleep(5_000 * PAUSE);
+  }
+  console.log(`  ${assigned} de ${rows.length} sedes con provincia`);
+  return ok;
+}
+
 async function fetchCountry(cc, timezoneOf) {
   console.log(`▸ ${cc}: consultando sedes…`);
   const core = await overpass(coreQuery(cc), `${cc} sedes`);
@@ -175,6 +213,11 @@ async function fetchCountry(cc, timezoneOf) {
   console.log(`  ${places.length} localidades`);
 
   const { rows, stats } = buildVenues(elements, { countryCode: cc, timezoneOf, places });
+
+  // Provincia de cada sede. Si alguna tanda falla, la corrida queda parcial:
+  // un archivo sin provincias no debe reemplazar a uno que las tenía.
+  const regionsOk = await assignRegions(rows, cc);
+  if (!regionsOk) complete = false;
   console.log(
     `  → ${rows.length} sedes · ${stats.courtsAttributed} canchas dentro de su club · ${stats.courtsNearby} al lado · ` +
       `${stats.duplicatesMerged} duplicados · ${stats.unnamedSkipped} sin nombre`,

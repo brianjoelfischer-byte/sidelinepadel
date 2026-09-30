@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildVenues, fold, isCompleteSql, nearestPlace, sqlText, toSql } from './osm-venues.mjs';
+import {
+  buildVenues,
+  canonicalRegion,
+  fold,
+  isCompleteSql,
+  nearestPlace,
+  parseRegionRows,
+  regionQuery,
+  sqlText,
+  toSql,
+} from './osm-venues.mjs';
 
 const tz = () => 'America/Argentina/Cordoba';
 const opts = { countryCode: 'AR', timezoneOf: tz };
@@ -250,7 +260,9 @@ describe('SQL', () => {
     );
     const sql = toSql(rows, { countryCode: 'AR', generatedAt: 'hoy', stats });
     expect(sql).toContain("'O''Brien'");
-    expect(sql).toContain('ON CONFLICT (osm_type, osm_id) DO NOTHING');
+    // Una segunda carga solo puede completar la provincia; nada más se pisa.
+    expect(sql).toContain('ON CONFLICT (osm_type, osm_id) DO UPDATE');
+    expect(sql.match(/SET [^;]*;/)?.[0]).toBe('SET admin_area = EXCLUDED.admin_area\n  WHERE public.venues.admin_area IS NULL AND EXCLUDED.admin_area IS NOT NULL;');
     expect(sql).toContain('ODbL');
     expect(sql.trim().startsWith('--')).toBe(true);
   });
@@ -274,5 +286,72 @@ describe('marca de consulta completa', () => {
 describe('fold', () => {
   it('ignora tildes, mayúsculas y espacios', () => {
     expect(fold('  Pádel   CLUB ')).toBe('padel club');
+  });
+});
+
+describe('provincia', () => {
+  it('traduce el nombre oficial de OSM al de la app', () => {
+    expect(canonicalRegion('AR', 'Provincia de Córdoba')).toBe('Córdoba');
+    expect(canonicalRegion('AR', 'Tierra del Fuego, Antártida e Islas del Atlántico Sur')).toBe('Tierra del Fuego');
+  });
+
+  /** "Ciudad Autónoma de Buenos Aires" también contiene "Buenos Aires". */
+  it('la ciudad de Buenos Aires no es la provincia', () => {
+    expect(canonicalRegion('AR', 'Ciudad Autónoma de Buenos Aires')).toBe('Ciudad Autónoma de Buenos Aires');
+    expect(canonicalRegion('AR', 'Buenos Aires')).toBe('Buenos Aires');
+  });
+
+  it('lo que no es una provincia real no se guarda', () => {
+    expect(canonicalRegion('AR', 'Cba')).toBeNull();
+    expect(canonicalRegion('AR', '')).toBeNull();
+  });
+
+  it('en países sin lista usa el nombre de OSM, sin "Provincia de"', () => {
+    expect(canonicalRegion('CL', 'Región de Valparaíso')).toBe('Región de Valparaíso');
+    expect(canonicalRegion('UY', 'Departamento de Montevideo')).toBe('Montevideo');
+  });
+
+  it('la etiqueta addr:state de OSM también pasa por la lista', () => {
+    const { rows } = buildVenues(
+      [
+        { type: 'node', id: 1, lat: -31.4, lon: -64.2, tags: { sport: 'padel', name: 'Club Uno', 'addr:state': 'Córdoba' } },
+        { type: 'node', id: 2, lat: -31.5, lon: -64.3, tags: { sport: 'padel', name: 'Club Dos', 'addr:state': 'Cba' } },
+      ],
+      opts,
+    );
+    expect(rows.find((r) => r.name === 'Club Uno')?.admin_area).toBe('Córdoba');
+    expect(rows.find((r) => r.name === 'Club Dos')?.admin_area).toBeNull();
+  });
+
+  it('una consulta para muchos puntos, cada respuesta con su índice', () => {
+    const q = regionQuery([
+      { lat: -31.42, lng: -64.18 },
+      { lat: -34.6, lng: -58.38 },
+    ]);
+    expect(q).toContain('is_in(-31.420000,-64.180000)->.a0;');
+    expect(q).toContain('is_in(-34.600000,-58.380000)->.a1;');
+    expect(q).toContain('convert row idx="1"');
+    expect(q.match(/admin_level"="4"/g)).toHaveLength(2);
+  });
+
+  it('lee la respuesta aunque falte algún punto', () => {
+    const found = parseRegionRows([
+      { type: 'row', id: 1, tags: { idx: '0', name: 'Córdoba' } },
+      { type: 'row', id: 2, tags: { idx: '2', name: 'Mendoza' } },
+      { type: 'area', id: 3, tags: { name: 'ignorado' } },
+    ]);
+    expect([...found.entries()]).toEqual([[0, 'Córdoba'], [2, 'Mendoza']]);
+  });
+});
+
+describe('SQL con provincia', () => {
+  it('completa la provincia de sedes ya cargadas, solo si estaba vacía', () => {
+    const { rows, stats } = buildVenues(
+      [{ type: 'node', id: 1, lat: -31.4, lon: -64.2, tags: { sport: 'padel', name: 'Top Pádel' } }],
+      opts,
+    );
+    const sql = toSql(rows, { countryCode: 'AR', generatedAt: 'hoy', stats });
+    expect(sql).toContain('DO UPDATE');
+    expect(sql).toContain('WHERE public.venues.admin_area IS NULL');
   });
 });
