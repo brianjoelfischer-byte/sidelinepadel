@@ -185,7 +185,7 @@ export function AddVenuePanel({
                 onClick={() =>
                   onDone({ id: v.id, name: v.name, city: v.city ?? draft.city, existed: true })
                 }
-                className="touch-target shrink-0 rounded-pill bg-accent px-4 text-sm font-semibold text-accent-ink"
+                className="btn-gold touch-target shrink-0 px-4"
               >
                 {t('isThis')}
               </button>
@@ -225,7 +225,7 @@ export function AddVenuePanel({
   return (
     <section
       aria-labelledby={`${ids.name}-title`}
-      className="mt-3 rounded-card border border-border bg-bg-surface p-4"
+      className="mt-3 card-glass p-4"
       // El panel vive dentro del formulario del partido: Enter en un campo lo
       // mandaría entero. Acá Enter no hace nada; se sigue con el botón.
       onKeyDown={(e) => {
@@ -239,7 +239,7 @@ export function AddVenuePanel({
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block sm:col-span-2" htmlFor={ids.name}>
-          <span className="mb-1 block text-sm font-semibold text-fg-secondary">{t('name')}</span>
+          <span className="mb-1 block text-sm font-bold uppercase tracking-wider text-fg-secondary">{t('name')}</span>
           <input
             id={ids.name}
             value={name}
@@ -251,7 +251,7 @@ export function AddVenuePanel({
         </label>
 
         <label className="block" htmlFor={ids.region}>
-          <span className="mb-1 block text-sm font-semibold text-fg-secondary">{t('region')}</span>
+          <span className="mb-1 block text-sm font-bold uppercase tracking-wider text-fg-secondary">{t('region')}</span>
           {regions ? (
             <select
               id={ids.region}
@@ -281,7 +281,7 @@ export function AddVenuePanel({
         </label>
 
         <label className="block" htmlFor={ids.city}>
-          <span className="mb-1 block text-sm font-semibold text-fg-secondary">{t('city')}</span>
+          <span className="mb-1 block text-sm font-bold uppercase tracking-wider text-fg-secondary">{t('city')}</span>
           <input
             id={ids.city}
             list={ids.cities}
@@ -301,7 +301,7 @@ export function AddVenuePanel({
         </label>
 
         <label className="block sm:col-span-2" htmlFor={ids.address}>
-          <span className="mb-1 block text-sm font-semibold text-fg-secondary">
+          <span className="mb-1 block text-sm font-bold uppercase tracking-wider text-fg-secondary">
             {t('address')} <span className="font-normal text-fg-muted">({t('optional')})</span>
           </span>
           <input
@@ -364,7 +364,7 @@ export function AddVenuePanel({
           type="button"
           onClick={next}
           disabled={isPending}
-          className="touch-target rounded-pill bg-accent px-5 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-60"
+          className="btn-gold touch-target px-5 disabled:opacity-60"
         >
           {isPending ? t('checking') : t('continue')}
         </button>

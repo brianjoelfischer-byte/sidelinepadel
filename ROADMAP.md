@@ -23,6 +23,7 @@ entra a `main` se publica solo.
 | **Niveles** | Declarado + percibido + efectivo, con confianza adaptativa, límite de ±2,5 por voto y categoría estimada |
 | **Sesiones** | Partido con sets, partido rápido y entrenamiento; resultado derivado en el servidor; participantes y confirmación de etiqueta; marcador set por set en el historial |
 | **Sedes** | Clubes de Argentina desde OpenStreetMap con su provincia, buscador en "Dónde jugaste" sin importar tildes, cada lugar abre en Google Maps. Si falta un club, el jugador lo agrega con provincia y ciudad; la base detecta si ya existe escrito distinto ("Club Paddle Point" = "Padel Point") y queda verificado cuando 3 jugadores cargan partidos ahí |
+| **Diseño** | Estilo de las transmisiones del circuito profesional: negro y dorado, tipografía cuadrada en mayúsculas, títulos en dos pesos, marcador de TV en cada partido, botones con sombra desplazada. Marca propia: nada de logos ni nombres ajenos |
 | **Interfaz** | Barra de navegación (inferior en celular, lateral en escritorio), panel con resumen (partidos, % de victorias, racha, forma), perfil, borrar partido con confirmación, avisos, pantallas de carga y error, ícono e instalable en el celular |
 | **Seguridad** | 142 tests de base que prueban que un usuario no puede leer ni escribir lo de otro, más 105 de lógica y guardas de código |
 

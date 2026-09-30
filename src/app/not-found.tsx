@@ -21,7 +21,7 @@ export default function GlobalNotFound() {
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a
               href="/es"
-              className="touch-target mt-8 inline-grid place-items-center rounded-pill bg-accent px-6 font-semibold text-accent-ink"
+              className="btn-gold touch-target mt-8 px-6"
             >
               Sideline Padel
             </a>

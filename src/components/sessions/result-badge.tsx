@@ -10,10 +10,12 @@ import type { Result } from '@/lib/stats/summary';
  * igual lee "Victoria" y ve la flecha.
  */
 const STYLE: Record<Result | 'training', string> = {
-  win: 'bg-win/15 text-win',
-  loss: 'bg-loss/15 text-loss',
-  draw: 'bg-bg-elevated text-fg-secondary',
-  training: 'bg-info/10 text-info',
+  // Chips llenos, como el "COMPLETED" de los marcadores de la tele.
+  // Negro sobre verde 9:1, blanco sobre rojo 4.9:1, negro sobre blanco 21:1.
+  win: 'bg-win text-black',
+  loss: 'bg-loss-strong text-white',
+  draw: 'bg-white text-black',
+  training: 'border border-white/25 bg-white/10 text-fg',
 };
 
 const SYMBOL: Record<Result | 'training', string> = {
@@ -30,7 +32,7 @@ export function ResultBadge({ result }: { result: Result | null }) {
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-pill px-3 py-1 text-xs font-semibold ${STYLE[key]}`}
+      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${STYLE[key]}`}
     >
       <span aria-hidden="true" className="text-[9px]">
         {SYMBOL[key]}
@@ -53,7 +55,7 @@ export function FormStrip({ form }: { form: Result[] }) {
       {form.map((result, i) => (
         <li
           key={i}
-          className={`grid h-8 w-8 place-items-center rounded-lg text-xs font-bold ${STYLE[result]}`}
+          className={`grid h-8 w-8 place-items-center rounded-md text-sm font-bold ${STYLE[result]}`}
         >
           <span aria-hidden="true">{t(`formLetter.${result}`)}</span>
           <span className="sr-only">{t(`formWord.${result}`)}</span>

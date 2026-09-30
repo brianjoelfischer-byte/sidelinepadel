@@ -2,50 +2,58 @@
 
 /* ---------------------------------------------------------------------------
    Tokens de diseño · §10 del BLUEPRINT
-   Paleta deliberadamente distinta a la referencia: volt lime sobre grafito
-   cálido, nada de cian sobre azul marino.
+   Lenguaje visual de las transmisiones del circuito profesional: negro
+   profundo, dorado, tipografía cuadrada en mayúsculas. Es lo que el jugador
+   ya ve en la tele; acá se siente familiar. Logo, nombre y estrella son
+   propios: nada de marcas ajenas.
 
    Contraste verificado (WCAG AA):
-     --color-accent  sobre --color-bg-base     ≈ 13.8:1
-     --color-fg-muted sobre --color-bg-surface ≈  5.9:1
-   El acento se usa COMO FONDO con texto oscuro, nunca como texto fino.
+     --color-accent (dorado) sobre negro      ≈ 7.1:1
+     texto negro sobre --color-accent         ≈ 7.1:1
+     --color-fg-muted sobre --color-bg-surface ≈ 5.0:1
+     blanco sobre el degradé dorado del botón ≥ 3.1:1 en el borde claro,
+       ~5.5:1 al centro — por eso el botón usa texto grande (≥ 19 px bold,
+       "texto grande" para WCAG, que pide 3:1).
 --------------------------------------------------------------------------- */
 @theme {
-  /* Base — grafito cálido, no azul */
-  --color-bg-base: #14161a;
-  --color-bg-surface: #1d2026;
-  --color-bg-elevated: #262a31;
-  --color-border: #333842;
+  /* Base — negro, como la transmisión */
+  --color-bg-base: #000000;
+  --color-bg-surface: #111111;
+  --color-bg-elevated: #1c1c1c;
+  --color-border: #2c2c2c;
 
-  /* Acento primario */
-  --color-accent: #c8f751;
-  --color-accent-hover: #d9ff7a;
-  --color-accent-ink: #14161a;
+  /* Dorado */
+  --color-accent: #b49058;
+  --color-accent-hover: #c4a36d;
+  --color-accent-ink: #000000;
+  --color-gold-deep: #4b330d;
 
-  /* Acento secundario — ámbar quemado: premium, logros y avisos */
-  --color-accent-2: #ff9f45;
+  /* Categorías de torneo: plata, bronce, bordó. Para rangos y logros. */
+  --color-silver: #a0a0a0;
+  --color-bronze: #cd8032;
+  --color-accent-2: #cd8032;
+  --color-finals: #610031;
 
   /* Semánticos. Nunca son el ÚNICO portador de información (§10):
      victoria/derrota siempre llevan además icono y texto. */
-  --color-win: #4ade80;
-  --color-loss: #f87171;
+  --color-win: #00c758;
+  --color-loss: #ff4d55;
+  --color-loss-strong: #e40014;
   --color-info: #7dd3fc;
 
   /* Texto */
-  --color-fg: #f2f4f7;
-  --color-fg-secondary: #9ba3b0;
-  --color-fg-muted: #6b7280;
+  --color-fg: #ffffff;
+  --color-fg-secondary: #b3b3b3;
+  --color-fg-muted: #8a8a8a;
 
-  /* Radios */
-  --radius-card: 12px;
-  --radius-pill: 999px;
+  /* Radios: rectángulos redondeados, no píldoras */
+  --radius-card: 16px;
+  --radius-pill: 12px;
 
-  /* Tipografía. Autohospedada en el bloque siguiente — sin llamadas a
-     Google Fonts: privacidad y CSP (§10, §8.6). */
-  --font-display:
-    var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Tipografía: una sola familia cuadrada para todo, como en la tele.
+     `next/font` la autohospeda: sin llamadas a Google Fonts (§10, §8.6). */
+  --font-display: var(--font-rajdhani), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-rajdhani), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 @layer base {
@@ -55,8 +63,18 @@
 
   body {
     background-color: var(--color-bg-base);
+    /* Barridos de luz, uno dorado y uno blanco: el fondo de las
+       transmisiones. Decorativo y fijo, no distrae al hacer scroll. */
+    background-image:
+      linear-gradient(118deg, transparent 58%, rgb(180 144 88 / 0.13) 58.4%, transparent 61%),
+      linear-gradient(118deg, transparent 63%, rgb(180 144 88 / 0.07) 63.3%, transparent 66%),
+      linear-gradient(62deg, transparent 18%, rgb(255 255 255 / 0.05) 18.3%, transparent 21%);
+    background-attachment: fixed;
     color: var(--color-fg);
     font-family: var(--font-sans);
+    font-weight: 500;
+    /* La familia es angosta: un punto más grande lee como 16 px normales. */
+    font-size: 1.0625rem;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -65,7 +83,17 @@
   h3 {
     font-family: var(--font-display);
     font-weight: 700;
-    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    line-height: 1.05;
+  }
+
+  /* Los campos no heredan la fuente por defecto. */
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
   }
 
   /* Foco visible siempre. Quitarlo rompe la navegación por teclado. */
@@ -84,6 +112,88 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+  }
+}
+
+@layer components {
+  /* Botón principal: degradé dorado, borde blanco y sombra blanca
+     desplazada. Al pasar el mouse "se hunde" sobre su sombra. */
+  .btn-gold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid #fff;
+    border-radius: 12px;
+    background: linear-gradient(98deg, var(--color-accent) 0%, var(--color-gold-deep) 101%);
+    box-shadow: 2.5px 2.5px 0 #fff;
+    color: #fff;
+    font-size: 1.1875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    text-transform: uppercase;
+    transition:
+      transform 0.15s linear,
+      box-shadow 0.15s linear;
+  }
+  .btn-gold:hover:not(:disabled),
+  .btn-gold:active:not(:disabled) {
+    transform: translate(2.5px, 2.5px);
+    box-shadow: 0 0 0 #fff;
+  }
+  .btn-gold:disabled {
+    opacity: 0.6;
+  }
+
+  /* Secundario: negro con el mismo borde y sombra. */
+  .btn-dark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid #fff;
+    border-radius: 12px;
+    background: #000;
+    box-shadow: 2.5px 2.5px 0 #fff;
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition:
+      transform 0.15s linear,
+      box-shadow 0.15s linear;
+  }
+  .btn-dark:hover:not(:disabled),
+  .btn-dark:active:not(:disabled) {
+    transform: translate(2.5px, 2.5px);
+    box-shadow: 0 0 0 #fff;
+  }
+
+  /* Tarjeta de vidrio sobre negro. */
+  .card-glass {
+    border: 1px solid rgb(255 255 255 / 0.12);
+    border-radius: var(--radius-card);
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02));
+  }
+
+  /* Superficie dorada: lo destacado (total de sets, nivel). */
+  .bg-gold-gradient {
+    background: linear-gradient(98deg, var(--color-accent) 0%, var(--color-gold-deep) 101%);
+  }
+
+  /* Tarjeta dorada con texto chico encima: el dorado más oscuro, así el
+     blanco llega a 4.6:1 incluso en el borde claro. */
+  .bg-gold-card {
+    background: linear-gradient(98deg, #8f7042 0%, #3a2709 101%);
+  }
+
+  /* Rótulo de sección: chico, en mayúsculas y espaciado. */
+  .eyebrow {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
 }
 

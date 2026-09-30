@@ -70,10 +70,10 @@ export function AppNav({ variant }: { variant: 'bar' | 'sidebar' }) {
                   aria-current={isActive ? 'page' : undefined}
                   className="-mt-5 flex flex-col items-center gap-1"
                 >
-                  <span className="grid h-14 w-14 place-items-center rounded-full bg-accent text-accent-ink shadow-lg shadow-black/40 ring-4 ring-bg-base transition-transform active:scale-95 motion-reduce:transition-none">
+                  <span className="grid h-14 w-14 place-items-center rounded-2xl border border-white bg-gold-gradient text-white shadow-[2.5px_2.5px_0_#fff] ring-4 ring-bg-base transition-transform active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none motion-reduce:transition-none">
                     <Icon className="h-7 w-7" />
                   </span>
-                  <span className="text-[11px] font-semibold text-fg">{label(key)}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-fg">{label(key)}</span>
                 </Link>
               </li>
             );
@@ -98,7 +98,7 @@ export function AppNav({ variant }: { variant: 'bar' | 'sidebar' }) {
                   />
                 ) : null}
                 <Icon className="h-6 w-6" />
-                <span className="text-[11px] font-semibold">
+                <span className="text-[11px] font-bold uppercase tracking-wider">
                   {label(key)}
                   {soon ? <span className="sr-only"> · {t('soon')}</span> : null}
                 </span>
@@ -130,8 +130,8 @@ export function AppNav({ variant }: { variant: 'bar' | 'sidebar' }) {
               aria-current={isActive ? 'page' : undefined}
               className={
                 isActive
-                  ? 'flex min-h-11 items-center gap-3 rounded-card bg-bg-elevated px-3 font-semibold text-fg'
-                  : 'flex min-h-11 items-center gap-3 rounded-card px-3 font-medium text-fg-secondary transition-colors hover:bg-bg-surface hover:text-fg'
+                  ? 'flex min-h-11 items-center gap-3 rounded-card border-l-2 border-accent bg-white/10 px-3 font-bold uppercase tracking-wider text-fg'
+                  : 'flex min-h-11 items-center gap-3 rounded-card border-l-2 border-transparent px-3 font-bold uppercase tracking-wider text-fg-secondary transition-colors hover:bg-white/5 hover:text-fg'
               }
             >
               <Icon className={isActive ? 'h-5 w-5 text-accent' : 'h-5 w-5'} />

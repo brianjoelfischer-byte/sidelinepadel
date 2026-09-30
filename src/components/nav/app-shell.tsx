@@ -38,20 +38,20 @@ export function AppShell({
       {/* Primer elemento enfocable: con Tab se salta la navegación entera. */}
       <a
         href="#contenido"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-pill focus:bg-accent focus:px-4 focus:py-2 focus:font-semibold focus:text-accent-ink"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-pill focus:bg-accent focus:px-4 focus:py-2 focus:font-bold focus:text-accent-ink"
       >
         {t('skipToContent')}
       </a>
 
       {/* ── Escritorio: barra lateral ───────────────────────────────────── */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-bg-base px-4 py-6 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-gradient-to-b from-[#1a1a1a] to-black px-4 py-6 shadow-[1px_0_0_0_var(--color-accent)] lg:flex">
         <Link href="/panel" aria-label={t('panel')} className="px-3">
           <Logo />
         </Link>
 
         <Link
           href="/sesiones/nueva"
-          className="touch-target mt-8 flex items-center justify-center gap-2 rounded-pill bg-accent px-4 font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
+          className="btn-gold touch-target mt-8 gap-2 px-4"
         >
           <PlusIcon className="h-5 w-5" />
           {t('addSessionLong')}
@@ -67,7 +67,7 @@ export function AppShell({
         >
           <span
             aria-hidden="true"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-bg-elevated font-display font-bold text-accent"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-accent/60 bg-black font-display text-lg font-bold text-accent"
           >
             {initial}
           </span>
@@ -81,14 +81,14 @@ export function AppShell({
       </aside>
 
       {/* ── Celular: barra superior ─────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border/60 bg-bg-base/85 px-5 py-3 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-30 flex items-center justify-between bg-gradient-to-b from-[#1a1a1a] to-black px-5 py-3 shadow-[0_1px_0_0_var(--color-accent)] lg:hidden">
         <Link href="/panel" aria-label={t('panel')}>
           <Logo />
         </Link>
         <Link
           href="/perfil"
           aria-label={t('profile')}
-          className="grid h-10 w-10 place-items-center rounded-full bg-bg-elevated font-display font-bold text-accent"
+          className="grid h-10 w-10 place-items-center rounded-xl border border-accent/60 bg-black font-display text-lg font-bold text-accent"
         >
           {initial}
         </Link>
@@ -108,7 +108,7 @@ export function AppShell({
       {/* ── Celular: barra inferior ─────────────────────────────────────── */}
       <nav
         aria-label={t('main')}
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg-base/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 bg-black/95 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_0_0_var(--color-accent)] backdrop-blur lg:hidden"
       >
         <AppNav variant="bar" />
       </nav>

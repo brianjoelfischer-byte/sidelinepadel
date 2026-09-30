@@ -49,24 +49,27 @@ export async function LevelSummary({
   const showPerceived = perceived !== null && raterCount >= 3;
 
   return (
-    <section className="rounded-card border border-border bg-bg-surface p-6">
-      <div className="flex items-baseline gap-4">
-        <span className="font-display text-6xl font-bold leading-none text-accent">
+    <section className="card-glass overflow-hidden">
+      {/* El número, en tarjeta dorada: la ficha de jugador de la tele. */}
+      <div className="bg-gold-card flex items-end gap-4 border-b border-white/30 px-6 py-5">
+        <span className="font-display text-7xl font-bold leading-none text-white">
           {formatLevel(effective, locale)}
         </span>
-        <div>
-          <p className="text-xs uppercase tracking-widest text-fg-muted">
-            {t('effective')}
+        <div className="pb-1">
+          <p className="eyebrow text-white">{t('effective')}</p>
+          <p className="text-base font-semibold uppercase tracking-wide text-white">
+            {bandLabel}
           </p>
-          <p className="text-sm text-fg-secondary">{bandLabel}</p>
         </div>
       </div>
+
+      <div className="px-6 pb-6">
 
       {/* Categoría estimada · secundaria a propósito, y siempre etiquetada
           como aproximación para que nadie la lea como oficial. */}
       {category ? (
-        <div className="mt-5 flex flex-wrap items-center gap-2 rounded-card border border-border bg-bg-elevated px-4 py-3">
-          <span className="rounded-pill bg-accent-2/15 px-3 py-1 text-sm font-semibold text-accent-2">
+        <div className="mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-black/50 px-4 py-3">
+          <span className="rounded-md bg-bronze px-2.5 py-1 text-sm font-bold uppercase text-black">
             ≈ {category}
           </span>
           <span className="text-xs text-fg-muted">
@@ -80,19 +83,15 @@ export async function LevelSummary({
         </div>
       ) : null}
 
-      <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-border pt-6 text-sm">
+      <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-white/10 pt-6 text-sm">
         <div>
-          <dt className="text-xs uppercase tracking-wider text-fg-muted">
-            {t('declared')}
-          </dt>
-          <dd className="mt-1 font-semibold">{formatLevel(declared, locale)}</dd>
+          <dt className="eyebrow text-fg-muted">{t('declared')}</dt>
+          <dd className="mt-1 font-display text-2xl font-bold">{formatLevel(declared, locale)}</dd>
         </div>
 
         <div>
-          <dt className="text-xs uppercase tracking-wider text-fg-muted">
-            {t('perceived')}
-          </dt>
-          <dd className="mt-1 font-semibold">
+          <dt className="eyebrow text-fg-muted">{t('perceived')}</dt>
+          <dd className="mt-1 font-display text-2xl font-bold">
             {showPerceived ? formatLevel(perceived, locale) : '—'}
           </dd>
           <dd className="text-xs text-fg-muted">
@@ -100,6 +99,7 @@ export async function LevelSummary({
           </dd>
         </div>
       </dl>
+      </div>
     </section>
   );
 }

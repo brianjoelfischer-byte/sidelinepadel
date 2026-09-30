@@ -176,7 +176,7 @@ export function SessionForm({
 
       {/* Marcador */}
       {kind === 'match' ? (
-        <section className="rounded-card border border-border bg-bg-surface p-5">
+        <section className="card-glass p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-widest text-fg-secondary">
               {t('score')}
@@ -185,9 +185,9 @@ export function SessionForm({
               <span
                 className={
                   derived === 'win'
-                    ? 'rounded-pill bg-win/15 px-3 py-1 text-sm font-semibold text-win'
+                    ? 'rounded-md bg-win px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-black'
                     : derived === 'loss'
-                      ? 'rounded-pill bg-loss/15 px-3 py-1 text-sm font-semibold text-loss'
+                      ? 'rounded-md bg-loss-strong px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-white'
                       : 'rounded-pill bg-bg-elevated px-3 py-1 text-sm font-semibold text-fg-secondary'
                 }
               >
@@ -317,7 +317,7 @@ export function SessionForm({
           {players.map((player, index) => (
             <div
               key={index}
-              className="rounded-card border border-border bg-bg-surface p-4"
+              className="card-glass p-4"
             >
               <div className="flex gap-2">
                 <input
@@ -473,7 +473,7 @@ export function SessionForm({
         type="button"
         onClick={submit}
         disabled={isPending || (kind === 'match' && derived === null)}
-        className="touch-target w-full rounded-pill bg-accent px-6 py-3 font-semibold text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-50"
+        className="btn-gold touch-target w-full px-6 py-3 disabled:opacity-50"
       >
         {isPending ? t('saving') : t('save')}
       </button>
@@ -515,7 +515,7 @@ function Field({
 }) {
   return (
     <div className="space-y-2">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-fg-secondary">
+      <label htmlFor={htmlFor} className="block text-sm font-bold uppercase tracking-wider text-fg-secondary">
         {label}
       </label>
       {children}
@@ -536,7 +536,7 @@ function Choice<T extends string>({
 }) {
   return (
     <fieldset className="space-y-2">
-      <legend className="text-sm font-medium text-fg-secondary">{label}</legend>
+      <legend className="text-sm font-bold uppercase tracking-wider text-fg-secondary">{label}</legend>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => (
           <button

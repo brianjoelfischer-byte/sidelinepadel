@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 
+import { DisplayTitle } from '@/components/display-title';
 import { CalendarIcon, PlusIcon, UsersIcon } from '@/components/nav/icons';
 import { Link } from '@/i18n/navigation';
 
@@ -25,7 +26,7 @@ export function OffersSoon() {
   return (
     <main className="mx-auto max-w-3xl px-5 py-8 lg:px-10 lg:py-12">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl sm:text-4xl">{tNav('offers')}</h1>
+        <DisplayTitle text={tNav('offers')} className="text-5xl sm:text-6xl" />
         <span className="rounded-pill bg-bg-elevated px-3 py-1 text-xs font-semibold uppercase tracking-wider text-fg-muted">
           {tNav('soon')}
         </span>
@@ -43,7 +44,7 @@ export function OffersSoon() {
           {steps.map(({ key, Icon }, i) => (
             <li
               key={key}
-              className="flex gap-4 rounded-card border border-border bg-bg-surface p-5"
+              className="flex gap-4 card-glass p-5"
             >
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-card bg-accent/10 text-accent">
                 <Icon className="h-6 w-6" />
@@ -66,7 +67,7 @@ export function OffersSoon() {
         <p className="text-fg-secondary">{t('meanwhile')}</p>
         <Link
           href="/sesiones/nueva"
-          className="touch-target mt-5 inline-flex items-center gap-2 rounded-pill bg-accent px-6 font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
+          className="btn-gold touch-target mt-5 gap-2 px-6"
         >
           <PlusIcon className="h-5 w-5" />
           {tNav('addSessionLong')}

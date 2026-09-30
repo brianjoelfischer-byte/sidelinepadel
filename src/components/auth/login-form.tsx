@@ -75,7 +75,7 @@ export function LoginForm({
    */
   if (sent) {
     return (
-      <div className="mt-10 rounded-card border border-border bg-bg-surface p-6 text-center">
+      <div className="mt-10 card-glass p-6 text-center">
         <p className="text-lg font-semibold">{t('checkInbox')}</p>
         <p className="mt-2 text-sm leading-relaxed text-fg-secondary">
           {t('checkInboxBody')}
@@ -94,7 +94,7 @@ export function LoginForm({
   return (
     <div className="mt-10">
       <form action={handleSubmit} className="space-y-3">
-        <label htmlFor="email" className="block text-sm font-medium text-fg-secondary">
+        <label htmlFor="email" className="block text-sm font-bold uppercase tracking-wider text-fg-secondary">
           {t('emailLabel')}
         </label>
         <input
@@ -113,7 +113,7 @@ export function LoginForm({
         <button
           type="submit"
           disabled={isPending}
-          className="touch-target w-full rounded-pill bg-accent px-6 py-3 font-semibold text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-60"
+          className="btn-gold touch-target w-full px-6 py-3 disabled:opacity-60"
         >
           {isPending ? t('sending') : t('sendLink')}
         </button>
@@ -141,7 +141,7 @@ export function LoginForm({
         type="button"
         onClick={handleGoogle}
         disabled={isPending}
-        className="touch-target w-full rounded-pill border border-border px-6 py-3 font-semibold text-fg transition-colors hover:bg-bg-surface disabled:opacity-60"
+        className="btn-dark touch-target w-full px-6 py-3 disabled:opacity-60"
       >
         {t('google')}
       </button>

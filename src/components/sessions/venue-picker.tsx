@@ -138,7 +138,7 @@ export function VenuePicker({
 
   return (
     <div className="relative">
-      <label htmlFor={inputId} className="mb-2 block text-sm font-semibold text-fg-secondary">
+      <label htmlFor={inputId} className="mb-2 block text-sm font-bold uppercase tracking-wider text-fg-secondary">
         {label}
       </label>
 
@@ -244,7 +244,7 @@ export function VenuePicker({
             setAdding(true);
             setOpen(false);
           }}
-          className="touch-target mt-1 rounded-pill px-1 text-sm font-semibold text-accent-2 hover:underline"
+          className="touch-target mt-1 rounded-pill px-1 text-sm font-bold uppercase tracking-wider text-accent hover:underline"
         >
           + {t('venueAddCta')}
         </button>
