@@ -22,7 +22,7 @@ export function DisplayTitle({
   const strong = cut > 0 ? text.slice(cut + 1) : text;
 
   return (
-    <h1 className={`font-display uppercase leading-[0.95] ${className}`}>
+    <h1 className={`font-display uppercase leading-[0.95] break-words ${className}`}>
       {light ? <span className="block font-light">{light}</span> : null}
       {light ? ' ' : null}
       <span className="block font-bold">{strong}</span>

@@ -45,7 +45,60 @@
     "previewStreak": "Streak",
     "previewVenue": "Club Atlético Belgrano, Córdoba",
     "previewWin": "Win",
-    "footerOsm": "Club data © contributors of"
+    "footerOsm": "Club data © contributors of",
+    "home": "Go to home",
+    "howMore": "Read the full guide"
+  },
+  "how": {
+    "metaTitle": "How it works",
+    "eyebrow": "Guide",
+    "title": "How it works",
+    "intro": "Sideline is your padel notebook: you log what you play and the app turns it into stats, an honest level and, very soon, people to play with.",
+    "soon": "Soon",
+    "steps": {
+      "track": {
+        "title": "Log every match",
+        "body": "With the gold \"Log match\" button, in under a minute.",
+        "p1": "A match with set-by-set score, a quick match (just who won) or a training session.",
+        "p2": "You don't enter whether you won: the result comes from the score.",
+        "p3": "Pick the club from the list and you get a link to open it in Google Maps."
+      },
+      "stats": {
+        "title": "See how you're doing",
+        "body": "Home shows your summary as soon as you sign in.",
+        "p1": "Win percentage, with how many you won and lost.",
+        "p2": "Your current streak and your recent form (W, L, D).",
+        "p3": "How many matches you played this month, and every match with its scoreboard, TV style."
+      },
+      "level": {
+        "title": "Your level, honestly",
+        "body": "A number from 1 to 7, built from what you say and what the people you play with say.",
+        "p1": "Declared: the one you set. Nobody changes it.",
+        "p2": "Perceived: what people who played with you think. Shown only after 3 opinions, and every vote is private.",
+        "p3": "Effective: a blend of both. Next to it you see an estimated category (for example, ≈ 5ta in Argentina), an approximation, not an official category.",
+        "soonNote": "Rating the level of people you played with is coming soon."
+      },
+      "venues": {
+        "title": "Clubs nationwide",
+        "body": "Clubs come from OpenStreetMap, the free map, and players fill in the rest.",
+        "p1": "Search without worrying about accents or capitals.",
+        "p2": "If your club is missing, add it with province and city. If someone already added it under another name, the app notices and uses that one.",
+        "p3": "Once 3 different players log matches there, the club is verified."
+      },
+      "offers": {
+        "title": "Games",
+        "body": "For when you're short of players.",
+        "p1": "Post the game with the level you're looking for and others join.",
+        "p2": "Each player confirms they're going, and you get a reminder before playing."
+      }
+    },
+    "privacyTitle": "Your data",
+    "privacy1": "Your email and date of birth are never shown to anyone.",
+    "privacy2": "Opinions about your level are private: only the result is published.",
+    "privacy3": "Sideline is for people aged 16 and over.",
+    "ctaTitle": "Shall we start?",
+    "cta": "Get started",
+    "back": "Back to home"
   },
   "disclaimer": {
     "noBooking": "Sideline does not book courts. Book with your club, then post the game once you have it.",
