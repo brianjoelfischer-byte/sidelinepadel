@@ -243,8 +243,11 @@
     "partner": "Partner",
     "opponents": "Opponents",
     "addPlayer": "Add player",
+    "removePlayer": "Remove player",
     "playerName": "Name",
-    "theirLevel": "Their level (optional)",
+    "levelPartner": "Your partner's level",
+    "levelOpponent": "Opponent's level",
+    "levelClear": "Remove",
     "side": {
       "label": "Which side you played",
       "drive": "Drive (right)",

@@ -4,12 +4,26 @@ import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 
 import { createSession } from '@/actions/sessions';
+import { LevelSlider } from '@/components/sessions/level-slider';
 import { VenuePicker, emptyVenue, type VenueValue } from '@/components/sessions/venue-picker';
 import { resultFromSets, setWinner, type SetScore } from '@/lib/sessions/score';
 import { useRouter } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
 
 type Kind = 'match' | 'quick_match' | 'training';
+
+/**
+ * Un set mientras se carga. `null` es un casillero vacío: hace falta poder
+ * borrar el número para escribir otro, y un 0 que vuelve solo no deja.
+ */
+interface SetDraft {
+  me: number | null;
+  opp: number | null;
+}
+
+function isComplete(set: SetDraft): set is SetScore {
+  return set.me !== null && set.opp !== null;
+}
 type Team = 'mine' | 'opponent';
 
 interface PlayerDraft {
@@ -31,10 +45,13 @@ const today = () => new Date().toISOString().slice(0, 10);
 export function SessionForm({
   locale: _locale,
   preferCountry,
+  myLevel,
 }: {
   locale: Locale;
   /** País del jugador: sus clubes aparecen primero en el buscador. */
   preferCountry: string | null;
+  /** Tu nivel: de ahí arranca la barrita cuando le das nivel a alguien. */
+  myLevel: number;
 }) {
   const t = useTranslations('session');
   const router = useRouter();
@@ -43,7 +60,7 @@ export function SessionForm({
   const [kind, setKind] = useState<Kind>('match');
   const [playedOn, setPlayedOn] = useState(today());
   const [venue, setVenue] = useState<VenueValue>(emptyVenue);
-  const [sets, setSets] = useState<SetScore[]>([{ me: 6, opp: 3 }]);
+  const [sets, setSets] = useState<SetDraft[]>([{ me: 6, opp: 3 }]);
   const [quickResult, setQuickResult] = useState<'win' | 'loss' | 'draw'>('win');
   const [players, setPlayers] = useState<PlayerDraft[]>([]);
   const [side, setSide] = useState<'drive' | 'reves' | null>(null);
@@ -56,9 +73,10 @@ export function SessionForm({
    * Que sea visible mientras cargás es la forma de detectar un set mal tipeado
    * antes de guardar, en vez de descubrirlo en las estadísticas meses después.
    */
-  const derived = kind === 'match' ? resultFromSets(sets) : null;
+  const complete = sets.every(isComplete) ? sets.filter(isComplete) : null;
+  const derived = kind === 'match' && complete ? resultFromSets(complete) : null;
 
-  function updateSet(index: number, field: keyof SetScore, value: number) {
+  function updateSet(index: number, field: keyof SetDraft, value: number | null) {
     setSets((current) =>
       current.map((set, i) => (i === index ? { ...set, [field]: value } : set)),
     );
@@ -89,9 +107,14 @@ export function SessionForm({
       ...(kind !== 'training' ? { selfRating } : {}),
     };
 
+    if (kind === 'match' && !complete) {
+      setError('invalid_score');
+      return;
+    }
+
     const payload =
       kind === 'match'
-        ? { ...common, kind: 'match' as const, sets }
+        ? { ...common, kind: 'match' as const, sets: complete ?? [] }
         : kind === 'quick_match'
           ? { ...common, kind: 'quick_match' as const, result: quickResult }
           : { ...common, kind: 'training' as const };
@@ -213,7 +236,7 @@ export function SessionForm({
 
           <div className="mt-2 space-y-3">
             {sets.map((set, index) => {
-              const winner = setWinner(set);
+              const winner = isComplete(set) ? setWinner(set) : null;
               return (
                 <div key={index} className="flex items-center gap-3">
                   <span className="w-14 shrink-0 text-xs uppercase tracking-wider text-fg-muted">
@@ -339,7 +362,7 @@ export function SessionForm({
                   onClick={() =>
                     setPlayers((current) => current.filter((_, i) => i !== index))
                   }
-                  aria-label={t('removeSet')}
+                  aria-label={t('removePlayer')}
                   className="touch-target rounded-pill border border-border px-3 text-sm text-fg-muted"
                 >
                   ×
@@ -372,34 +395,22 @@ export function SessionForm({
                   </button>
                 ))}
 
-                {player.team === 'opponent' ? (
-                  <label className="ml-auto flex items-center gap-2 text-xs text-fg-muted">
-                    {t('theirLevel')}
-                    <input
-                      type="number"
-                      min={1}
-                      max={7}
-                      step={0.1}
-                      value={player.perceivedLevel ?? ''}
-                      onChange={(e) =>
-                        setPlayers((current) =>
-                          current.map((p, i) =>
-                            i === index
-                              ? {
-                                  ...p,
-                                  perceivedLevel:
-                                    e.target.value === ''
-                                      ? null
-                                      : Number(e.target.value),
-                                }
-                              : p,
-                          ),
-                        )
-                      }
-                      className="w-20 rounded-card border border-border bg-bg-elevated px-2 py-1 text-sm text-fg"
-                    />
-                  </label>
-                ) : null}
+              </div>
+
+              {/* Nivel: para el compañero también. Antes solo se podía
+                  valorar a los rivales. */}
+              <div className="mt-3">
+                <LevelSlider
+                  label={player.team === 'mine' ? t('levelPartner') : t('levelOpponent')}
+                  value={player.perceivedLevel}
+                  onChange={(level) =>
+                    setPlayers((current) =>
+                      current.map((p, i) => (i === index ? { ...p, perceivedLevel: level } : p)),
+                    )
+                  }
+                  countryCode={preferCountry}
+                  startAt={myLevel}
+                />
               </div>
             </div>
           ))}
@@ -481,24 +492,36 @@ export function SessionForm({
   );
 }
 
+/**
+ * Casillero de juegos de un set. Texto numérico y no `type="number"`: así se
+ * puede borrar y queda vacío (antes el 0 volvía solo), y escribir encima de
+ * un número lo reemplaza en vez de sumarle un dígito.
+ */
 function GameInput({
   label,
   value,
   onChange,
 }: {
   label: string;
-  value: number;
-  onChange: (value: number) => void;
+  value: number | null;
+  onChange: (value: number | null) => void;
 }) {
   return (
     <input
-      type="number"
+      type="text"
       inputMode="numeric"
-      min={0}
-      max={9}
-      value={value}
+      pattern="[0-9]*"
+      autoComplete="off"
+      value={value ?? ''}
       aria-label={label}
-      onChange={(e) => onChange(Number(e.target.value))}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => {
+        if (e.target.value === '') return onChange(null);
+        // El último dígito tipeado: sobre un "6", escribir "4" deja 4. Una
+        // letra no borra lo que había.
+        const digit = e.target.value.replace(/\D/g, '').slice(-1);
+        if (digit !== '') onChange(Number(digit));
+      }}
       className="touch-target w-16 shrink-0 rounded-card border border-border bg-bg-elevated px-3 py-2 text-center text-lg font-semibold"
     />
   );
