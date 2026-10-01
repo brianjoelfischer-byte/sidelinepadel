@@ -311,8 +311,16 @@ rama `main` de GitHub y la vuelve a publicar sola cada vez que `main` cambia.
 
 Yo trabajo en otra rama. Cuando algo está listo, abro un *pull request* (un
 pedido de juntar esa rama con `main`), GitHub corre todas las comprobaciones,
-y si vos estás de acuerdo lo junto. Ahí Vercel publica solo, en uno o dos
-minutos. No tenés que tocar nada en Vercel.
+y **si pasan, lo junto sin esperar tu "dale"** — así lo pediste: las ideas se
+publican apenas están hechas y lo que haya que corregir se corrige sobre lo
+publicado. Ahí Vercel publica solo, en uno o dos minutos. No tenés que tocar
+nada en Vercel.
+
+**La única excepción son los cambios de base de datos.** Si un cambio trae
+una migración, primero te paso el SQL **por el chat**, listo para pegar en el
+SQL Editor de Supabase, y espero a que me digas que lo aplicaste. Recién ahí
+lo junto: si la app nueva sale antes que la base, busca cosas que todavía no
+existen y se rompe para todos.
 
 ### Si alguna vez hay que armarlo de nuevo
 
