@@ -22,9 +22,9 @@ export function VenueLink({ venue, label }: { venue: VenueLabel | null; label: s
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`${text} · ${label}`}
-      className="inline-flex max-w-full items-center gap-1 text-xs text-fg-secondary underline decoration-border underline-offset-4 hover:text-fg hover:decoration-fg-secondary"
+      className="inline-flex max-w-full items-center gap-1 text-sm font-semibold text-fg underline decoration-white/25 underline-offset-4 hover:decoration-accent"
     >
-      <PinIcon className="h-3.5 w-3.5 shrink-0 text-accent-2" />
+      <PinIcon className="h-4 w-4 shrink-0 text-accent" />
       <span className="truncate">{text}</span>
     </a>
   );

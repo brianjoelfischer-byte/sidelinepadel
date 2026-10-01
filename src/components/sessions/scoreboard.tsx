@@ -14,7 +14,8 @@ import { setWinner, setsWon, type SetScore } from '@/lib/sessions/score';
  *
  * El ganador de cada set va en negrita y a color pleno; el perdedor, apagado.
  * La diferencia no depende solo del color (§10): cambia también el peso, y el
- * `<caption>` lo dice en palabras para el lector de pantalla.
+ * `<caption>` lo dice en palabras para el lector de pantalla. El total de
+ * sets del ganador va en un casillero dorado, como en la tele.
  */
 export function Scoreboard({ sets }: { sets: SetScore[] }) {
   const t = useTranslations('session');
@@ -34,12 +35,12 @@ export function Scoreboard({ sets }: { sets: SetScore[] }) {
       </caption>
 
       <thead>
-        <tr className="text-xs text-fg-muted">
+        <tr className="text-[11px] font-bold uppercase tracking-wider text-fg-muted">
           <th scope="col" className="w-full text-left font-normal">
             <span className="sr-only">{t('scoreboard.side')}</span>
           </th>
           {sets.map((_, index) => (
-            <th key={index} scope="col" className="px-2 pb-1 text-center font-normal">
+            <th key={index} scope="col" className="px-2 pb-1 text-center font-bold">
               {/* Visible solo el número; el lector de pantalla oye "Set 1". */}
               <span aria-hidden="true">{index + 1}</span>
               <span className="sr-only">{t('setNumber', { n: index + 1 })}</span>
@@ -47,7 +48,7 @@ export function Scoreboard({ sets }: { sets: SetScore[] }) {
           ))}
           <th
             scope="col"
-            className="border-l border-border pb-1 pl-3 text-center font-normal"
+            className="border-l border-white/15 pb-1 pl-3 text-center font-bold"
           >
             {t('scoreboard.sets')}
           </th>
@@ -56,13 +57,13 @@ export function Scoreboard({ sets }: { sets: SetScore[] }) {
 
       <tbody>
         {rows.map(({ side, label, total }) => (
-          <tr key={side} className="border-t border-border first:border-t-0">
+          <tr key={side} className="border-t border-white/10 first:border-t-0">
             <th
               scope="row"
               className={
                 matchWinner === side
-                  ? 'py-1.5 pr-4 text-left font-sans text-sm font-semibold text-fg'
-                  : 'py-1.5 pr-4 text-left font-sans text-sm font-normal text-fg-secondary'
+                  ? 'py-1.5 pr-4 text-left text-sm font-bold uppercase tracking-wider text-fg'
+                  : 'py-1.5 pr-4 text-left text-sm font-semibold uppercase tracking-wider text-fg-secondary'
               }
             >
               {label}
@@ -76,8 +77,8 @@ export function Scoreboard({ sets }: { sets: SetScore[] }) {
                   key={index}
                   className={
                     wonSet
-                      ? 'px-2 py-1.5 text-center text-lg font-bold text-fg'
-                      : 'px-2 py-1.5 text-center text-lg font-normal text-fg-muted'
+                      ? 'px-2 py-1.5 text-center text-xl font-bold text-fg'
+                      : 'px-2 py-1.5 text-center text-xl font-medium text-fg-muted'
                   }
                 >
                   {games}
@@ -85,14 +86,16 @@ export function Scoreboard({ sets }: { sets: SetScore[] }) {
               );
             })}
 
-            <td
-              className={
-                matchWinner === side
-                  ? 'border-l border-border py-1.5 pl-3 text-center text-lg font-bold text-accent'
-                  : 'border-l border-border py-1.5 pl-3 text-center text-lg font-normal text-fg-muted'
-              }
-            >
-              {total}
+            <td className="border-l border-white/15 py-1 pl-3 text-center">
+              <span
+                className={
+                  matchWinner === side
+                    ? 'bg-gold-gradient mx-auto grid h-8 w-8 place-items-center rounded-md text-xl font-bold text-white'
+                    : 'mx-auto grid h-8 w-8 place-items-center rounded-md bg-white/10 text-xl font-medium text-fg-secondary'
+                }
+              >
+                {total}
+              </span>
             </td>
           </tr>
         ))}

@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 
 import { searchVenues, type VenueOption } from '@/actions/venues';
+import { AddVenuePanel, type AddedVenue } from '@/components/sessions/add-venue-panel';
 
 /**
  * Campo "Dónde jugaste" con sugerencias de clubes · §13.
@@ -11,8 +12,10 @@ import { searchVenues, type VenueOption } from '@/actions/venues';
  * Dos resultados posibles, y los dos valen:
  *  · elegís un club de la lista → se guarda su id, y el historial después
  *    muestra nombre y ciudad reales y abre el lugar exacto en Google Maps.
- *  · no está, o no elegís → se guarda el texto tal cual (`venue_freetext`).
- *    Nunca se bloquea a nadie por un club que falta en OpenStreetMap.
+ *  · no está → "Agregalo": provincia, ciudad y, si ya existe con otro
+ *    nombre, la base lo detecta y usa ese. Así el próximo jugador lo encuentra.
+ *  · no elegís ni agregás → se guarda el texto tal cual (`venue_freetext`).
+ *    Nunca se bloquea a nadie por un club que falta.
  *
  * Accesible según el patrón combobox de ARIA: el foco queda siempre en el
  * campo, las flechas mueven la opción activa, Enter elige, Escape cierra.
@@ -34,6 +37,7 @@ export function VenuePicker({
   preferCountry,
   label,
   search = searchVenues,
+  addActions,
 }: {
   value: VenueValue;
   onChange: (value: VenueValue) => void;
@@ -44,6 +48,8 @@ export function VenuePicker({
    * probar el componente contra una base local sin Supabase de por medio.
    */
   search?: typeof searchVenues;
+  /** Igual que `search`, para el panel de agregar club. */
+  addActions?: React.ComponentProps<typeof AddVenuePanel>['actions'];
 }) {
   const t = useTranslations('session');
   const inputId = useId();
@@ -58,6 +64,9 @@ export function VenuePicker({
   });
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  const [adding, setAdding] = useState(false);
+  // Qué pasó al agregar: se creó, o ya existía y se usó ese.
+  const [added, setAdded] = useState<'created' | 'existed' | null>(null);
 
   // Cada búsqueda lleva un número: si vuelve una vieja después de una nueva
   // (la red no garantiza el orden), se descarta.
@@ -90,6 +99,13 @@ export function VenuePicker({
   function choose(option: VenueOption) {
     onChange({ id: option.id, name: option.name, city: option.city });
     setOpen(false);
+    setAdded(null);
+  }
+
+  function onAdded(venue: AddedVenue) {
+    onChange({ id: venue.id, name: venue.name, city: venue.city });
+    setAdding(false);
+    setAdded(venue.existed ? 'existed' : 'created');
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -117,10 +133,12 @@ export function VenuePicker({
   const showList = open && options.length > 0;
   const showNoResults = open && answered && options.length === 0;
   const activeOption = showList ? options[active] : undefined;
+  // Agregar necesita un país: sale del perfil. Sin país, queda el texto libre.
+  const canAdd = answered && !value.id && preferCountry !== null;
 
   return (
     <div className="relative">
-      <label htmlFor={inputId} className="mb-2 block text-sm font-semibold text-fg-secondary">
+      <label htmlFor={inputId} className="mb-2 block text-sm font-bold uppercase tracking-wider text-fg-secondary">
         {label}
       </label>
 
@@ -140,8 +158,9 @@ export function VenuePicker({
           // Escribir encima de un club elegido lo "suelta": vuelve a ser texto.
           onChange({ id: null, name: e.target.value, city: null });
           setOpen(true);
+          setAdded(null);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => setOpen(!adding)}
         // El clic en una opción llega después del blur: sin esta pausa, la
         // lista se cerraría antes de registrar la elección.
         onBlur={() => setTimeout(() => setOpen(false), 120)}
@@ -153,6 +172,11 @@ export function VenuePicker({
         <p className="mt-2 flex items-center gap-1.5 text-xs text-win">
           <span aria-hidden="true">✓</span>
           {value.city ? t('venueChosenIn', { city: value.city }) : t('venueChosen')}
+        </p>
+      ) : null}
+      {value.id && added ? (
+        <p className="mt-1 text-xs text-fg-muted">
+          {added === 'existed' ? t('venueExisted') : t('venueAdded')}
         </p>
       ) : null}
 
@@ -185,11 +209,17 @@ export function VenuePicker({
             <span className="block text-xs text-fg-muted">
               {[
                 option.city,
+                option.adminArea,
                 option.courts ? t('venueCourts', { count: option.courts }) : null,
               ]
                 .filter(Boolean)
                 .join(' · ')}
             </span>
+            {option.verified ? null : (
+              <span className="mt-1 inline-block whitespace-nowrap rounded-pill border border-border px-2 py-0.5 text-[11px] text-fg-muted">
+                {t('venueByPlayers', { count: option.players })}
+              </span>
+            )}
           </li>
         ))}
         <li
@@ -200,8 +230,34 @@ export function VenuePicker({
         </li>
       </ul>
 
-      {showNoResults ? (
-        <p className="mt-2 text-xs text-fg-muted">{t('venueNoResults')}</p>
+      {showNoResults && !adding ? (
+        <p className="mt-2 text-xs text-fg-muted">
+          {canAdd ? t('venueNoResultsAdd') : t('venueNoResults')}
+        </p>
+      ) : null}
+
+      {/* Con la lista cerrada (o vacía) y ningún club elegido: agregarlo. */}
+      {canAdd && !adding && !showList ? (
+        <button
+          type="button"
+          onClick={() => {
+            setAdding(true);
+            setOpen(false);
+          }}
+          className="touch-target mt-1 rounded-pill px-1 text-sm font-bold uppercase tracking-wider text-accent hover:underline"
+        >
+          + {t('venueAddCta')}
+        </button>
+      ) : null}
+
+      {adding && preferCountry ? (
+        <AddVenuePanel
+          initialName={value.name}
+          country={preferCountry}
+          onDone={onAdded}
+          onCancel={() => setAdding(false)}
+          {...(addActions ? { actions: addActions } : {})}
+        />
       ) : null}
 
       {/* Para el lector de pantalla: cuántos clubes aparecieron. */}

@@ -20,6 +20,8 @@
  * ser la sede, con la cantidad de canchas contadas.
  */
 
+import regions from '../../src/lib/venues/regions.json' with { type: 'json' };
+
 /** @typedef {{ type: 'node'|'way'|'relation', id: number, lat?: number, lon?: number,
  *   bounds?: { minlat: number, minlon: number, maxlat: number, maxlon: number },
  *   tags?: Record<string, string> }} OsmElement */
@@ -290,7 +292,9 @@ export function buildVenues(elements, { countryCode, timezoneOf, places = [] }) 
     rows.push({
       name,
       country_code: countryCode,
-      admin_area: cleanName(tags['addr:state'] ?? tags['addr:province']) ?? null,
+      // Lo que diga la etiqueta, pero solo si es una provincia real: "Cba"
+      // o un barrio escrito ahí no sirven para agrupar.
+      admin_area: canonicalRegion(countryCode, tags['addr:state'] ?? tags['addr:province']),
       city: cleanName(tags['addr:city']) ?? nearestPlace(point, places),
       address: addressOf(tags),
       lat: point.lat,
@@ -304,6 +308,70 @@ export function buildVenues(elements, { countryCode, timezoneOf, places = [] }) 
 
   rows.sort((a, b) => fold(a.name).localeCompare(fold(b.name)));
   return { rows, stats };
+}
+
+// ---------------------------------------------------------------------------
+//  Provincia de cada sede
+// ---------------------------------------------------------------------------
+
+/**
+ * Nombre oficial de OpenStreetMap → nombre canónico de la app.
+ *
+ * OSM dice "Provincia de Córdoba" o "Tierra del Fuego, Antártida e Islas del
+ * Atlántico Sur"; la app guarda "Córdoba" y "Tierra del Fuego", que es lo que
+ * ofrece la lista del formulario. Si no fueran iguales, un club de OSM y uno
+ * agregado por un jugador nunca coincidirían por provincia.
+ *
+ * Gana la coincidencia más larga: "Ciudad Autónoma de Buenos Aires" también
+ * contiene "Buenos Aires", y la provincia no es la ciudad.
+ *
+ * En países sin lista se devuelve el nombre de OSM limpio.
+ */
+export function canonicalRegion(countryCode, osmName) {
+  const name = cleanName(osmName);
+  if (!name) return null;
+  const list = regions[countryCode] ?? null;
+  if (!list) return name.replace(/^(provincia|estado|departamento) (de|del) /i, '');
+
+  const folded = fold(name);
+  let best = null;
+  for (const region of list) {
+    const r = fold(region);
+    if (folded === r || folded.includes(r)) {
+      if (!best || r.length > fold(best).length) best = region;
+    }
+  }
+  return best;
+}
+
+/**
+ * Una sola consulta a Overpass para muchos puntos: "¿en qué provincia cae
+ * cada uno?". Cada respuesta vuelve marcada con el índice del punto (`idx`),
+ * así se sabe a cuál corresponde aunque falte alguna — un punto en el agua o
+ * en una zona sin límites cargados no devuelve nada.
+ */
+export function regionQuery(points) {
+  const blocks = points
+    .map(
+      (p, i) =>
+        `is_in(${p.lat.toFixed(6)},${p.lng.toFixed(6)})->.a${i};\n` +
+        `area.a${i}["boundary"="administrative"]["admin_level"="4"];\n` +
+        `convert row idx="${i}", name=t["name"];\nout;`,
+    )
+    .join('\n');
+  return `[out:json][timeout:180];\n${blocks}`;
+}
+
+/** Respuesta de `regionQuery` → índice del punto → nombre de OSM. */
+export function parseRegionRows(elements) {
+  const out = new Map();
+  for (const el of elements) {
+    if (el.type !== 'row' || !el.tags) continue;
+    const idx = Number(el.tags.idx);
+    if (!Number.isInteger(idx) || !el.tags.name || out.has(idx)) continue;
+    out.set(idx, el.tags.name);
+  }
+  return out;
 }
 
 /** Literal SQL seguro: comillas simples duplicadas, NULL si no hay valor. */
@@ -321,9 +389,10 @@ function sqlNumber(value) {
 /**
  * El archivo SQL para pegar en el SQL Editor.
  *
- * `ON CONFLICT DO NOTHING`: una segunda carga no pisa nada. Si un moderador
- * corrigió un club, la re-sincronización no le deshace el trabajo (§13). La
- * actualización de clubes ya cargados queda para el job mensual.
+ * Una segunda carga no pisa nada: si un moderador corrigió un club, la
+ * re-sincronización no le deshace el trabajo (§13). La única excepción es la
+ * provincia, y solo si estaba vacía — así los clubes ya cargados la reciben
+ * sin que se toque lo que alguien haya escrito a mano.
  */
 /**
  * Marca de consulta completa en la cabecera del SQL. `venues-fetch.mjs` la
@@ -343,12 +412,14 @@ ${complete ? COMPLETE_MARK : '--  Consulta: parcial (falló la consulta extra; s
 --
 --  ${rows.length} sedes · ${stats.courtsAttributed + stats.courtsNearby} canchas atribuidas a su club (${stats.courtsNearby} por cercanía)
 --  ${stats.duplicatesMerged} duplicados unidos · ${stats.unnamedSkipped} canchas sin nombre ni club
+--  ${rows.filter((r) => r.admin_area).length} con provincia
 --
 --  Datos © colaboradores de OpenStreetMap, bajo licencia ODbL 1.0.
 --  https://www.openstreetmap.org/copyright
 --
 --  Pegá TODO este archivo en el SQL Editor de Supabase y ejecutá.
---  Se puede correr más de una vez: lo que ya está cargado no se toca.
+--  Se puede correr más de una vez: lo ya cargado no se toca, salvo completar
+--  la provincia donde estaba vacía.
 -- ===========================================================================
 
 BEGIN;
@@ -386,7 +457,9 @@ INSERT INTO public.venues
    courts_count, source, osm_type, osm_id, status)
 VALUES
 ${values}
-ON CONFLICT (osm_type, osm_id) DO NOTHING;
+ON CONFLICT (osm_type, osm_id) DO UPDATE
+  SET admin_area = EXCLUDED.admin_area
+  WHERE public.venues.admin_area IS NULL AND EXCLUDED.admin_area IS NOT NULL;
 `);
   }
 

@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { Metadata } from 'next';
 
+import { DisplayTitle } from '@/components/display-title';
 import { Link } from '@/i18n/navigation';
 import { SessionForm } from '@/components/sessions/session-form';
 import { getProfile, requireUser } from '@/lib/auth/session';
@@ -40,7 +41,7 @@ export default async function NewSessionPage({
         ← {tCommon('back')}
       </Link>
 
-      <h1 className="mt-6 text-3xl">{t('title')}</h1>
+      <DisplayTitle text={t('title')} className="mt-6 text-5xl" />
 
       <div className="mt-10">
         <SessionForm locale={locale} preferCountry={profile?.country_code ?? null} />

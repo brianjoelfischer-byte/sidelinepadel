@@ -695,46 +695,59 @@ El bloque 2 antes que el 3 no es negociable: si las políticas se escriben despu
 
 ## 10 · Diseño e identidad visual
 
-Referencia estructural: Padelis. **Paleta deliberadamente distinta** — nada de cian sobre azul marino.
+Referencia visual: **las transmisiones y la web del circuito profesional (Premier Padel)**, para que la app se sienta familiar para quien mira pádel. Se toma el lenguaje (negro, dorado, tipografía cuadrada en mayúsculas, marcador de TV, botones con sombra desplazada) y **nunca** la marca: logo, nombre, estrella y fuente licenciada son de ellos y no se usan. La app no debe poder confundirse con una app oficial.
 
 ### Tokens
 
 ```css
-:root {
-  /* Base — grafito cálido, no azul */
-  --bg-base:      #14161A;
-  --bg-surface:   #1D2026;
-  --bg-elevated:  #262A31;
-  --border:       #333842;
+@theme {
+  /* Base — negro de transmisión */
+  --color-bg-base:      #000000;
+  --color-bg-surface:   #111111;
+  --color-bg-elevated:  #1C1C1C;
+  --color-border:       #2C2C2C;
 
-  /* Acento primario — volt lime, alto contraste sobre oscuro */
-  --accent:       #C8F751;
-  --accent-hover: #D9FF7A;
-  --accent-ink:   #14161A;   /* texto sobre el acento */
+  /* Dorado */
+  --color-accent:       #B49058;
+  --color-accent-hover: #C4A36D;
+  --color-accent-ink:   #000000;   /* texto sobre el dorado liso */
+  --color-gold-deep:    #4B330D;   /* final del degradé */
 
-  /* Acento secundario — ámbar quemado (premium, logros) */
-  --accent-2:     #FF9F45;
+  /* Categorías: plata, bronce, bordó */
+  --color-silver:       #A0A0A0;
+  --color-bronze:       #CD8032;
+  --color-finals:       #610031;
 
   /* Semánticos */
-  --win:          #4ADE80;
-  --loss:         #F87171;
-  --info:         #7DD3FC;
+  --color-win:          #00C758;
+  --color-loss:         #FF4D55;   /* como texto */
+  --color-loss-strong:  #E40014;   /* como fondo, con texto blanco */
+  --color-info:         #7DD3FC;
 
   /* Texto */
-  --text-primary:   #F2F4F7;
-  --text-secondary: #9BA3B0;
-  --text-muted:     #6B7280;
+  --color-fg:           #FFFFFF;
+  --color-fg-secondary: #B3B3B3;
+  --color-fg-muted:     #8A8A8A;
 }
 ```
 
-**Contraste verificado:** `--accent` sobre `--bg-base` da ~13.8:1; `--text-secondary` sobre `--bg-surface` da ~5.9:1. Ambos superan WCAG AA. El acento se usa **como fondo con texto oscuro** en botones, no como texto fino sobre oscuro.
+**Contraste verificado (WCAG AA):** dorado sobre negro ~7.1:1; `--color-fg-muted` sobre `--color-bg-surface` ~5.0:1; chips de resultado negro sobre verde ~9:1 y blanco sobre rojo ~4.9:1. El botón principal lleva blanco sobre el degradé dorado: ≥3.1:1 en el borde claro, por eso su texto es grande (≥19 px bold, "texto grande" para WCAG). Las tarjetas doradas con texto chico usan un degradé más oscuro (`.bg-gold-card`, desde `#8F7042`) que da ≥4.6:1.
+
+### Piezas
+
+- **Botón principal** (`.btn-gold`): degradé dorado, borde blanco de 1 px, radio 12 px y sombra blanca desplazada 2,5 px; al pasar el mouse se hunde sobre la sombra. **Secundario** (`.btn-dark`): igual, en negro.
+- **Títulos en dos pesos** (`DisplayTitle`): primera palabra fina, el resto en negrita, en mayúsculas y uno debajo del otro ("MIS / PARTIDOS").
+- **Tarjeta de partido** (`SessionCard`): fecha y tipo en mayúsculas chicas, resultado en chip lleno, marcador set por set con el total del ganador en casillero dorado.
+- **Tarjetas de vidrio** (`.card-glass`) sobre negro; la destacada, dorada.
+- Portada: secciones negras y una **hoja blanca** con esquinas redondeadas arriba.
+- Fondo con barridos de luz dorados y blancos, fijos.
 
 ### Reglas
 
 - **Modo oscuro por defecto.** Modo claro en fase 2, con los tokens ya preparados.
-- Tipografía: una sans geométrica para títulos (`Outfit`), sistema para el cuerpo. Autohospedada — sin llamadas a Google Fonts (privacidad + CSP).
-- Sin `text-shadow` de resplandor. El acento lime ya destaca; el glow satura y arruina la legibilidad.
-- Radios: `12px` en tarjetas, `999px` en píldoras y botones principales.
+- Tipografía: **Rajdhani** (licencia OFL) para todo, la alternativa libre más cercana a la de las transmisiones. Autohospedada con `next/font` — sin llamadas a Google Fonts (privacidad + CSP). Títulos, rótulos y botones en mayúsculas.
+- Sin `text-shadow` de resplandor.
+- Radios: `16px` en tarjetas, `12px` en botones y chips. Sin píldoras.
 - El color **nunca** es el único portador de información: victoria/derrota llevan icono y texto, no solo verde/rojo.
 - Todo objetivo táctil mínimo 44×44 px.
 - Respetar `prefers-reduced-motion` en las animaciones de logro.

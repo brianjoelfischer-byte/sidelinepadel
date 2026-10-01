@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { use } from 'react';
 
+import { DisplayTitle } from '@/components/display-title';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { Logo } from '@/components/logo';
 import { MatchesIcon, TrendIcon, UsersIcon } from '@/components/nav/icons';
@@ -32,45 +33,48 @@ export default function LandingPage({
   ] as const;
 
   return (
-    <div className="min-h-dvh">
-      <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-6">
+    // `clip` y no `hidden`: recorta el brillo de la vista previa sin romper
+    // la cabecera fija.
+    <div className="min-h-dvh overflow-x-clip">
+      <header className="sticky top-0 z-30 bg-gradient-to-b from-[#1a1a1a] to-black shadow-[0_1px_0_0_var(--color-accent)]">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
         <Logo />
         <div className="flex items-center gap-2">
           <LocaleSwitcher />
           <Link
             href="/entrar"
-            className="touch-target inline-flex items-center rounded-pill border border-border px-5 text-sm font-semibold transition-colors hover:bg-bg-surface"
+            className="btn-dark touch-target px-5 text-sm"
           >
             {t('signIn')}
           </Link>
+        </div>
         </div>
       </header>
 
       <main>
         <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 pb-16 pt-8 sm:pt-16 lg:grid-cols-[1fr_26rem]">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">
-              {tMeta('tagline')}
-            </p>
+            <p className="eyebrow text-accent">{tMeta('tagline')}</p>
 
-            <h1 className="mt-4 max-w-2xl text-4xl leading-[1.05] sm:text-6xl">
-              {t('heroTitle')}
-            </h1>
+            <DisplayTitle
+              text={t('heroTitle')}
+              className="mt-4 max-w-2xl text-6xl sm:text-8xl"
+            />
 
-            <p className="mt-6 max-w-xl text-lg text-fg-secondary">{t('heroSubtitle')}</p>
+            <p className="mt-6 max-w-xl text-xl text-fg-secondary">{t('heroSubtitle')}</p>
 
             {/* Enlaces, no botones: navegan. Funcionan sin JavaScript, se abren en
                 otra pestaña y el lector de pantalla los anuncia como lo que son. */}
             <div className="mt-10 flex flex-wrap gap-3">
               <Link
                 href="/entrar"
-                className="touch-target inline-flex items-center rounded-pill bg-accent px-8 py-3 font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
+                className="btn-gold touch-target px-8 py-3"
               >
                 {t('cta')}
               </Link>
               <a
                 href="#como-funciona"
-                className="touch-target inline-flex items-center rounded-pill border border-border px-8 py-3 font-semibold text-fg transition-colors hover:bg-bg-surface"
+                className="btn-dark touch-target px-8 py-3 text-[1.1875rem]"
               >
                 {t('ctaSecondary')}
               </a>
@@ -88,10 +92,10 @@ export default function LandingPage({
             <figcaption className="sr-only">{t('previewLabel')}</figcaption>
             <div
               aria-hidden="true"
-              className="rounded-[1.75rem] border border-border bg-bg-surface p-5 shadow-2xl shadow-black/50"
+              className="rounded-[1.75rem] border border-white/15 bg-gradient-to-b from-[#1a1a1a] to-black p-5 shadow-2xl shadow-black/50"
             >
-              <p className="text-xs text-fg-muted first-letter:uppercase">{t('previewDate')}</p>
-              <p className="mt-1 font-display text-2xl font-bold">{t('previewGreeting')}</p>
+              <p className="eyebrow text-accent">{t('previewDate')}</p>
+              <p className="mt-1 font-display text-3xl font-bold uppercase">{t('previewGreeting')}</p>
 
               <div className="mt-5 grid grid-cols-3 gap-2">
                 <PreviewStat label={t('previewMatches')} value="24" />
@@ -103,14 +107,14 @@ export default function LandingPage({
                 <FormStrip form={['win', 'win', 'win', 'loss', 'win']} />
               </div>
 
-              <div className="mt-5 rounded-card border border-border bg-bg-base p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-fg-secondary">{t('previewVenue')}</p>
-                  <span className="shrink-0 whitespace-nowrap rounded-pill bg-win/15 px-2.5 py-0.5 text-[11px] font-semibold text-win">
+              <div className="card-glass mt-5 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="truncate text-sm font-semibold">{t('previewVenue')}</p>
+                  <span className="shrink-0 whitespace-nowrap rounded-md bg-win px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-black">
                     ▲ {t('previewWin')}
                   </span>
                 </div>
-                <div className="mt-3">
+                <div className="mt-3 rounded-xl border border-white/10 bg-black/60 px-3 py-2">
                   <Scoreboard
                     sets={[
                       { me: 3, opp: 6 },
@@ -124,32 +128,45 @@ export default function LandingPage({
             {/* Brillo de fondo: decorativo, detrás de la tarjeta. */}
             <div
               aria-hidden="true"
-              className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-accent/10 blur-3xl"
+              className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-accent/15 blur-3xl"
             />
           </figure>
         </section>
 
+        {/* Hoja blanca sobre el negro, con las esquinas de arriba redondeadas:
+            el corte de sección de las portadas del circuito. */}
         <section
           id="como-funciona"
-          className="mx-auto grid max-w-6xl scroll-mt-6 gap-4 px-6 pb-24 sm:grid-cols-3"
+          aria-labelledby="como-funciona-titulo"
+          className="scroll-mt-20 rounded-t-[2rem] bg-white text-black"
         >
-          {features.map(({ key, Icon }) => (
-            <article key={key} className="rounded-card border border-border bg-bg-surface p-6">
-              <span className="grid h-11 w-11 place-items-center rounded-card bg-accent/10 text-accent">
-                <Icon className="h-6 w-6" />
-              </span>
-              <h2 className="mt-4 text-lg">
-                {t(`features.${key}Title` as 'features.trackTitle')}
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-fg-secondary">
-                {t(`features.${key}Body` as 'features.trackBody')}
-              </p>
-            </article>
-          ))}
+          <div className="mx-auto max-w-6xl px-6 pb-24 pt-14">
+            <h2
+              id="como-funciona-titulo"
+              className="text-5xl leading-[0.95] sm:text-6xl"
+            >
+              {t('howTitle')}
+            </h2>
+            <div className="mt-10 grid gap-4 sm:grid-cols-3">
+              {features.map(({ key, Icon }) => (
+                <article key={key} className="rounded-card border border-black/10 bg-[#f4f4f4] p-6">
+                  <span className="bg-gold-card grid h-12 w-12 place-items-center rounded-xl border border-black text-white shadow-[2.5px_2.5px_0_#000]">
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <h3 className="mt-5 text-2xl">
+                    {t(`features.${key}Title` as 'features.trackTitle')}
+                  </h3>
+                  <p className="mt-2 leading-relaxed text-[#3a3a3a]">
+                    {t(`features.${key}Body` as 'features.trackBody')}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
         </section>
       </main>
 
-      <footer className="border-t border-border">
+      <footer className="bg-black shadow-[0_-1px_0_0_var(--color-accent)]">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-xs text-fg-muted">
           <Logo />
           <p>

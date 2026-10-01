@@ -18,13 +18,14 @@ entra a `main` se publica solo.
 |---|---|
 | **Diseño** | 17 secciones y 37 reglas no negociables, con la investigación de matchmaking, formatos de torneo y sistemas de rango competitivos |
 | **App** | Next.js 16, TypeScript estricto, Tailwind 4 con los tokens, español e inglés, CI con typecheck + lint + audit + escaneo de secretos |
-| **Datos** | 12 migraciones, RLS activo y forzado en todas las tablas, PostGIS para las sedes |
+| **Datos** | 13 migraciones, RLS activo y forzado en todas las tablas, PostGIS para las sedes |
 | **Auth** | Login sin contraseñas (magic link + Google), guard de sesión en el layout, verificación de 16 años, onboarding de 5 pasos |
 | **Niveles** | Declarado + percibido + efectivo, con confianza adaptativa, límite de ±2,5 por voto y categoría estimada |
 | **Sesiones** | Partido con sets, partido rápido y entrenamiento; resultado derivado en el servidor; participantes y confirmación de etiqueta; marcador set por set en el historial |
-| **Sedes** | Clubes de Argentina desde OpenStreetMap, buscador en "Dónde jugaste" sin importar tildes, cada lugar abre en Google Maps |
+| **Sedes** | Clubes de Argentina desde OpenStreetMap con su provincia, buscador en "Dónde jugaste" sin importar tildes, cada lugar abre en Google Maps. Si falta un club, el jugador lo agrega con provincia y ciudad; la base detecta si ya existe escrito distinto ("Club Paddle Point" = "Padel Point") y queda verificado cuando 3 jugadores cargan partidos ahí |
+| **Diseño** | Estilo de las transmisiones del circuito profesional: negro y dorado, tipografía cuadrada en mayúsculas, títulos en dos pesos, marcador de TV en cada partido, botones con sombra desplazada. Marca propia: nada de logos ni nombres ajenos |
 | **Interfaz** | Barra de navegación (inferior en celular, lateral en escritorio), panel con resumen (partidos, % de victorias, racha, forma), perfil, borrar partido con confirmación, avisos, pantallas de carga y error, ícono e instalable en el celular |
-| **Seguridad** | 123 tests de base que prueban que un usuario no puede leer ni escribir lo de otro, más 78 de lógica y guardas de código |
+| **Seguridad** | 142 tests de base que prueban que un usuario no puede leer ni escribir lo de otro, más 105 de lógica y guardas de código |
 
 Se levanta en cualquier máquina con `npm install && npm run db:reset`.
 
@@ -36,8 +37,8 @@ progresión de nivel.
 
 ## Pendiente del owner
 
-- **Aplicar la migración `venue_search`** (la 12) y **cargar los clubes** de
-  `supabase/seed/venues/AR.sql`. Pasos en [`GUIA.md`](./GUIA.md), paso 6.
+- **Aplicar las migraciones `venue_search` y `community_venues`** (la 12 y la
+  13) y **cargar los clubes** de `supabase/seed/venues/AR.sql`. Pasos en [`GUIA.md`](./GUIA.md), paso 6.
 - ~~Login de punta a punta~~ **Hecho:** probado en la máquina del owner, con
   guardado de partido incluido.
 - ~~Publicar en Vercel~~ **Hecho:** `sidelinepadel.vercel.app`. Cómo se armó y

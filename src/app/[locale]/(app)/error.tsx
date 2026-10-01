@@ -42,13 +42,13 @@ export default function AppError({
           <button
             type="button"
             onClick={() => retry()}
-            className="touch-target rounded-pill bg-accent px-6 font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
+            className="btn-gold touch-target px-6"
           >
             {tCommon('retry')}
           </button>
           <Link
             href="/panel"
-            className="touch-target inline-grid place-items-center rounded-pill border border-border px-6 font-semibold"
+            className="btn-dark touch-target px-6"
           >
             {tNav('panel')}
           </Link>

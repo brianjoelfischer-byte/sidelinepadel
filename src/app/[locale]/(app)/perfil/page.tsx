@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { Metadata } from 'next';
 
+import { DisplayTitle } from '@/components/display-title';
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { LevelSummary } from '@/components/profile/level-summary';
@@ -72,7 +73,7 @@ export default async function ProfilePage({
           {initial}
         </span>
         <div className="min-w-0">
-          <h1 className="truncate text-3xl">{profile.display_name}</h1>
+          <DisplayTitle text={profile.display_name} className="truncate text-4xl sm:text-5xl" />
           <p className="mt-1 text-sm text-fg-muted">
             @{profile.slug} · {country}
           </p>
@@ -80,7 +81,7 @@ export default async function ProfilePage({
             <span
               className={
                 profile.is_public
-                  ? 'rounded-pill bg-win/10 px-2.5 py-0.5 text-xs font-semibold text-win'
+                  ? 'rounded-md bg-win px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-black'
                   : 'rounded-pill bg-bg-elevated px-2.5 py-0.5 text-xs font-semibold text-fg-secondary'
               }
             >
@@ -112,7 +113,7 @@ export default async function ProfilePage({
         <h2 id="juego" className="text-xl">
           {t('game')}
         </h2>
-        <dl className="mt-4 divide-y divide-border rounded-card border border-border bg-bg-surface">
+        <dl className="mt-4 divide-y divide-white/10 card-glass">
           <Row label={tGame('sideLabel')} value={side ?? t('notSet')} />
           <Row label={tGame('handLabel')} value={hand ?? t('notSet')} />
           <Row label={t('racket')} value={profile.racket ?? t('notSet')} />
@@ -124,7 +125,7 @@ export default async function ProfilePage({
         <h2 id="cuenta" className="text-xl">
           {t('account')}
         </h2>
-        <div className="mt-4 divide-y divide-border rounded-card border border-border bg-bg-surface">
+        <div className="mt-4 divide-y divide-white/10 card-glass">
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
             <span className="text-sm text-fg-secondary">{t('language')}</span>
             <LocaleSwitcher />

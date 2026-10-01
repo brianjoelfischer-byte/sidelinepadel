@@ -12,7 +12,7 @@ export default function NotFound() {
         <p className="mt-3 text-fg-secondary">{t('notFoundBody')}</p>
         <Link
           href="/"
-          className="touch-target mt-8 inline-grid place-items-center rounded-pill bg-accent px-6 font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
+          className="btn-gold touch-target mt-8 px-6"
         >
           {t('backHome')}
         </Link>

@@ -147,12 +147,24 @@ por mail no te trae de vuelta a la app.
 
 ## 6 · Aplicar las migraciones
 
-Hay **12 archivos** en `supabase/migrations/`. Las 11 primeras ya están en tu
-base. Falta una:
+Hay **13 archivos** en `supabase/migrations/`. Las 11 primeras ya están en tu
+base. Las nuevas son:
 
-| Falta | Qué hace |
+| Archivo | Qué hace |
 |---|---|
-| `venue_search` | El buscador de clubes de "Dónde jugaste" |
+| `20260729000004_venue_search` | El buscador de clubes de "Dónde jugaste" |
+| `20260729000005_community_venues` | "¿No está? Agregalo": clubes que suben los jugadores, sin duplicados |
+
+**Primero fijate cuál te falta.** En el SQL Editor:
+
+```sql
+SELECT filename FROM app.schema_migrations ORDER BY filename;
+```
+
+- Si la última es `20260729000003…` → te faltan las dos: usá
+  `--from 20260729000004`, y el aviso dice `2 migraciones`.
+- Si la última es `20260729000004_venue_search.sql` → te falta una: usá
+  `--from 20260729000005`, y el aviso dice `1 migración`.
 
 ### La forma simple: copiar y pegar
 
@@ -162,9 +174,9 @@ En la terminal, dentro de la carpeta del proyecto:
 npm run db:bundle -- --from 20260729000004
 ```
 
-✅ Tiene que decir `1 migración (desde 20260729000004_venue_search.sql)`.
+(o `20260729000005`, según lo que viste arriba)
 
-Eso crea `supabase/bundle.sql` con **solo la que falta**. Abrilo:
+Eso crea `supabase/bundle.sql` con **solo lo que falta**. Abrilo:
 
 ```bash
 notepad supabase\bundle.sql
@@ -214,7 +226,7 @@ acá en adelante cada vez que yo agregue una, con ese comando alcanza.
 
 Los clubes no son una migración: son datos, bajados de OpenStreetMap. Están en
 `supabase/seed/venues/`, un archivo por país. Se pegan igual que una migración,
-**después** de aplicar la migración `venue_search`:
+**después** de aplicar las migraciones de arriba:
 
 ```bash
 notepad supabase\seed\venues\AR.sql
@@ -230,8 +242,9 @@ Ctrl+A, Ctrl+C, SQL Editor → **pestaña nueva** → pegar → **Run**.
 SELECT count(*) FROM venues;
 ```
 
-> **Se puede pegar más de una vez.** Lo que ya está cargado no se toca, así
-> que si lo corrés dos veces no se duplica nada. Cuando haya una versión
+> **Se puede pegar más de una vez.** Lo que ya está cargado no se toca (solo
+> se completa la provincia donde estaba vacía), así que si lo corrés dos veces
+> no se duplica nada. Cuando haya una versión
 > nueva del archivo, se pega encima de la anterior sin problema.
 
 > **Si dice "Este archivo tiene que correr en el SQL Editor"** es que lo

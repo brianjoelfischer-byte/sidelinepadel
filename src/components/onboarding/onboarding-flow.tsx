@@ -217,7 +217,7 @@ export function OnboardingFlow({
 
         {step === 4 ? (
           <Step title={t('level.title')} subtitle={t('level.subtitle')}>
-            <div className="rounded-card border border-border bg-bg-surface p-6 text-center">
+            <div className="card-glass p-6 text-center">
               <p className="font-display text-5xl font-bold text-accent">
                 {draft.declaredLevel.toFixed(1).replace('.', locale === 'es' ? ',' : '.')}
               </p>
@@ -271,7 +271,7 @@ export function OnboardingFlow({
             type="button"
             onClick={() => setStep((s) => s - 1)}
             disabled={isPending}
-            className="touch-target rounded-pill border border-border px-6 font-semibold disabled:opacity-60"
+            className="btn-dark touch-target px-6 disabled:opacity-60"
           >
             {t('back')}
           </button>
@@ -283,7 +283,7 @@ export function OnboardingFlow({
           onClick={() =>
             step === TOTAL_STEPS - 1 ? submit() : setStep((s) => s + 1)
           }
-          className="touch-target flex-1 rounded-pill bg-accent px-6 py-3 font-semibold text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-50"
+          className="btn-gold touch-target flex-1 px-6 py-3 disabled:opacity-50"
         >
           {step === TOTAL_STEPS - 1
             ? isPending
@@ -325,7 +325,7 @@ function Field({
 }) {
   return (
     <div className="space-y-2">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-fg-secondary">
+      <label htmlFor={htmlFor} className="block text-sm font-bold uppercase tracking-wider text-fg-secondary">
         {label}
       </label>
       {children}
@@ -346,7 +346,7 @@ function Choice<T extends string>({
 }) {
   return (
     <fieldset className="space-y-2">
-      <legend className="text-sm font-medium text-fg-secondary">{label}</legend>
+      <legend className="text-sm font-bold uppercase tracking-wider text-fg-secondary">{label}</legend>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => {
           const selected = option.value === value;

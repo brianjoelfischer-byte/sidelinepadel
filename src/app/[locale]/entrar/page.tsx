@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { Metadata } from 'next';
 
+import { DisplayTitle } from '@/components/display-title';
 import { LoginForm } from '@/components/auth/login-form';
 import { Logo } from '@/components/logo';
 import { getUser } from '@/lib/auth/session';
@@ -63,7 +64,7 @@ export default async function LoginPage({
           <Logo />
         </div>
 
-        <h1 className="mt-10 text-center text-3xl">{t('title')}</h1>
+        <DisplayTitle text={t('title')} className="mt-10 text-center text-5xl" />
         <p className="mt-3 text-center text-fg-secondary">{t('subtitle')}</p>
 
         <LoginForm locale={locale} initialError={error} />

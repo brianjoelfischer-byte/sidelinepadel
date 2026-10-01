@@ -2,19 +2,22 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
-import { Outfit } from 'next/font/google';
+import { Rajdhani } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
 import { routing } from '@/i18n/routing';
 
 /**
- * Fuente de títulos. `next/font` la descarga en build y la sirve desde
- * nuestro dominio: no hay request del usuario a Google (§10, §8.6).
+ * Fuente de toda la app: cuadrada, de estilo técnico, la familia visual de
+ * los gráficos de las transmisiones de pádel. Licencia libre (OFL).
+ * `next/font` la descarga en build y la sirve desde nuestro dominio: no hay
+ * request del usuario a Google (§10, §8.6).
  */
-const outfit = Outfit({
+const rajdhani = Rajdhani({
   subsets: ['latin'],
-  variable: '--font-outfit',
+  weight: ['300', '500', '600', '700'],
+  variable: '--font-rajdhani',
   display: 'swap',
 });
 
@@ -26,7 +29,7 @@ const outfit = Outfit({
  */
 export const viewport: Viewport = {
   viewportFit: 'cover',
-  themeColor: '#14161a',
+  themeColor: '#000000',
   colorScheme: 'dark',
 };
 
@@ -68,7 +71,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <html lang={locale} className={outfit.variable}>
+    <html lang={locale} className={rajdhani.variable}>
       <body>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>

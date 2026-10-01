@@ -17,8 +17,11 @@ export function Logo() {
         <line x1="16" y1="1" x2="16" y2="23" />
         <line x1="1" y1="12" x2="31" y2="12" strokeDasharray="2 2" />
       </svg>
-      <span className="font-display text-lg font-bold tracking-tight">
-        Sideline
+      <span className="whitespace-nowrap font-display text-xl uppercase leading-none tracking-wide">
+        <span className="font-bold">Sideline</span>
+        {/* En pantallas muy angostas queda solo "Sideline": con idioma y
+            "Entrar" al lado, no entra entero. */}
+        <span className="font-light text-fg-secondary max-[420px]:hidden"> Padel</span>
       </span>
     </div>
   );
