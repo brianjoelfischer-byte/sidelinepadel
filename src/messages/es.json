@@ -243,8 +243,11 @@
     "partner": "Compañero",
     "opponents": "Rivales",
     "addPlayer": "Agregar jugador",
+    "removePlayer": "Quitar jugador",
     "playerName": "Nombre",
-    "theirLevel": "Su nivel (opcional)",
+    "levelPartner": "Nivel de tu compañero",
+    "levelOpponent": "Nivel del rival",
+    "levelClear": "Quitar",
     "side": {
       "label": "De qué lado jugaste",
       "drive": "Drive (derecha)",

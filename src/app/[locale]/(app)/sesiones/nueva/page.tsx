@@ -44,7 +44,11 @@ export default async function NewSessionPage({
       <DisplayTitle text={t('title')} className="mt-6 text-5xl" />
 
       <div className="mt-10">
-        <SessionForm locale={locale} preferCountry={profile?.country_code ?? null} />
+        <SessionForm
+          locale={locale}
+          preferCountry={profile?.country_code ?? null}
+          myLevel={profile ? Number(profile.effective_level) : 3.5}
+        />
       </div>
     </main>
   );
