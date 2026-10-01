@@ -80,7 +80,7 @@
       },
       "venues": {
         "title": "Clubs nationwide",
-        "body": "Clubs come from OpenStreetMap, the free map, and players fill in the rest.",
+        "body": "Hundreds of clubs are already listed, and players add the ones that are missing.",
         "p1": "Search without worrying about accents or capitals.",
         "p2": "If your club is missing, add it with province and city. If someone already added it under another name, the app notices and uses that one.",
         "p3": "Once 3 different players log matches there, the club is verified."
