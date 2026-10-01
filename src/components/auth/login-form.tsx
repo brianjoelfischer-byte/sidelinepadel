@@ -28,9 +28,12 @@ function asErrorKey(value: string | undefined): ErrorKey | null {
 export function LoginForm({
   locale,
   initialError,
+  googleEnabled,
 }: {
   locale: Locale;
   initialError?: string | undefined;
+  /** Si Google está activado en Supabase. Apagado, el botón no se muestra. */
+  googleEnabled: boolean;
 }) {
   const t = useTranslations('auth');
   const [isPending, startTransition] = useTransition();
@@ -129,22 +132,26 @@ export function LoginForm({
         </p>
       ) : null}
 
-      <div className="my-6 flex items-center gap-4" aria-hidden="true">
-        <span className="h-px flex-1 bg-border" />
-        <span className="text-xs uppercase tracking-widest text-fg-muted">
-          {t('or')}
-        </span>
-        <span className="h-px flex-1 bg-border" />
-      </div>
+      {googleEnabled ? (
+        <>
+          <div className="my-6 flex items-center gap-4" aria-hidden="true">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-xs uppercase tracking-widest text-fg-muted">
+              {t('or')}
+            </span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
 
-      <button
-        type="button"
-        onClick={handleGoogle}
-        disabled={isPending}
-        className="btn-dark touch-target w-full px-6 py-3 disabled:opacity-60"
-      >
-        {t('google')}
-      </button>
+          <button
+            type="button"
+            onClick={handleGoogle}
+            disabled={isPending}
+            className="btn-dark touch-target w-full px-6 py-3 disabled:opacity-60"
+          >
+            {t('google')}
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }
