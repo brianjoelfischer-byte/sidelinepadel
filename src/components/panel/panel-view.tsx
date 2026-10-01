@@ -49,7 +49,7 @@ export function PanelView({
   return (
     <main className="mx-auto max-w-5xl px-5 py-8 lg:px-10 lg:py-12">
       <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="eyebrow text-accent">
             {format.dateTime(new Date(`${today}T12:00:00Z`), {
               weekday: 'long',
@@ -73,7 +73,7 @@ export function PanelView({
             <h2 id="resumen" className="sr-only">
               {t('summary')}
             </h2>
-            <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <dl className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 lg:grid-cols-[repeat(4,minmax(0,1fr))]">
               <Stat label={t('matches')} value={format.number(summary.matches)} />
               <Stat
                 label={t('winRate')}
@@ -114,7 +114,7 @@ export function PanelView({
             ) : null}
           </section>
 
-          <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_22rem]">
+          <div className="mt-10 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
             {/* ── Últimos partidos ───────────────────────────────────── */}
             <section aria-labelledby="recientes">
               <div className="flex items-center justify-between">
@@ -188,7 +188,9 @@ function Stat({
       }
     >
       <dt className={`eyebrow ${accent ? 'text-white' : 'text-fg-muted'}`}>{label}</dt>
-      <dd className={`mt-1 font-display text-5xl font-bold leading-none tabular-nums ${valueColor}`}>
+      <dd
+        className={`mt-1 font-display text-4xl font-bold leading-none tabular-nums sm:text-5xl ${valueColor}`}
+      >
         {value}
       </dd>
       {hint ? (

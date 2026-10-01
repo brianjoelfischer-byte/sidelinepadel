@@ -45,7 +45,60 @@
     "previewStreak": "Racha",
     "previewVenue": "Club Atlético Belgrano, Córdoba",
     "previewWin": "Victoria",
-    "footerOsm": "Datos de clubes © colaboradores de"
+    "footerOsm": "Datos de clubes © colaboradores de",
+    "home": "Ir al inicio",
+    "howMore": "Ver la guía completa"
+  },
+  "how": {
+    "metaTitle": "Cómo funciona",
+    "eyebrow": "Guía",
+    "title": "Cómo funciona",
+    "intro": "Sideline es tu cuaderno de pádel: anotás lo que jugás y la app lo convierte en estadísticas, en un nivel honesto y, muy pronto, en gente para jugar.",
+    "soon": "Pronto",
+    "steps": {
+      "track": {
+        "title": "Registrá cada partido",
+        "body": "Con el botón dorado de «Registrar», en menos de un minuto.",
+        "p1": "Partido con marcador set por set, partido rápido (solo quién ganó) o entrenamiento.",
+        "p2": "No tenés que poner si ganaste: el resultado sale solo del marcador.",
+        "p3": "Elegís el club de la lista y queda un enlace para abrirlo en Google Maps."
+      },
+      "stats": {
+        "title": "Mirá cómo venís",
+        "body": "El inicio te muestra tu resumen apenas entrás.",
+        "p1": "Porcentaje de victorias, con cuántos ganaste y perdiste.",
+        "p2": "Tu racha actual y la forma de tus últimos partidos (G, P, E).",
+        "p3": "Cuántos partidos jugaste este mes, y cada partido con su marcador como en la tele."
+      },
+      "level": {
+        "title": "Tu nivel, honesto",
+        "body": "Un número del 1 al 7, armado entre lo que decís vos y lo que dicen los que juegan con vos.",
+        "p1": "Declarado: el que ponés vos. Nadie lo cambia.",
+        "p2": "Percibido: lo que opinan quienes jugaron con vos. Se muestra recién con 3 opiniones, y cada voto es privado.",
+        "p3": "Efectivo: la mezcla de los dos. Al lado ves una categoría estimada (por ejemplo, ≈ 5ta), que es una aproximación, no una categoría oficial.",
+        "soonNote": "Valorar el nivel de quienes jugaron con vos llega pronto."
+      },
+      "venues": {
+        "title": "Clubes de todo el país",
+        "body": "Los clubes salen de OpenStreetMap, el mapa libre, y los completan los jugadores.",
+        "p1": "Buscás sin preocuparte por tildes ni mayúsculas.",
+        "p2": "Si tu club no está, lo agregás con provincia y ciudad. Si otro ya lo cargó con otro nombre, la app se da cuenta y usa ese.",
+        "p3": "Cuando 3 jugadores distintos cargan partidos ahí, el club queda verificado."
+      },
+      "offers": {
+        "title": "Turnos",
+        "body": "Para cuando te falta gente para jugar.",
+        "p1": "Publicás el turno con el nivel que buscás y otros se suman.",
+        "p2": "Cada jugador confirma si va, y te llega un recordatorio antes de jugar."
+      }
+    },
+    "privacyTitle": "Tus datos",
+    "privacy1": "Tu email y tu fecha de nacimiento nunca se muestran a nadie.",
+    "privacy2": "Las opiniones sobre tu nivel son privadas: solo se publica el resultado.",
+    "privacy3": "Sideline es para mayores de 16 años.",
+    "ctaTitle": "¿Arrancamos?",
+    "cta": "Empezar",
+    "back": "Volver al inicio"
   },
   "disclaimer": {
     "noBooking": "Sideline no reserva canchas. Reservá vos en el club y publicá el turno cuando lo tengas.",

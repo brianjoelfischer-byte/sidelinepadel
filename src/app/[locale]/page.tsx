@@ -3,9 +3,9 @@ import { setRequestLocale } from 'next-intl/server';
 import { use } from 'react';
 
 import { DisplayTitle } from '@/components/display-title';
-import { LocaleSwitcher } from '@/components/locale-switcher';
 import { Logo } from '@/components/logo';
 import { MatchesIcon, TrendIcon, UsersIcon } from '@/components/nav/icons';
+import { PublicHeader } from '@/components/public-header';
 import { FormStrip } from '@/components/sessions/result-badge';
 import { Scoreboard } from '@/components/sessions/scoreboard';
 import { Link } from '@/i18n/navigation';
@@ -36,23 +36,13 @@ export default function LandingPage({
     // `clip` y no `hidden`: recorta el brillo de la vista previa sin romper
     // la cabecera fija.
     <div className="min-h-dvh overflow-x-clip">
-      <header className="sticky top-0 z-30 bg-gradient-to-b from-[#1a1a1a] to-black shadow-[0_1px_0_0_var(--color-accent)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-        <Logo />
-        <div className="flex items-center gap-2">
-          <LocaleSwitcher />
-          <Link
-            href="/entrar"
-            className="btn-dark touch-target px-5 text-sm"
-          >
-            {t('signIn')}
-          </Link>
-        </div>
-        </div>
-      </header>
+      <PublicHeader />
 
       <main>
-        <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 pb-16 pt-8 sm:pt-16 lg:grid-cols-[1fr_26rem]">
+        {/* `minmax(0,1fr)`: sin esto la columna crece hasta el ancho del
+            contenido, y con la fuente de reemplazo (más ancha, mientras la
+            nuestra carga) el título se sale de la pantalla. */}
+        <section className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-12 px-6 pb-16 pt-8 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_26rem]">
           <div>
             <p className="eyebrow text-accent">{tMeta('tagline')}</p>
 
@@ -72,12 +62,12 @@ export default function LandingPage({
               >
                 {t('cta')}
               </Link>
-              <a
-                href="#como-funciona"
+              <Link
+                href="/como-funciona"
                 className="btn-dark touch-target px-8 py-3 text-[1.1875rem]"
               >
                 {t('ctaSecondary')}
-              </a>
+              </Link>
             </div>
 
             {/* El aviso de que la app no reserva canchas NO va acá: va donde
@@ -162,6 +152,12 @@ export default function LandingPage({
                 </article>
               ))}
             </div>
+            <Link
+              href="/como-funciona"
+              className="eyebrow mt-8 inline-flex items-center gap-2 text-black underline decoration-accent decoration-2 underline-offset-8 hover:decoration-black"
+            >
+              {t('howMore')} <span aria-hidden="true">→</span>
+            </Link>
           </div>
         </section>
       </main>
