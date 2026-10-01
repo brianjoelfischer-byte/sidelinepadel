@@ -80,7 +80,7 @@
       },
       "venues": {
         "title": "Clubes de todo el país",
-        "body": "Los clubes salen de OpenStreetMap, el mapa libre, y los completan los jugadores.",
+        "body": "Ya hay cientos de clubes cargados, y los jugadores suman los que faltan.",
         "p1": "Buscás sin preocuparte por tildes ni mayúsculas.",
         "p2": "Si tu club no está, lo agregás con provincia y ciudad. Si otro ya lo cargó con otro nombre, la app se da cuenta y usa ese.",
         "p3": "Cuando 3 jugadores distintos cargan partidos ahí, el club queda verificado."
