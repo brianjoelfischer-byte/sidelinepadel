@@ -3,6 +3,7 @@
 import { z } from 'zod';
 
 import { siteUrl } from '@/lib/env';
+import { isGoogleEnabled } from '@/lib/auth/providers';
 import { createClient } from '@/lib/supabase/server';
 import { defaultLocale, locales } from '@/i18n/routing';
 
@@ -66,6 +67,11 @@ export async function startGoogleSignIn(
   input: unknown,
 ): Promise<{ ok: true; url: string } | { ok: false; error: 'unavailable' }> {
   const { locale } = oauthSchema.parse(input);
+
+  // Con Google apagado en Supabase, la URL igual se arma y lleva a una
+  // pantalla de error cruda. Mejor decirlo acá.
+  if (!(await isGoogleEnabled())) return { ok: false, error: 'unavailable' };
+
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({

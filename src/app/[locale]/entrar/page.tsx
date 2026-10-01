@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { DisplayTitle } from '@/components/display-title';
 import { LoginForm } from '@/components/auth/login-form';
 import { Logo } from '@/components/logo';
+import { isGoogleEnabled } from '@/lib/auth/providers';
 import { getUser } from '@/lib/auth/session';
 import { hasSupabaseConfig } from '@/lib/env';
 import { redirect } from '@/i18n/navigation';
@@ -56,6 +57,7 @@ export default async function LoginPage({
   if (user) redirect({ href: '/panel', locale });
 
   const { error } = await searchParams;
+  const googleEnabled = await isGoogleEnabled();
 
   return (
     <main className="grid min-h-dvh place-items-center px-6 py-12">
@@ -67,7 +69,7 @@ export default async function LoginPage({
         <DisplayTitle text={t('title')} className="mt-10 text-center text-5xl" />
         <p className="mt-3 text-center text-fg-secondary">{t('subtitle')}</p>
 
-        <LoginForm locale={locale} initialError={error} />
+        <LoginForm locale={locale} initialError={error} googleEnabled={googleEnabled} />
 
         <p className="mt-8 text-center text-xs leading-relaxed text-fg-muted">
           {t('minAge')}
