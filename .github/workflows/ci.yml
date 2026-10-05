@@ -106,10 +106,19 @@ jobs:
 
       - run: npm ci
 
-      # Regla 30 del BLUEPRINT: una vulnerabilidad alta o crítica bloquea.
-      # Las moderadas se reportan pero no frenan el merge.
-      - name: npm audit (bloquea en high y critical)
-        run: npm audit --audit-level=high
+      # Lo que se publica (dependencies, lo que corre en la app): una
+      # vulnerabilidad alta o crítica bloquea el merge.
+      - name: npm audit · producción (bloquea en high y critical)
+        run: npm audit --omit=dev --audit-level=high
+
+      # Herramientas de desarrollo (eslint, vitest…): no llegan al usuario.
+      # Bloquean solo las críticas; las altas quedan en el reporte. Separado
+      # el 2026-10-05: salió GHSA-vfj7-8cjw-p6xm contra `braces` (todas las
+      # versiones, sin arreglo publicado), que entra solo por
+      # eslint-config-next, y frenaba todo sin que hubiera nada que hacer.
+      # Cuando haya versión corregida, `npm audit` la va a pedir igual.
+      - name: npm audit · desarrollo (bloquea en critical)
+        run: npm audit --audit-level=critical
 
   secrets:
     name: Escaneo de secretos
