@@ -98,6 +98,8 @@ export const siteUrl =
 const serverSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
+  /** Lo manda Vercel en la llamada diaria a /api/keepalive, si está configurado. */
+  CRON_SECRET: z.string().min(16).optional(),
 });
 
 let cachedServerEnv: z.infer<typeof serverSchema> | undefined;
@@ -112,6 +114,7 @@ export function serverEnv() {
   cachedServerEnv ??= serverSchema.parse({
     NODE_ENV: process.env.NODE_ENV,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    CRON_SECRET: process.env.CRON_SECRET,
   });
   return cachedServerEnv;
 }
