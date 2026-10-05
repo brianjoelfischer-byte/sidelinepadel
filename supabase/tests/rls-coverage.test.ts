@@ -13,9 +13,9 @@ import { asAnon, asUser, createUser, db, truncateAll } from './helpers';
 describe('cobertura de RLS', () => {
   it('TODA tabla de public tiene RLS activado y forzado', async () => {
     // Se excluyen las tablas que instala una extensión: `spatial_ref_sys` de
-    // PostGIS es un catálogo de sistemas de coordenadas, no un dato nuestro,
-    // y no le corresponde RLS. En Supabase real vive en el esquema
-    // `extensions`; acá cae en `public` por cómo se instala localmente.
+    // PostGIS no es un dato nuestro y no lleva RLS forzado. Tiene su propia
+    // prueba más abajo, porque en Supabase también cae en `public` y sale por
+    // la API.
     const rows = await db`
       SELECT c.relname AS table_name, c.relrowsecurity, c.relforcerowsecurity
       FROM pg_class c
@@ -175,6 +175,48 @@ describe('anon no puede escribir nada', () => {
     `;
 
     expect(await countAsAnon('public.match_offers')).toBe(0);
+  });
+});
+
+/**
+ * Migración 14. `spatial_ref_sys` de PostGIS está en `public`, y en Supabase
+ * los privilegios por defecto dan escritura a los roles de la API. Se imita
+ * eso con un GRANT ALL y se prueba que igual nadie puede escribir, pero que
+ * leer (que PostGIS necesita) sigue andando.
+ */
+describe('spatial_ref_sys (PostGIS)', () => {
+  it('tiene RLS: se lee, no se escribe, y las funciones geográficas andan', async () => {
+    await truncateAll();
+    const a = await createUser();
+
+    const [flags] = await db`
+      SELECT relrowsecurity FROM pg_class WHERE oid = 'public.spatial_ref_sys'::regclass
+    `;
+    expect(flags?.relrowsecurity).toBe(true);
+
+    // Como en Supabase: permisos de más, que RLS tiene que contener.
+    await db`GRANT ALL ON public.spatial_ref_sys TO anon, authenticated`;
+    try {
+      const borradas = await asUser(a.id, (sql) =>
+        sql`DELETE FROM public.spatial_ref_sys WHERE srid = 4326 RETURNING srid`,
+      );
+      expect(borradas, 'nadie borra el sistema de coordenadas').toHaveLength(0);
+
+      const visibles = await asAnon(
+        (sql) => sql`SELECT srid FROM public.spatial_ref_sys WHERE srid = 4326`,
+      );
+      expect(visibles).toHaveLength(1);
+
+      // Una distancia geográfica real necesita leer la 4326 con el rol que llama.
+      const [d] = await asUser(a.id, (sql) =>
+        sql`SELECT ST_Distance(
+              ST_MakePoint(-58.38, -34.60)::geography,
+              ST_MakePoint(-64.18, -31.42)::geography) AS m`,
+      );
+      expect(Number(d?.m)).toBeGreaterThan(600_000);
+    } finally {
+      await db`REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.spatial_ref_sys FROM anon, authenticated`;
+    }
   });
 });
 
